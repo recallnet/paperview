@@ -27,8 +27,8 @@ The repo now also has a first persisted scoring surface for `exposure_score`,
 persisted queryless mining queue, analyst-adjudicated reranks with learned mode
 weights, a hard-gated ranked family queue, and generated strategy briefs. The
 repo now also has a persisted Gate C review path over those briefs, so the next
-critical path is executing that review on real output rather than adding more
-pipeline plumbing by default.
+critical path is preparing analyst-ready review packets and executing that
+review on real output rather than adding more pipeline plumbing by default.
 
 ---
 
@@ -310,6 +310,8 @@ Current state:
 - in progress
 - `generate_strategy_briefs.py` now writes persisted `strategy_briefs` plus
   run-folder markdown/json brief packets from the ranked family queue
+- `prepare_gate_c_review.py` now exports those briefs into analyst-ready Gate C
+  review bundles with editable JSONL templates and packet indexes
 - `review_gate_c.py` now writes persisted `gate_c_brief_reviews` and
   `gate_c_review_summaries` over those brief packets
 - the remaining question is whether the reviewed briefs are good enough under
@@ -654,6 +656,7 @@ If those are approved, the remaining work becomes mostly execution and tuning ra
 - persisted candidate families, family members, transfer hypotheses, and ranked
   family queue rows
 - persisted strategy briefs and reviewable brief packets with minimal test plans
+- analyst-ready Gate C review bundles with editable JSONL templates
 - persisted Gate C brief reviews and run-level pass/fail summaries
 
 ## Current Non-Implemented Surfaces

@@ -31,6 +31,7 @@
     "adjudicate:analyst": "python3 scripts/run_analyst_adjudication.py",
     "rank:candidates": "python3 scripts/build_candidate_family_ranking.py",
     "briefs:generate": "python3 scripts/generate_strategy_briefs.py",
+    "gatec:prepare": "python3 scripts/prepare_gate_c_review.py",
     "gatec:review": "python3 scripts/review_gate_c.py",
     "schemas:validate": "python3 scripts/validate_schema_examples.py",
     "docs:lint": "recall-docs-governance lint",

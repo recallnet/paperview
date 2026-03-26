@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `all-canonical-commits-complete-awaiting-real-gate-c-run`
+- Current commit focus: `all-canonical-commits-complete-awaiting-real-analyst-gate-c-input`
 - Last updated: `2026-03-26`
 
 ---
@@ -80,7 +80,8 @@ The current bottleneck is also clear:
 - hard-gated ranking and family assembly now persist against the analyst-informed queue
 - final strategy briefs and minimal test plans now persist from the ranked family queue
 - Gate C review judgments and pass/fail summaries can now persist directly against the generated brief surface
-- the remaining work is executing that review on a larger real candidate surface and deciding whether more corpus/retrieval iteration is needed
+- Gate C review packets and editable analyst templates can now be prepared directly from persisted briefs
+- the remaining work is collecting real analyst input on a larger candidate surface and deciding whether more corpus/retrieval iteration is needed
 - the system now has the end-to-end implementation path in place, and the main open question is outcome quality rather than missing pipeline layers
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
@@ -243,6 +244,7 @@ This commit plan implements that order in concrete units.
 | `C13` | `completed` | Add hard-gated candidate ranking and family assembly | `C08`, `C09`, `C11`, `C12` |
 | `C14` | `completed` | Generate final strategy briefs and minimal test plans | `C13` |
 | `C15` | `completed` | Persist Gate C review judgments and final success summary | `C14` |
+| `C16` | `completed` | Prepare analyst Gate C review packets and editable templates | `C15` |
 
 ---
 
@@ -942,6 +944,42 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Inherits completed `C14`: Gate C judgments should attach to persisted `strategy_briefs` rather than raw ranking rows so final acceptance stays anchored on the actual review packet seen by the analyst.
+
+## C16: Gate C Review Packet Preparation
+
+- Status: `completed`
+- Scope: make the real Gate C analyst review executable without hand-assembling templates from SQLite rows
+- Depends on: `C15`
+
+### Deliverables
+
+- checked-in script that exports persisted `strategy_briefs` into a Gate C review packet
+- editable JSONL review template with stable ids already populated
+- manifest/readme output that points reviewers at the concrete brief packets
+- doc update that narrows the remaining work to real analyst review input
+
+### Exit Criteria
+
+- repo can prepare a review bundle from a brief run and hand the analyst a stable JSONL template plus packet index
+
+### Completion Record
+
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C16`
+- Operator: `Codex`
+- Reviewer:
+- Verification:
+  - added `scripts/prepare_gate_c_review.py` plus `npm run gatec:prepare` to export persisted `strategy_briefs` into a Gate C review packet directory
+  - verified the end-to-end C16 flow on `/tmp/paperview-c15-test.sqlite3` by preparing a packet from the `c14-brief-test` brief run, which produced a review template, manifest, and reviewer README under a run-specific `gate-c-review` folder
+  - confirmed the prepared template carries stable `strategy_brief_id` and `candidate_family_id` fields so later `C15` ingestion can map judgments back to the exact reviewed packets
+- Completion notes:
+  - the review-prep step now gives analysts a concrete packet index and a hand-editable JSONL surface instead of requiring manual SQLite queries to build review input
+  - the remaining work after C16 is no longer missing repo support; it is obtaining real analyst judgments on a real brief run
+
+### Upstream Impact Notes
+
+- Inherits completed `C15`: review packet prep should preserve the exact ids consumed by `gate_c_review_summaries` so analyst judgments stay attached to the reviewed packet rather than a renamed or reordered copy.
 
 ---
 
