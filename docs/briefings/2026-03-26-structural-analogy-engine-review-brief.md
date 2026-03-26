@@ -22,6 +22,10 @@ We are building a local-first research system that turns the literature corpus i
 
 The system’s end state is not “a pile of embeddings.” It is a reviewed pipeline that extracts mechanism records from papers, normalizes them into a controlled ontology, generates structural fingerprints, retrieves non-obvious analogs across domains, scores them for `tradecore` fit and novelty, and outputs a ranked review queue of candidate strategy mechanisms. This document is the exact plan, stack, and expected deliverables so the project can be reviewed before we push deeper.
 
+The repo now also has a first persisted scoring surface for `exposure_score`,
+`underexploited_score`, and a bootstrap `worth_followup_score`, so the next
+critical path is retrieval rather than scoring heuristics.
+
 ---
 
 ## What We Are Building
@@ -240,7 +244,10 @@ Exit condition:
 - the system can retrieve non-obvious but structurally relevant papers
 
 Current state:
-- not started
+- retrieval not started yet, but the upstream scoring surface now exists
+- `mechanism_exposure_scores` can already persist mechanism-level exposure,
+  underexploited, and bootstrap follow-up priors for later retrieval and
+  ranking layers
 
 ## Phase 6: Scoring and Review Queue
 
@@ -290,7 +297,8 @@ The intended stack is deliberately local-first and lightweight.
 
 - `SQLite`
   - canonical local write store for v1
-  - tables for papers, sections, extractions, fingerprints, embeddings, edges, and candidates
+  - tables for papers, sections, extractions, fingerprints, exposure scores,
+    embeddings, edges, and candidates
 - `JSONL`
   - run artifacts
   - request/response files
@@ -350,9 +358,38 @@ Not all of these are built yet, but they are part of the planned stack:
 - PDF text extraction / sectioning
   - likely via a local parser path
 - local embedding model
-  - for summary and fingerprint embeddings
+  - MLX is the primary intended Apple Silicon path, with `sentence-transformers` as the fallback baseline
 - retrieval / graph tooling
-  - likely Python-native over local stored embeddings
+  - likely Python-native over local stored embeddings, with `sqlite-vec` now available for SQLite-native vector search
+
+## Local Toolchain Status
+
+- `sqlite-vec` v0.1.6 is already installed locally, including the Python binding
+- MLX is already the local extraction backend and is the intended primary local embedding runtime on this Mac Studio once the current install completes
+- `sentence-transformers` is the preferred local fallback and baseline embedding path
+
+This means the remaining open work is increasingly about retrieval/ranking design and evaluation, not toolchain acquisition.
+
+## Embedding Guidance
+
+- use one primary production embedding space at a time
+- current recommended primary indexer is `Qwen/Qwen3-Embedding-0.6B`
+  at `512` dimensions
+- keep `BAAI/bge-m3` as a separate exploratory / hybrid discovery index, not
+  as mixed vectors inside the main ANN table
+- keep `Alibaba-NLP/gte-Qwen2-7B-instruct` for reranking or top-k adjudication,
+  not first-pass corpus embedding
+
+Why:
+
+- verified from model cards: `Qwen/Qwen3-Embedding-0.6B` supports `32k`
+  context and user-defined output dimensions from `32` to `1024`
+- verified from model cards: `BAAI/bge-m3` is a `1024`-dimensional model with
+  dense, sparse, and multi-vector retrieval support over up to `8192` tokens
+- verified from model cards: `Alibaba-NLP/gte-Qwen2-7B-instruct` uses a
+  `3584`-dimensional embedding space and `32k` max input tokens
+- inference from those contracts: vectors from different models or dimensions
+  should not be treated as one comparable retrieval space
 
 ---
 
@@ -533,7 +570,7 @@ These are the questions worth reviewing now, before we push much farther:
    - ranked candidate mechanisms and strategy briefs, not just retrieval
 
 4. Is the current phase order correct?
-   - finish abstract extraction stability before full-text parsing, normalization, and embeddings
+   - the sequencing through extraction stability, full-text prep, and normalization is now largely done; the main remaining question is whether embeddings and retrieval should proceed exactly as planned
 
 5. Is the ontology direction right?
    - enough structure to support analogy search without becoming rigid nonsense

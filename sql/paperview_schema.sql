@@ -241,6 +241,40 @@ CREATE TABLE IF NOT EXISTS paper_fingerprints (
   UNIQUE (paper_id, run_id, fingerprint_version)
 );
 
+-- @context decision: C09 persists exposure and follow-up priors at the
+-- `mechanism_instance` level because later retrieval, analyst feedback, and
+-- family assembly all operate on mechanisms rather than paper wrappers.
+CREATE TABLE IF NOT EXISTS mechanism_exposure_scores (
+  exposure_score_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mechanism_instance_id INTEGER NOT NULL,
+  paper_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  score_version TEXT NOT NULL,
+  literature_family TEXT NOT NULL,
+  evaluation_split TEXT NOT NULL,
+  exposure_score REAL NOT NULL,
+  underexploited_score REAL NOT NULL,
+  worth_followup_score REAL NOT NULL,
+  family_share REAL NOT NULL,
+  trigger_share REAL NOT NULL,
+  topology_share REAL NOT NULL,
+  duplicate_share REAL NOT NULL,
+  benchmark_support REAL NOT NULL,
+  ambiguity_burden REAL NOT NULL,
+  portability_burden REAL NOT NULL,
+  evidence_strength_score REAL NOT NULL,
+  tradecore_fit_score REAL NOT NULL,
+  crowding_score REAL NOT NULL,
+  feature_json TEXT NOT NULL,
+  model_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (mechanism_instance_id, run_id, score_version)
+);
+
 CREATE TABLE IF NOT EXISTS paper_embeddings (
   embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
   paper_id TEXT NOT NULL,
@@ -334,6 +368,12 @@ ON mechanism_fingerprints (run_id);
 
 CREATE INDEX IF NOT EXISTS idx_normalization_reviews_mechanism_instance_id
 ON normalization_reviews (mechanism_instance_id);
+
+CREATE INDEX IF NOT EXISTS idx_mechanism_exposure_scores_mechanism_instance_id
+ON mechanism_exposure_scores (mechanism_instance_id);
+
+CREATE INDEX IF NOT EXISTS idx_mechanism_exposure_scores_run_id
+ON mechanism_exposure_scores (run_id);
 
 CREATE INDEX IF NOT EXISTS idx_paper_embeddings_paper_id
 ON paper_embeddings (paper_id);

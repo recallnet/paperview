@@ -25,6 +25,9 @@ written: 2026-03-25
 
 ## Current Focus
 
+- Use the persisted mechanism-level scoring surface as the input contract for the first retrieval stack rather than recomputing exposure heuristics downstream.
+- Build the multi-view retrieval stack against canonical `mechanism_fingerprints`, `mechanism_evidence_spans`, and `mechanism_exposure_scores`.
+- Keep retrieval work SQLite-native first so `sqlite-vec`, shared model cache, and local embedding paths can be exercised before introducing any separate serving layer.
 - Finish the `q-fin` PDF pull and verify corpus completeness.
 - Use repo-native launch/status commands for the corpus pull rather than ad hoc shell commands.
 - Materialize a completeness inventory so missing IDs are explicit rather than inferred.
@@ -43,6 +46,8 @@ written: 2026-03-25
 - Create prompt-ready abstract extraction runs from the pilot batch before local model execution is locked.
 - Ingest validated extraction responses into SQLite so the first pilot can produce real staged rows and canonical `mechanism_instances`.
 - Use a concrete local runtime for the first abstract-extraction pass and evaluate whether schema-valid outputs are actually useful.
+- Treat the machine-level Hugging Face cache as the canonical local model store shared across repos rather than provisioning per-project model copies.
+- Plan retrieval work around the already-installed `sqlite-vec` extension and shared local embedding runtimes instead of introducing a separate vector service.
 - Tighten prompt quality until outputs are economically sensible, not just structurally valid JSON.
 - Add a repeatable quality gate before widening from smoke tests to pilot-batch execution.
 - Make the quality gate operational by distinguishing blocking failures from warning-only findings and enforcing gate-before-ingest behavior.
@@ -87,8 +92,8 @@ written: 2026-03-25
 | Structured extraction | `in_progress` | A deterministic abstract-first pilot batch can now be materialized from the SQLite store, prompt-ready abstract extraction runs can be registered and exported, validated responses can be ingested into a transitional `paper_extractions` buffer, and the first local MLX backend has completed smoke tests. The quality-review gate now distinguishes `blocking` vs `warning` findings, validates outputs against `schemas/extraction.schema.json`, and a repo-native gate-and-ingest command enforces the policy before persistence. The active extraction contract now also requires `insight_type`, `required_assumptions`, `assumption_violations`, `fragility_flags`, `capacity_constraints`, `failure_regimes`, and `negative_transfer_rationale`, and the reviewer blocks promising candidates that lack specific blocker context. Prompt v3 clears the known-bad generic-model smoke test, but the first 10-paper slice shows `5` blocking schema-normalization failures after schema-aware review. Prompt v4 improves some field mappings on the same slice, but the blocking count remains `5/10`. Prompt v5 fixes the off-domain `math.OC` / logistics optimization failure mode and reduces the fixed 10-paper benchmark from `5/10` blocking to `1/10` blocking. Prompt v6 resolves the last remaining benchmark blocker and clears the fixed 10-paper benchmark at `0/10` blocking. On the first wider `25`-paper slice, v6 yields `2/25` blocking (`8%`). Prompt v7 retires the numerical American-option solver blocker in targeted smoke-test form, and prompt v8 retires the generic credit-risk ML blocker in targeted smoke-test form. The widened-slice rerun is now generated directly from the prompt file via `create_extraction_run.py --max-requests` rather than copied request artifacts, and the first valid v8 `25`-paper rerun improves the slice to `1/25` blocking (`4%`). Prompt v9 retires the final known widened-slice blocker in targeted smoke-test form for `2412.03618`, but the full v9 `25`-paper rerun regresses to `20/25` blocking because many rows drop required fields like `mechanism_name`. Prompt v10 merges the `2412.03618` fix back into the stronger v8 surface, passes the targeted smoke test cleanly, and clears the full widened `25`-paper slice at `0/25` blocking. The first beyond-benchmark gate-and-ingest pass has now succeeded on that v10 slice, inserting `25` clean rows into the staged store and marking the run `ingested`. The first larger `50`-paper v10 review slice does not stay clean: it lands at `3` blocking and `1` warning, so larger-scale extraction needs another blocker-retirement loop before ingestion. Prompt v12 retires the first of those new larger-slice blocker classes in targeted smoke-test form: `2510.07444` no longer emits invalid `debt` or `loan` labels and passes cleanly. Prompt v13 retires the second larger-slice blocker class in targeted smoke-test form: `2210.15329` no longer emits a pipe-joined multi-domain label, preserves required mechanism fields, and passes the schema-aware gate. Prompt v14 retires the third larger-slice blocker class in targeted smoke-test form: `2511.17963` no longer emits invalid `trend_following`, collapses to low-fit `other` output, and passes the schema-aware gate cleanly. But the first full v14 `50`-paper verification rerun is still not clean: it lands at `4/50` blocking and `0` warning, with three rows dropping `mechanism_name` under conservative collapse and one regression back to invalid `debt` / `loan` output on `2510.07444`. Prompt v15 fixes that `2510.07444` regression again in targeted smoke-test form by explicitly collapsing debt/loan VaR papers all the way to `other` across edge, execution, conditions, and failure fields. Prompt v16 fixes the missing-required-key conservative-collapse class in targeted smoke-test form across `2205.01524`, `cond-mat/0012514`, and `cond-mat/0108452`. The reviewer now treats placeholder names like `mechanism_name = "None"` as blocking, and prompt v18 resolves that representative placeholder-name generation failure in targeted smoke-test form for `cond-mat/0108452` by producing a concrete title-derived mechanism name. The first full v18 `50`-paper verification rerun materially improves the larger-batch surface to `2/50` blocking and `1/50` warning. Prompt v19 now retires the `2206.05410` market-making schema drift in targeted smoke-test form by keeping `inventory_pressure` in `edge_source` and out of `required_market_conditions`. Prompt v21 now retires the `2103.11557` unsupported-domain drift in targeted smoke-test form by collapsing venture-capital exit-timing papers cleanly to low-fit `other` output. The warning-only `2311.02434` DeFi drift turned out to be a reviewer-keyword issue rather than a prompt failure; after broadening the reviewer’s explicit DeFi cues, the refreshed `v18` quality report drops to `2/50` blocking and `0/50` warning. Prompt v22 merges the current prompt-side fixes back into the active `v18` batch line and improves the full `50`-paper rerun to `1/50` blocking and `0/50` warning. Prompt v23 retires the last blocker in targeted smoke-test form for `2002.02583` by forcing high-fit FX/linked-market papers to use specific `why_missed` reasons such as `buried_in_non_prediction_market_language` and `requires_linked_market_modeling`. But the full `v23` `50`-paper rerun regresses badly to `9/50` blocking: the new `why_missed` rule causes broad high-fit / high-portability overreach and an invalid `Q_learning` execution label to reappear. Prompt v23 should therefore remain a targeted branch only, not the new active batch prompt. Prompt v24 now keeps the targeted FX exemplar from `v23` but drops the broad global high-fit rule, and it resolves `2002.02583` cleanly in targeted smoke-test form. The full `v24` `50`-paper rerun materially improves on `v23` but still does not clear: it lands at `4/50` blocking and `0/50` warning. Prompt v25 now retires the two remaining off-domain overreach papers (`2301.11084` and `2305.11519`) in targeted smoke-test form by forcing political-science measurement and AI ethics / moral-agent papers to stay low-fit and low-portability. The remaining unresolved `v24` blocker set is now narrowed to the genuinely market-adjacent high-fit cases, primarily `2206.05410` and `1310.6873`, that still need specific `why_missed` reasons. The active ingest path now also accepts a paper-level `mechanism_instances` batch format, promotes accepted rows into canonical `mechanism_instances` plus `mechanism_evidence_spans`, and ships a backfill script for older valid staging rows. A checked-in mixed-family pilot definition and `v26` wrapper-style prompt now exist, and the quality gate reports Gate A rollout metrics such as `semantic_pass_rate`, `unsupported_enum_ratio`, and blocker-plus-evidence coverage on mixed-family wrapper outputs. Full-text preparation can now upgrade evidence spans from abstract fallback to actual parsed section snippets without changing the mechanism-first storage model. |
 | Fingerprint ontology | `in_progress` | The active fingerprint contract now maps accepted mechanism instances into mechanism-level normalized facets plus deterministic `fingerprint_text`, and ambiguous mappings are queued in `normalization_reviews`; broader retrieval-side calibration remains open. |
 | Discovery benchmark | `in_progress` | A checked-in retrieval benchmark definition now exists with adjudicated lexical/structural buckets, explicit baselines, and materialization into `benchmark_pairs`; the retrieval stack itself is not built yet. |
-| Embeddings + graph | `planned` | Not started. |
-| Candidate scoring | `planned` | Not started. |
+| Embeddings + graph | `planned` | SQLite-native vector search is now available via installed `sqlite-vec`, and the machine-level Hugging Face cache plus MLX / `sentence-transformers` stack are available for local embedding work; retrieval/index implementation itself is the next critical-path build surface. |
+| Candidate scoring | `in_progress` | `scripts/score_mechanism_exposure.py` now persists `mechanism_exposure_scores` with mechanism-level `exposure_score`, `underexploited_score`, and bootstrap `worth_followup_score` rows derived from fingerprints, family metadata, benchmark-linked mechanism ids, and any future analyst labels. |
 | Human review queue | `planned` | Not started. |
 
 ## Open Questions
@@ -115,6 +120,10 @@ written: 2026-03-25
 | 2026-03-26 | Use `corpus:readiness` as the canonical Phase 0 review artifact. | Phase 0 should end with a concrete report, not just a collection of operational commands. |
 | 2026-03-26 | Use checked-in JSON schema files under `schemas/` as the Phase 1 contract surface. | The extraction pipeline needs a concrete, versionable target before prompt work and normalization code start. |
 | 2026-03-26 | Use SQLite as the canonical v1 write store, with DuckDB deferred only if SQLite later proves insufficient for read-side analytics. | The pilot needs a zero-dependency transactional local store more than it needs a richer analytical engine, and local `sqlite-vec` availability keeps the first vector path SQLite-native longer. |
+| 2026-03-26 | Treat installed `sqlite-vec` plus its Python binding as the default local vector stack, with MLX and `sentence-transformers` as the planned primary and fallback embedding paths. | The machine now has most of the needed local infrastructure, so upcoming retrieval work should optimize for SQLite-native integration and local embedding throughput rather than adding a new serving layer. |
+| 2026-03-26 | Use one canonical production embedding space at a time, starting with `Qwen/Qwen3-Embedding-0.6B` at `512` dimensions. | Embeddings from different models or output dimensions are not directly comparable, so the retrieval stack should keep `bge-m3` as a separate exploratory index and reserve `gte-Qwen2-7B-instruct` for reranking rather than blending them into one ANN surface. |
+| 2026-03-26 | Treat the machine-level Hugging Face cache as shared infrastructure for all local model and embedding work in this repo. | `HF_HOME` and `HF_HUB_CACHE` are now configured globally, so model downloads should be reused across repos instead of duplicated inside project-specific caches. |
+| 2026-03-26 | Prefer MLX-backed local embeddings on Apple Silicon, with `sentence-transformers` as the compatibility fallback. | This Mac Studio M4 Max can run ML workloads on the local GPU through MLX, but the repo still needs a portable fallback path for models or code that are not MLX-ready. |
 | 2026-03-26 | Use the SQLite `papers` table as the canonical metadata surface for the pilot. | Later phases should read from the local store rather than repeatedly reparsing raw corpus JSONL files. |
 | 2026-03-26 | Use a deterministic stratified 200-paper pilot batch with a downloaded-PDF quota for the abstract-first pilot. | Early extraction work needs a reproducible and reasonably diverse batch that still keeps some papers ready for later full-text follow-up. |
 | 2026-03-26 | Split abstract extraction into a run-preparation layer before model execution. | The local model stack is still open, but the repo can still lock prompt versioning, run IDs, and request artifacts now. |
@@ -173,6 +182,8 @@ written: 2026-03-25
 
 ### 2026-03-26
 
+- Confirmed the machine-level local ML stack is now shared across repos: system `sqlite-vec`, MLX on Apple Silicon, `sentence-transformers` fallback, and a global Hugging Face cache.
+- Added `scripts/score_mechanism_exposure.py` plus `npm run score:exposure` to persist mechanism-level `exposure_score`, `underexploited_score`, and bootstrap `worth_followup_score` rows under `mechanism_exposure_scores`.
 - Added `scripts/corpus_status.py` to report expected/downloaded/failure counts plus downloader PID and recent log context.
 - Phase 0 now has a canonical status command: `python3 scripts/corpus_status.py`.
 - Status check shows the background downloader is no longer running and stalled after 4 PDFs.
@@ -967,6 +978,8 @@ Exit criteria status: `not_started`
 Comments:
 
 - Need separate embeddings for abstract, mechanism summary, and serialized fingerprint.
+- Local infra is now materially de-risked: `sqlite-vec` is installed system-wide, MLX is available on Apple Silicon, `sentence-transformers` remains available as fallback, and model weights can be shared through the machine-level Hugging Face cache.
+- Retrieval implementation should therefore start from a SQLite-native embedding/index path rather than assuming a standalone vector service.
 
 Deliverables:
 
@@ -1025,9 +1038,11 @@ This should be built entirely locally unless quality proves unacceptable.
 Recommended local-first stack:
 
 - Python for pipeline code
-- DuckDB or SQLite for storage
+- SQLite for storage, with DuckDB deferred unless read-side analytics outgrow SQLite
 - local PDF extraction tools
-- local embeddings
+- `sqlite-vec` for ANN search inside SQLite
+- MLX-backed local embeddings, with `sentence-transformers` fallback
+- shared Hugging Face cache via global `HF_HOME` / `HF_HUB_CACHE`
 - local instruct model for first-pass extraction
 
 Recommended operating mode:
@@ -1062,16 +1077,15 @@ Mitigations:
 
 ## Immediate Next Steps
 
-1. Retire the remaining narrower `high_fit_without_specific_why_missed` cases exposed by the `v24` `50`-paper rerun, especially `2206.05410` and `1310.6873`.
-2. Re-run the larger `50`-paper slice and confirm the schema-aware gate clears at `0/50` blocking.
-3. If the larger pass clears, run the first `50`-paper gate-and-ingest attempt.
-4. Harden the extraction schema against the first real pilot-batch examples.
-5. Harden the fingerprint ontology against adjacent-domain and pilot coverage gaps.
-6. Evaluate retrieval quality on:
+1. Build the first `C10` multi-view retrieval surface on top of canonical `mechanism_fingerprints`, `mechanism_evidence_spans`, and persisted `mechanism_exposure_scores`.
+2. Generate the first production embedding space for retrieval with one canonical model and dimension contract.
+3. Benchmark structured, sparse, and dense retrieval variants against the checked-in discovery benchmark.
+4. Use `underexploited_score` and `worth_followup_score` as reranking priors rather than recomputing scoring heuristics inside retrieval jobs.
+5. Evaluate retrieval quality on:
    - nearest fit
    - far analog
    - bridge papers
-7. Expand to full-text only after the pilot shows useful candidates.
+6. Expand to full-text only after the pilot shows useful candidates.
 
 ---
 

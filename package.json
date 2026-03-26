@@ -1,0 +1,36 @@
+{
+  "name": "paperview",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Local literature-review tooling and corpus workflows for strategy discovery.",
+  "scripts": {
+    "codecontext:scope": "codecontext --scope",
+    "codecontext:diff": "codecontext --diff HEAD",
+    "codecontext:report": "codecontext --report",
+    "codecontext:py": "uv run --with-editable ../codecontext/packages/python codecontext-python",
+    "corpus:launch": "python3 scripts/launch_qfin_download.py",
+    "corpus:launch:pipeline": "python3 scripts/launch_qfin_download.py --pipeline",
+    "corpus:status": "python3 scripts/corpus_status.py",
+    "corpus:inventory": "python3 scripts/corpus_inventory.py",
+    "corpus:reconcile-failures": "python3 scripts/reconcile_failures.py",
+    "corpus:retryable-failures": "python3 scripts/retry_failures.py",
+    "corpus:run-pipeline": "python3 scripts/run_qfin_pipeline.py",
+    "corpus:readiness": "python3 scripts/corpus_readiness_report.py",
+    "store:init": "python3 scripts/init_local_store.py",
+    "store:load-metadata": "python3 scripts/load_metadata_store.py",
+    "pilot:create": "python3 scripts/create_pilot_batch.py",
+    "extract:prepare": "python3 scripts/create_extraction_run.py",
+    "extract:ingest": "python3 scripts/ingest_extraction_responses.py",
+    "extract:run-mlx": "uv run --with mlx-lm python3 scripts/run_local_mlx_extraction.py",
+    "extract:review-quality": "python3 scripts/review_extraction_quality.py",
+    "extract:gate-and-ingest": "python3 scripts/review_and_ingest_extractions.py",
+    "score:exposure": "python3 scripts/score_mechanism_exposure.py",
+    "schemas:validate": "python3 scripts/validate_schema_examples.py",
+    "docs:lint": "recall-docs-governance lint",
+    "docs:lint:changed": "recall-docs-governance lint --changed"
+  },
+  "devDependencies": {
+    "@recallnet/codecontext-cli": "^0.3.0",
+    "@recallnet/docs-governance-preset": "^0.2.2"
+  }
+}

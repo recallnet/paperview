@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C09-exposure-scoring-and-transfer-manifold-bootstrap`
+- Current commit focus: `C10-multi-view-retrieval-stack`
 - Last updated: `2026-03-26`
 
 ---
@@ -61,21 +61,67 @@ The current repo has already built a substantial amount of table-stakes infrastr
 - in-progress PDF pull with operational tracking, inventory, and retry flow
 - checked-in extraction schema and fingerprint schema
 - canonical SQLite store with `papers`
-- deterministic 200-paper abstract pilot
+- deterministic mixed-family pilot generation
 - local MLX extraction runner
 - schema-aware quality gate
 - gate-before-ingest workflow
-- first successful beyond-benchmark ingest on a clean 25-paper slice
+- adjacent-literature seed registries and holdout policy
+- discovery benchmark definition with retrieval thresholds
+- section-aware evidence preparation and mechanism-level fingerprint normalization
+- `sqlite-vec` plus Python bindings already installed locally for SQLite-native vector work
 
 The current bottleneck is also clear:
 
-- abstract extraction quality has been stabilized enough to run real slices
-- but the system is still too paper-centric
-- adjacent-domain seeding is not yet in place
-- retrieval has no far-analog benchmark
-- the output contract still trends toward `paper_extractions` instead of mechanism families and strategy briefs
+- abstract extraction quality is stable enough to support downstream retrieval work
+- exposure scoring and follow-up priors now exist at the mechanism level
+- but retrieval, analyst feedback, and final candidate assembly are still not built
+- embeddings and vector indexing are now the next capability surface, not schema, storage, or scoring bootstrap
+- the system now has most of the local infrastructure it needs, but the retrieval and ranking layers still need to be implemented and benchmarked
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
+
+## Local Toolchain Readiness
+
+The local stack is now materially stronger than the original draft assumed:
+
+- `sqlite-vec` v0.1.6 is installed locally, including the Python binding
+- first vector retrieval work can therefore stay SQLite-native in `C10`
+- MLX remains the active Apple Silicon execution path for local model work
+- MLX is also the intended high-throughput local embedding path on this Mac Studio once the install completes
+- `sentence-transformers` is the preferred Python fallback and baseline path for local embeddings when MLX coverage or model support is insufficient
+
+That means the remaining plan is mostly blocked by implementation work, not missing local infrastructure.
+
+## Canonical Vector Strategy
+
+Use one primary vector space for production retrieval, not a grab bag of
+incompatible embeddings.
+
+Rules:
+
+- vectors are only directly comparable when they come from the same model,
+  dimension, and normalization contract
+- the production ANN surface should therefore use one canonical embedder and
+  one fixed output dimension at a time
+- alternate models may exist, but they should live in separate indices or act
+  as rerankers rather than being mixed into the primary corpus space
+
+Current recommended roster:
+
+- primary production index: `Qwen/Qwen3-Embedding-0.6B`
+  - start with `512` dimensions for the main SQLite-native corpus index
+  - use for mechanism summaries, transfer rationales, and serialized
+    `fingerprint_text`
+- exploratory discovery index: `BAAI/bge-m3`
+  - keep separate from the production vector space
+  - use for lexical-far / structural-near discovery experiments, bridge-paper
+    search, and hybrid retrieval research
+- high-fidelity second pass: `Alibaba-NLP/gte-Qwen2-7B-instruct`
+  - do not mix into the main ANN index
+  - use for reranking, adjudication, or top-k quality passes only
+
+This preserves future flexibility without making `C10` and `C11` compare
+incompatible vectors as if they lived in one space.
 
 ---
 
@@ -185,7 +231,7 @@ This commit plan implements that order in concrete units.
 | `C06` | `completed` | Stabilize abstract extraction on mixed-family mechanism outputs | `C03`, `C05` |
 | `C07` | `completed` | Add section-aware text prep and evidence spans | `C05` |
 | `C08` | `completed` | Implement normalization and structural fingerprinting | `C05`, `C06`, `C07` |
-| `C09` | `pending` | Add exposure scoring and transfer manifold bootstrap | `C03`, `C08` |
+| `C09` | `completed` | Add exposure scoring and transfer manifold bootstrap | `C03`, `C08` |
 | `C10` | `pending` | Build multi-view retrieval stack | `C04`, `C08`, `C09` |
 | `C11` | `pending` | Add queryless mining jobs and local reranking | `C10` |
 | `C12` | `pending` | Add analyst adjudication loop and weight update path | `C04`, `C09`, `C11` |
@@ -578,7 +624,7 @@ This commit plan implements that order in concrete units.
 
 ## C09: Exposure Scoring And Transfer Manifold Bootstrap
 
-- Status: `pending`
+- Status: `completed`
 - Scope: formalize underexploited proxies and start adaptive transfer learning
 - Depends on: `C03`, `C08`
 
@@ -595,13 +641,17 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
-- Reviewer:
-- Verification:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in git history for this commit`
+- Operator: `Codex`
+- Reviewer: `not reviewed`
+- Verification: `python3 -m py_compile scripts/score_mechanism_exposure.py`; `npm run codecontext:py -- scripts/score_mechanism_exposure.py`; temp-store run of `python3 scripts/score_mechanism_exposure.py --db-path /tmp/paperview-c09-test.sqlite3 --run-id c09-test-run`
 - Completion notes:
+  - added `scripts/score_mechanism_exposure.py` plus `npm run score:exposure`
+  - added canonical `mechanism_exposure_scores` persistence for `exposure_score`, `underexploited_score`, `worth_followup_score`, and analyst-learning feature rows
+  - bootstrapped the scorer from canonical `mechanism_instances`, `mechanism_fingerprints`, family metadata, benchmark-linked mechanism ids, and any future `analyst_labels`
+  - verified end-to-end persistence on a temp SQLite store with mixed-family mechanism rows and benchmark-derived labels
 
 ### Upstream Impact Notes
 
@@ -609,6 +659,7 @@ This commit plan implements that order in concrete units.
 - Inherits `C03`: exposure features should include `literature_family` and holdout-aware corpus membership rather than only source-corpus labels.
 - Inherits `C06`: exposure work should use the checked-in mixed-family pilot and Gate A metrics as its first non-q-fin calibration slice.
 - Inherits `C08`: exposure scoring can now use normalized trigger/topology/liquidity facets and ambiguity-review burden as explicit features rather than re-deriving them from raw extraction JSON.
+- Completed in `C09`: older local SQLite files may lag the checked-in schema, so downstream jobs should apply `sql/paperview_schema.sql` or otherwise verify store shape before assuming C05/C08/C09 tables exist.
 
 ## C10: Multi-View Retrieval Stack
 
@@ -648,6 +699,9 @@ This commit plan implements that order in concrete units.
 - Inherits `C06`: with accepted mixed-family mechanism rows remaining in SQLite and `sqlite-vec` now available locally, the first vector retrieval surface should stay SQLite-native unless a later capability gap proves otherwise.
 - Inherits `C07`: sparse retrieval can now target parsed discussion/model/result sections and section-backed evidence snippets instead of abstract-only text.
 - Inherits `C08`: structured retrieval should read `mechanism_fingerprints` directly, and dense retrieval should treat serialized `fingerprint_text` as a first-class embedding surface.
+- Inherits completed `C09`: retrieval should join `mechanism_exposure_scores` directly and treat `underexploited_score` / `worth_followup_score` as first-class reranking priors rather than recomputing exposure heuristics in the query layer.
+- Inherits current local toolchain state: `sqlite-vec` and its Python binding are already installed, while MLX and `sentence-transformers` should be treated as the primary and fallback local embedding paths respectively.
+- Inherits the canonical vector strategy: the production ANN index should start with `Qwen/Qwen3-Embedding-0.6B` at `512` dimensions, while `BAAI/bge-m3` stays a separate exploratory index and `Alibaba-NLP/gte-Qwen2-7B-instruct` stays a reranking-only surface.
 
 ## C11: Queryless Mining And Local Reranking
 
@@ -688,6 +742,8 @@ This commit plan implements that order in concrete units.
 
 - Add notes here when earlier commits change retrieval surfaces or accepted mining modes.
 - Inherits `C07`: queryless mining should be able to inspect section-backed evidence snippets and section labels, not only mechanism summaries.
+- Inherits completed `C09`: mining jobs should use `underexploited_score` to prioritize rare/high-fit mechanisms before adding heavier reranking passes.
+- Inherits the canonical vector strategy: queryless mining should compare candidates within one production vector space at a time, while any `bge-m3` exploratory mining or `gte-Qwen2-7B-instruct` reranking should be logged as separate phases rather than blended scores.
 
 ## C12: Analyst Adjudication And Weight Update
 
@@ -726,6 +782,7 @@ This commit plan implements that order in concrete units.
 
 - Add notes here when earlier commits change candidate contracts or feature semantics.
 - Inherits `C08`: family assembly and hard gating should cluster on canonical mechanism-level fingerprints and can down-rank families that rely heavily on queued normalization ambiguities.
+- Inherits completed `C09`: analyst feedback should attach to persisted mechanism-level feature rows in `mechanism_exposure_scores` so weight updates do not have to reconstruct the bootstrap feature set from raw JSON.
 
 ## C13: Hard-Gated Candidate Ranking And Family Assembly
 
@@ -763,6 +820,7 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Inherits `C02`: the hard-gate layer should use the canonical blocker fields directly rather than reconstructing fragility or anti-transfer heuristics downstream.
+- Inherits completed `C09`: ranking should consume persisted `exposure_score`, `underexploited_score`, and `worth_followup_score` as canonical priors before adding family-level aggregation.
 
 ## C14: Strategy Briefs And Minimal Test Plans
 
