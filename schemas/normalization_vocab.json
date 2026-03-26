@@ -1,0 +1,285 @@
+{
+  "original_market_domain": [
+    "equities",
+    "options",
+    "futures",
+    "fixed_income",
+    "fx",
+    "prediction_markets",
+    "sports_betting",
+    "pari_mutuel",
+    "electricity",
+    "weather",
+    "decentralized_finance",
+    "auction_design",
+    "market_microstructure",
+    "other"
+  ],
+  "insight_type": [
+    "executable_strategy_primitive",
+    "missing_executor_primitive",
+    "regime_filter",
+    "failure_mode_or_anti_pattern",
+    "market_design_exploit",
+    "crowding_or_decay_warning",
+    "monitoring_signal",
+    "research_dead_end_worth_excluding"
+  ],
+  "instrument_type": [
+    "binary_contract",
+    "multi_outcome_contract",
+    "limit_order_book_claim",
+    "spot_asset",
+    "future",
+    "option",
+    "spread",
+    "basket",
+    "auction_allocation",
+    "amm_lp_position",
+    "other"
+  ],
+  "edge_source": [
+    "cross_venue_basis",
+    "logical_inconsistency",
+    "stale_quotes",
+    "inventory_pressure",
+    "reward_incentives",
+    "flow_imbalance",
+    "settlement_friction",
+    "delayed_information_diffusion",
+    "term_structure_dislocation",
+    "auction_design",
+    "queue_position_value",
+    "other"
+  ],
+  "execution_style": [
+    "maker_anchor",
+    "parallel_fok",
+    "sequential_fok",
+    "passive_market_making",
+    "inventory_rebalancing",
+    "latency_arb",
+    "auction_sniping",
+    "batch_basket_completion",
+    "other"
+  ],
+  "holding_horizon": [
+    "sub_minute",
+    "intraday",
+    "multi_day",
+    "event_resolution",
+    "other"
+  ],
+  "required_market_conditions": [
+    "thin_book",
+    "fragmented_venues",
+    "discrete_ticks",
+    "asynchronous_updates",
+    "reward_program",
+    "forced_flow",
+    "hedgeable_exposure",
+    "observable_order_book",
+    "known_resolution_rules",
+    "low_latency_access",
+    "other"
+  ],
+  "required_assumptions": [
+    "linked_market_structure_is_stable",
+    "hedge_leg_is_tradeable",
+    "mispricing_window_exceeds_latency_budget",
+    "fees_remain_below_edge",
+    "resolution_rules_remain_stationary",
+    "order_book_state_is_observable",
+    "inventory_can_be_rebalanced",
+    "reward_schedule_persists_long_enough",
+    "capital_can_be_recycled_fast_enough",
+    "other"
+  ],
+  "assumption_violations": [
+    "hedge_leg_becomes_untradeable",
+    "latency_advantage_disappears",
+    "fees_expand_past_edge",
+    "resolution_rules_shift",
+    "inventory_cannot_be_rebalanced",
+    "reward_program_ends",
+    "book_visibility_degrades",
+    "linked_markets_decouple",
+    "capital_recycling_slows",
+    "other"
+  ],
+  "fragility_flags": [
+    "depends_on_thin_liquidity",
+    "depends_on_fast_execution",
+    "depends_on_exogenous_subsidy",
+    "sensitive_to_fee_changes",
+    "sensitive_to_rule_changes",
+    "sensitive_to_inventory_constraints",
+    "sensitive_to_regime_transitions",
+    "sensitive_to_data_latency",
+    "implementation_complexity_is_high",
+    "other"
+  ],
+  "capacity_constraints": [
+    "thin_resting_liquidity",
+    "limited_hedge_capacity",
+    "venue_rate_limits",
+    "inventory_budget_limits",
+    "capital_intensity",
+    "crowding_sensitive_edge",
+    "manual_market_specific_ops",
+    "compliance_or_rule_overhead",
+    "limited_event_frequency",
+    "other"
+  ],
+  "failure_regimes": [
+    "high_volatility_dislocations",
+    "liquidity_crunch",
+    "rule_change_window",
+    "one_sided_flow_regime",
+    "crowded_arb_regime",
+    "oracle_or_data_degradation",
+    "venue_outage_regime",
+    "resolution_dispute_regime",
+    "correlation_breakdown",
+    "other"
+  ],
+  "negative_transfer_rationale": [
+    "depends_on_market_structure_not_present_in_target",
+    "depends_on_latency_edge_unavailable_in_target",
+    "depends_on_inventory_tools_missing_in_target",
+    "depends_on_regulatory_or_rule_surface_not_present",
+    "depends_on_reward_subsidies_not_present",
+    "depends_on_dense_liquidity_not_present",
+    "depends_on_observability_not_present",
+    "fails_under_sparse_event_frequency",
+    "target_market_already_prices_this_logic",
+    "other"
+  ],
+  "main_failure_modes": [
+    "fees_and_slippage",
+    "hedge_leg_nonfill",
+    "borrow_or_inventory_constraint",
+    "stale_or_bad_data",
+    "crowding",
+    "regime_shift",
+    "resolution_rule_change",
+    "venue_outage",
+    "adverse_selection",
+    "other"
+  ],
+  "why_missed": [
+    "non_obvious_source_domain",
+    "operationally_annoying",
+    "too_small_for_large_funds",
+    "requires_linked_market_modeling",
+    "requires_market_specific_resolution_knowledge",
+    "buried_in_non_prediction_market_language",
+    "other"
+  ],
+  "topology": [
+    "two_leg_parity",
+    "n_leg_basket",
+    "term_structure",
+    "implication_graph",
+    "queue_value_mm",
+    "auction_allocation",
+    "inventory_recycling",
+    "other"
+  ],
+  "market_structure": [
+    "thin_book",
+    "fragmented",
+    "discrete_ticks",
+    "reward_incentivized",
+    "asynchronous",
+    "central_limit_order_book",
+    "batch_auction",
+    "known_resolution_rules",
+    "other"
+  ],
+  "mispricing_source": [
+    "logical_inconsistency",
+    "stale_quotes",
+    "inventory_pressure",
+    "reward_incentives",
+    "settlement_friction",
+    "queue_option_value",
+    "flow_imbalance",
+    "term_shape_violation",
+    "other"
+  ],
+  "execution_pattern": [
+    "maker_anchor",
+    "parallel_fok",
+    "sequential_fok",
+    "quote_ladder",
+    "recovery_gtc",
+    "inventory_rebalance",
+    "auction_take",
+    "other"
+  ],
+  "participant_pressure": [
+    "retail_flow",
+    "maker_incentives",
+    "forced_hedging",
+    "latency_sensitive",
+    "passive_index_flow",
+    "rule_constrained_arbs",
+    "other"
+  ],
+  "time_structure": [
+    "event_time",
+    "expiry_sensitive",
+    "sequential_revelation",
+    "resolution_dependent",
+    "continuous_time",
+    "other"
+  ],
+  "risk_controls": [
+    "forced_hedge",
+    "inventory_cap",
+    "stale_data_guard",
+    "venue_health_gate",
+    "position_netting",
+    "time_stop",
+    "other"
+  ],
+  "transfer_targets": [
+    "prediction_markets",
+    "multi_outcome_events",
+    "cross_venue_yes_no",
+    "reward_mm",
+    "linked_event_curves",
+    "other"
+  ],
+  "tradecore_fit_tags": [
+    "anchor_hedge",
+    "basket_completion",
+    "fok_window",
+    "reward_mm",
+    "implication_checks",
+    "curve_checks",
+    "inventory_guards",
+    "other"
+  ],
+  "tradecore_fit": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "portability_band": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "evidence_strength": [
+    "weak",
+    "medium",
+    "strong"
+  ],
+  "crowding_band": [
+    "low",
+    "medium",
+    "high"
+  ]
+}

@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C02-insight-type-and-fragility-contract`
+- Current commit focus: `C03-adjacent-literature-seeding`
 - Last updated: `2026-03-26`
 
 ---
@@ -178,7 +178,7 @@ This commit plan implements that order in concrete units.
 | Commit | Status | Purpose | Depends On |
 | --- | --- | --- | --- |
 | `C01` | `completed` | Adopt mechanism-first canonical model and repo contract | none |
-| `C02` | `pending` | Add insight-type, fragility, and anti-transfer schema | `C01` |
+| `C02` | `completed` | Add insight-type, fragility, and anti-transfer schema | `C01` |
 | `C03` | `pending` | Seed adjacent literatures and holdout slices | `C01` |
 | `C04` | `pending` | Build discovery benchmark and retrieval acceptance thresholds | `C02`, `C03` |
 | `C05` | `pending` | Refactor local store and extraction pipeline around mechanism instances | `C01`, `C02` |
@@ -266,7 +266,7 @@ This commit plan implements that order in concrete units.
 
 ## C02: Insight-Type And Fragility Contract
 
-- Status: `pending`
+- Status: `completed`
 - Scope: make outputs strategy-bearing and falsifiable
 - Depends on: `C01`
 
@@ -289,17 +289,26 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C02`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - extended `schemas/extraction.schema.json` and the bundled example/vocab artifacts with mandatory insight, fragility, and anti-transfer fields
+  - updated `scripts/review_extraction_quality.py` to block promising candidates without specific blocker context
+  - extended the checked-in SQL surface for `mechanism_instances`, `transfer_hypotheses`, and `candidate_families` to carry the C02 contract
 - Completion notes:
+  - `insight_type` is now mandatory in the active extraction contract
+  - `required_assumptions`, `assumption_violations`, `fragility_flags`, `capacity_constraints`, `failure_regimes`, and `negative_transfer_rationale` are now required fields
+  - the repo now encodes the rule that promising candidates cannot advance without explicit blocker or anti-transfer context
 
 ### Upstream Impact Notes
 
-- Inherits `C01`: insight-type, fragility, and anti-transfer fields should be added to `mechanism_instances`, `transfer_hypotheses`, and related canonical tables, not treated as paper-level attributes.
+- Completed in `C02`: insight-type, fragility, and anti-transfer fields now exist in the active extraction schema and in the canonical SQL table surface, not as paper-level attributes.
+- `C04` should build benchmark labels around the checked-in `insight_type` enum rather than inventing a second category system.
+- `C05` should map validated extraction fields directly into the new JSON columns on `mechanism_instances` and `transfer_hypotheses`.
+- `C06` should tune prompts against the mandatory blocker fields and the new reviewer gate, not just the older paper-first schema keys.
 
 ## C03: Adjacent Literature Seeding
 
@@ -375,6 +384,7 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Inherits `C01`: benchmark storage should build on the draft `benchmark_pairs` table already checked into the local store schema.
+- Inherits `C02`: benchmark buckets and adjudication records should include the canonical `insight_type` labels so retrieval is judged on mechanism class as well as distance.
 
 ## C05: Mechanism-Instance Store And Extraction Refactor
 
@@ -407,6 +417,7 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Inherits `C01`: refactor the active ingest path into the checked-in canonical tables instead of defining new mechanism-first storage names.
+- Inherits `C02`: persist the mandatory blocker and anti-transfer arrays into the explicit JSON columns already added to `mechanism_instances` and `transfer_hypotheses`.
 
 ## C06: Mixed-Family Abstract Extraction Stability
 
@@ -440,7 +451,7 @@ This commit plan implements that order in concrete units.
 
 ### Upstream Impact Notes
 
-- Add notes here when earlier commits change extraction contracts or family balance.
+- Inherits `C02`: prompt/runtime work must emit the mandatory insight-type and blocker fields cleanly enough to satisfy Gate A and the blocker-context reviewer.
 
 ## C07: Section-Aware Text Preparation
 
@@ -690,7 +701,7 @@ This commit plan implements that order in concrete units.
 
 ### Upstream Impact Notes
 
-- Add notes here when earlier commits change ranking features, gates, or analyst labels.
+- Inherits `C02`: the hard-gate layer should use the canonical blocker fields directly rather than reconstructing fragility or anti-transfer heuristics downstream.
 
 ## C14: Strategy Briefs And Minimal Test Plans
 

@@ -34,6 +34,7 @@ The structural analogy engine is a research pipeline with five functional layers
 
 2. Extraction layer
    - Convert paper metadata and abstracts, then later full text, into structured mechanism records.
+   - Require insight type, fragility fields, and anti-transfer rationale on surfaced mechanisms.
    - Reject outputs that are schema-valid but semantically wrong.
 
 3. Normalization layer
@@ -165,6 +166,7 @@ Work:
 - run local model inference
 - validate against schema
 - apply semantic quality review
+- require insight type plus falsifiable blocker fields on promising outputs
 - gate ingestion on blocking failures
 - tune prompts until widened slices stay clean enough to ingest
 

@@ -1,0 +1,368 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/extraction.schema.json",
+  "title": "Mechanism Extraction Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paper_id",
+    "mechanism_name",
+    "mechanism_summary",
+    "insight_type",
+    "original_market_domain",
+    "instrument_type",
+    "edge_source",
+    "execution_style",
+    "holding_horizon",
+    "required_market_conditions",
+    "required_assumptions",
+    "assumption_violations",
+    "fragility_flags",
+    "capacity_constraints",
+    "failure_regimes",
+    "negative_transfer_rationale",
+    "main_failure_modes",
+    "evidence_strength",
+    "prediction_market_portability",
+    "novel_market_portability",
+    "tradecore_fit",
+    "likely_crowding",
+    "why_missed"
+  ],
+  "properties": {
+    "paper_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mechanism_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mechanism_summary": {
+      "type": "string",
+      "minLength": 20
+    },
+    "insight_type": {
+      "type": "string",
+      "enum": [
+        "executable_strategy_primitive",
+        "missing_executor_primitive",
+        "regime_filter",
+        "failure_mode_or_anti_pattern",
+        "market_design_exploit",
+        "crowding_or_decay_warning",
+        "monitoring_signal",
+        "research_dead_end_worth_excluding"
+      ]
+    },
+    "original_market_domain": {
+      "type": "string",
+      "enum": [
+        "equities",
+        "options",
+        "futures",
+        "fixed_income",
+        "fx",
+        "prediction_markets",
+        "sports_betting",
+        "pari_mutuel",
+        "electricity",
+        "weather",
+        "decentralized_finance",
+        "auction_design",
+        "market_microstructure",
+        "other"
+      ]
+    },
+    "instrument_type": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "binary_contract",
+          "multi_outcome_contract",
+          "limit_order_book_claim",
+          "spot_asset",
+          "future",
+          "option",
+          "spread",
+          "basket",
+          "auction_allocation",
+          "amm_lp_position",
+          "other"
+        ]
+      }
+    },
+    "edge_source": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "cross_venue_basis",
+          "logical_inconsistency",
+          "stale_quotes",
+          "inventory_pressure",
+          "reward_incentives",
+          "flow_imbalance",
+          "settlement_friction",
+          "delayed_information_diffusion",
+          "term_structure_dislocation",
+          "auction_design",
+          "queue_position_value",
+          "other"
+        ]
+      }
+    },
+    "execution_style": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "maker_anchor",
+          "parallel_fok",
+          "sequential_fok",
+          "passive_market_making",
+          "inventory_rebalancing",
+          "latency_arb",
+          "auction_sniping",
+          "batch_basket_completion",
+          "other"
+        ]
+      }
+    },
+    "holding_horizon": {
+      "type": "string",
+      "enum": [
+        "sub_minute",
+        "intraday",
+        "multi_day",
+        "event_resolution",
+        "other"
+      ]
+    },
+    "required_market_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "thin_book",
+          "fragmented_venues",
+          "discrete_ticks",
+          "asynchronous_updates",
+          "reward_program",
+          "forced_flow",
+          "hedgeable_exposure",
+          "observable_order_book",
+          "known_resolution_rules",
+          "low_latency_access",
+          "other"
+        ]
+      }
+    },
+    "required_assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "linked_market_structure_is_stable",
+          "hedge_leg_is_tradeable",
+          "mispricing_window_exceeds_latency_budget",
+          "fees_remain_below_edge",
+          "resolution_rules_remain_stationary",
+          "order_book_state_is_observable",
+          "inventory_can_be_rebalanced",
+          "reward_schedule_persists_long_enough",
+          "capital_can_be_recycled_fast_enough",
+          "other"
+        ]
+      }
+    },
+    "assumption_violations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "hedge_leg_becomes_untradeable",
+          "latency_advantage_disappears",
+          "fees_expand_past_edge",
+          "resolution_rules_shift",
+          "inventory_cannot_be_rebalanced",
+          "reward_program_ends",
+          "book_visibility_degrades",
+          "linked_markets_decouple",
+          "capital_recycling_slows",
+          "other"
+        ]
+      }
+    },
+    "fragility_flags": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "depends_on_thin_liquidity",
+          "depends_on_fast_execution",
+          "depends_on_exogenous_subsidy",
+          "sensitive_to_fee_changes",
+          "sensitive_to_rule_changes",
+          "sensitive_to_inventory_constraints",
+          "sensitive_to_regime_transitions",
+          "sensitive_to_data_latency",
+          "implementation_complexity_is_high",
+          "other"
+        ]
+      }
+    },
+    "capacity_constraints": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "thin_resting_liquidity",
+          "limited_hedge_capacity",
+          "venue_rate_limits",
+          "inventory_budget_limits",
+          "capital_intensity",
+          "crowding_sensitive_edge",
+          "manual_market_specific_ops",
+          "compliance_or_rule_overhead",
+          "limited_event_frequency",
+          "other"
+        ]
+      }
+    },
+    "failure_regimes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "high_volatility_dislocations",
+          "liquidity_crunch",
+          "rule_change_window",
+          "one_sided_flow_regime",
+          "crowded_arb_regime",
+          "oracle_or_data_degradation",
+          "venue_outage_regime",
+          "resolution_dispute_regime",
+          "correlation_breakdown",
+          "other"
+        ]
+      }
+    },
+    "negative_transfer_rationale": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "depends_on_market_structure_not_present_in_target",
+          "depends_on_latency_edge_unavailable_in_target",
+          "depends_on_inventory_tools_missing_in_target",
+          "depends_on_regulatory_or_rule_surface_not_present",
+          "depends_on_reward_subsidies_not_present",
+          "depends_on_dense_liquidity_not_present",
+          "depends_on_observability_not_present",
+          "fails_under_sparse_event_frequency",
+          "target_market_already_prices_this_logic",
+          "other"
+        ]
+      }
+    },
+    "main_failure_modes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "fees_and_slippage",
+          "hedge_leg_nonfill",
+          "borrow_or_inventory_constraint",
+          "stale_or_bad_data",
+          "crowding",
+          "regime_shift",
+          "resolution_rule_change",
+          "venue_outage",
+          "adverse_selection",
+          "other"
+        ]
+      }
+    },
+    "evidence_strength": {
+      "type": "string",
+      "enum": [
+        "weak",
+        "medium",
+        "strong"
+      ]
+    },
+    "prediction_market_portability": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "novel_market_portability": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "tradecore_fit": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "likely_crowding": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "why_missed": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "non_obvious_source_domain",
+          "operationally_annoying",
+          "too_small_for_large_funds",
+          "requires_linked_market_modeling",
+          "requires_market_specific_resolution_knowledge",
+          "buried_in_non_prediction_market_language",
+          "other"
+        ]
+      }
+    }
+  }
+}

@@ -10,6 +10,9 @@ unit for the structural analogy engine.
 - One paper may map to `0..N` mechanism instances.
 - `paper_extractions` is still used by the current abstract-first ingest path,
   but only as a transitional staging table.
+- The active extraction contract now requires `insight_type` plus explicit
+  fragility, capacity, failure-regime, and negative-transfer fields so
+  promising candidates stay falsifiable.
 - Downstream retrieval, benchmarking, transfer review, and candidate-family
   work should target `mechanism_instances`, `mechanism_evidence_spans`,
   `transfer_hypotheses`, `candidate_families`, `analyst_labels`, and
@@ -257,6 +260,19 @@ npm run extract:ingest -- --run-id <run_id> --responses-path <responses.jsonl>
 Today this command persists validated model output into transitional
 `paper_extractions` rows. That keeps the current extraction workflow usable
 while the mechanism-first persistence refactor is completed.
+
+The validated extraction payload now requires:
+
+- `insight_type`
+- `required_assumptions`
+- `assumption_violations`
+- `fragility_flags`
+- `capacity_constraints`
+- `failure_regimes`
+- `negative_transfer_rationale`
+
+The reviewer also blocks promising candidates that lack specific blocker
+context, so extraction outputs cannot stay “interesting” but unfalsifiable.
 
 Review extraction quality before scaling a run:
 

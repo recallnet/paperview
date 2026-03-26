@@ -1,0 +1,64 @@
+{
+  "paper_id": "arxiv:0906.1899",
+  "mechanism_name": "Cross-market basket completion under asynchronous updates",
+  "mechanism_summary": "The paper studies a basket-completion edge where linked event claims drift out of parity because venues update asynchronously and liquidity is thin, allowing a bounded multi-leg completion trade with immediate hedge logic.",
+  "insight_type": "executable_strategy_primitive",
+  "original_market_domain": "market_microstructure",
+  "instrument_type": [
+    "binary_contract",
+    "basket"
+  ],
+  "edge_source": [
+    "logical_inconsistency",
+    "stale_quotes"
+  ],
+  "execution_style": [
+    "parallel_fok",
+    "batch_basket_completion"
+  ],
+  "holding_horizon": "intraday",
+  "required_market_conditions": [
+    "thin_book",
+    "asynchronous_updates",
+    "known_resolution_rules"
+  ],
+  "required_assumptions": [
+    "linked_market_structure_is_stable",
+    "hedge_leg_is_tradeable",
+    "fees_remain_below_edge"
+  ],
+  "assumption_violations": [
+    "linked_markets_decouple",
+    "fees_expand_past_edge"
+  ],
+  "fragility_flags": [
+    "depends_on_thin_liquidity",
+    "depends_on_fast_execution"
+  ],
+  "capacity_constraints": [
+    "thin_resting_liquidity",
+    "limited_hedge_capacity"
+  ],
+  "failure_regimes": [
+    "liquidity_crunch",
+    "correlation_breakdown"
+  ],
+  "negative_transfer_rationale": [
+    "depends_on_market_structure_not_present_in_target",
+    "depends_on_dense_liquidity_not_present"
+  ],
+  "main_failure_modes": [
+    "hedge_leg_nonfill",
+    "fees_and_slippage",
+    "adverse_selection"
+  ],
+  "evidence_strength": "medium",
+  "prediction_market_portability": "high",
+  "novel_market_portability": "high",
+  "tradecore_fit": "high",
+  "likely_crowding": "low",
+  "why_missed": [
+    "buried_in_non_prediction_market_language",
+    "requires_linked_market_modeling"
+  ]
+}
