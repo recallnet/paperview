@@ -18,6 +18,7 @@
     "corpus:readiness": "python3 scripts/corpus_readiness_report.py",
     "store:init": "python3 scripts/init_local_store.py",
     "store:load-metadata": "python3 scripts/load_metadata_store.py",
+    "store:reconcile-canonical": "python3 scripts/reconcile_canonical_store.py",
     "pilot:create": "python3 scripts/create_pilot_batch.py",
     "extract:prepare": "python3 scripts/create_extraction_run.py",
     "extract:ingest": "python3 scripts/ingest_extraction_responses.py",

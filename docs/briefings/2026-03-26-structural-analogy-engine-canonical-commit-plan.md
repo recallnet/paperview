@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `all-canonical-commits-complete-awaiting-real-analyst-gate-c-input`
+- Current commit focus: `live-store-reconciled-awaiting-real-downstream-materialization`
 - Last updated: `2026-03-26`
 
 ---
@@ -81,7 +81,8 @@ The current bottleneck is also clear:
 - final strategy briefs and minimal test plans now persist from the ranked family queue
 - Gate C review judgments and pass/fail summaries can now persist directly against the generated brief surface
 - Gate C review packets and editable analyst templates can now be prepared directly from persisted briefs
-- the remaining work is collecting real analyst input on a larger candidate surface and deciding whether more corpus/retrieval iteration is needed
+- the live SQLite store is now reconciled to the canonical mechanism-first schema and legacy valid `paper_extractions` have been backfilled into `mechanism_instances`
+- the remaining work is materializing the downstream live runs from that reconciled mechanism store, then collecting real analyst input on a larger candidate surface
 - the system now has the end-to-end implementation path in place, and the main open question is outcome quality rather than missing pipeline layers
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
@@ -245,6 +246,7 @@ This commit plan implements that order in concrete units.
 | `C14` | `completed` | Generate final strategy briefs and minimal test plans | `C13` |
 | `C15` | `completed` | Persist Gate C review judgments and final success summary | `C14` |
 | `C16` | `completed` | Prepare analyst Gate C review packets and editable templates | `C15` |
+| `C17` | `completed` | Reconcile the live SQLite store and backfill legacy mechanism rows | `C05`, `C16` |
 
 ---
 
@@ -980,6 +982,45 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Inherits completed `C15`: review packet prep should preserve the exact ids consumed by `gate_c_review_summaries` so analyst judgments stay attached to the reviewed packet rather than a renamed or reordered copy.
+
+## C17: Live Store Reconciliation And Legacy Backfill
+
+- Status: `completed`
+- Scope: make the live canonical SQLite store consistent with the checked-in schema and forward-port legacy valid extraction rows into the mechanism-first surface
+- Depends on: `C05`, `C16`
+
+### Deliverables
+
+- checked-in reconciliation script that upgrades older SQLite files to the canonical schema
+- legacy extraction compatibility path for pre-C02 single-mechanism rows
+- live backfill from valid `paper_extractions` into canonical `mechanism_instances` plus evidence spans
+- doc update that distinguishes “store is now canonical” from “downstream live runs are already materialized”
+
+### Exit Criteria
+
+- live canonical DB can be upgraded in place and valid legacy extraction rows can be promoted into `mechanism_instances`
+
+### Completion Record
+
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C17`
+- Operator: `Codex`
+- Reviewer:
+- Verification:
+  - added `scripts/reconcile_canonical_store.py` plus `npm run store:reconcile-canonical` to apply the canonical schema and promote valid legacy extraction rows in one repo-native step
+  - updated `scripts/ingest_extraction_responses.py` so older SQLite files gain the missing `papers` and `paper_extractions` columns required before applying the full checked-in schema
+  - added a legacy extraction upgrader so pre-C02 single-mechanism rows can infer missing `insight_type`, blocker, fragility, and anti-transfer fields before promotion
+  - verified the reconciliation flow on `/tmp/paperview-live-upgrade-test.sqlite3`, then ran it on `data/structural-analogy/paperview.sqlite3`, which now contains `26` canonical `mechanism_instances` and `26` `mechanism_evidence_spans`
+- Completion notes:
+  - the live DB is no longer stuck on the older paper-level schema; the canonical mechanism-era tables now exist in the real store
+  - the reconciled live store still has `0` `mechanism_fingerprints` and `0` `strategy_briefs`, so real Gate C review remains blocked on downstream live runs rather than store shape
+  - legacy v10 single-mechanism rows now map into the mechanism-first surface without pretending they were collected under the richer later extraction contract
+
+### Upstream Impact Notes
+
+- Inherits completed `C05`: reconciliation should preserve `paper_extractions` as the staging/audit surface while promoting valid rows into canonical `mechanism_instances`.
+- Inherits completed `C16`: live analyst review remains blocked on real brief runs, so the next downstream materialization should target `mechanism_fingerprints`, retrieval, ranking, and brief generation in the reconciled live store before expecting Gate C packets.
 
 ---
 

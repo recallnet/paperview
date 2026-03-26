@@ -26,9 +26,12 @@ The repo now also has a first persisted scoring surface for `exposure_score`,
 `underexploited_score`, and a bootstrap `worth_followup_score`, plus a
 persisted queryless mining queue, analyst-adjudicated reranks with learned mode
 weights, a hard-gated ranked family queue, and generated strategy briefs. The
-repo now also has a persisted Gate C review path over those briefs, so the next
-critical path is preparing analyst-ready review packets and executing that
-review on real output rather than adding more pipeline plumbing by default.
+repo now also has a persisted Gate C review path over those briefs, and the
+live SQLite store has been reconciled onto the mechanism-first schema with
+legacy valid extractions promoted into `mechanism_instances`. The next critical
+path is therefore materializing real downstream live runs and then executing
+Gate C review on real output rather than adding more pipeline plumbing by
+default.
 
 ---
 
@@ -314,8 +317,9 @@ Current state:
   review bundles with editable JSONL templates and packet indexes
 - `review_gate_c.py` now writes persisted `gate_c_brief_reviews` and
   `gate_c_review_summaries` over those brief packets
-- the remaining question is whether the reviewed briefs are good enough under
-  Gate C on real corpus output, not whether the brief-generation layer exists
+- the live DB now also contains reconciled canonical `mechanism_instances` from
+  legacy valid extraction rows, but the remaining question is still whether the
+  reviewed briefs are good enough under Gate C on real corpus output
 - not started
 
 ---
@@ -658,6 +662,8 @@ If those are approved, the remaining work becomes mostly execution and tuning ra
 - persisted strategy briefs and reviewable brief packets with minimal test plans
 - analyst-ready Gate C review bundles with editable JSONL templates
 - persisted Gate C brief reviews and run-level pass/fail summaries
+- repo-native live-store reconciliation/backfill from valid legacy
+  `paper_extractions` into canonical `mechanism_instances`
 
 ## Current Non-Implemented Surfaces
 

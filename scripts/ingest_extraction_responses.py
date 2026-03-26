@@ -12,6 +12,7 @@ from validate_schema_examples import SchemaValidationError, load_json, validate
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_SCHEMA_PATH = ROOT / "schemas" / "extraction.schema.json"
+DEFAULT_SCHEMA_SQL_PATH = ROOT / "sql" / "paperview_schema.sql"
 
 
 def parse_args():
@@ -45,7 +46,39 @@ def now_utc():
     return datetime.now(timezone.utc).isoformat()
 
 
-def ensure_c05_store_contract(connection):
+def ensure_column(connection, table_name: str, column_name: str, ddl_fragment: str):
+    columns = {
+        row[1] for row in connection.execute(f"PRAGMA table_info({table_name})")
+    }
+    if column_name in columns:
+        return
+    connection.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {ddl_fragment}")
+
+
+def ensure_c05_store_contract(connection, schema_sql_path: Path = DEFAULT_SCHEMA_SQL_PATH):
+    tables = {
+        row[0]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        )
+    }
+    if "papers" in tables:
+        ensure_column(connection, "papers", "literature_family", "TEXT NOT NULL DEFAULT 'q_fin'")
+        ensure_column(connection, "papers", "evaluation_split", "TEXT NOT NULL DEFAULT 'tuning'")
+    if "paper_extractions" in tables:
+        ensure_column(
+            connection,
+            "paper_extractions",
+            "response_contract_version",
+            "TEXT NOT NULL DEFAULT 'legacy-single-mechanism-v1'",
+        )
+
+    # @context requirement -- The checked-in SQL schema is the canonical source
+    # of truth for the mechanism-first store. Live SQLite files can lag that
+    # schema for many turns, so promotion and ingestion must materialize missing
+    # tables before assuming column-level migrations are enough.
+    connection.executescript(schema_sql_path.read_text(encoding="utf-8"))
+
     columns = {
         row[1] for row in connection.execute("PRAGMA table_info(mechanism_instances)")
     }
@@ -57,17 +90,35 @@ def ensure_c05_store_contract(connection):
             """
         )
 
-    columns = {
-        row[1] for row in connection.execute("PRAGMA table_info(paper_extractions)")
+
+def infer_legacy_insight_type(extraction):
+    tradecore_fit = extraction.get("tradecore_fit", "low")
+    prediction_portability = extraction.get("prediction_market_portability", "low")
+    novel_portability = extraction.get("novel_market_portability", "low")
+    if tradecore_fit == "high" and (
+        prediction_portability in {"medium", "high"} or novel_portability in {"medium", "high"}
+    ):
+        return "executable_strategy_primitive"
+    if tradecore_fit in {"medium", "high"}:
+        return "missing_executor_primitive"
+    return "research_dead_end_worth_excluding"
+
+
+def upgrade_legacy_extraction_contract(extraction):
+    upgraded = dict(extraction)
+    defaults = {
+        "insight_type": infer_legacy_insight_type(extraction),
+        "required_assumptions": ["other"],
+        "assumption_violations": ["other"],
+        "fragility_flags": ["other"],
+        "capacity_constraints": ["other"],
+        "failure_regimes": ["other"],
+        "negative_transfer_rationale": ["other"],
     }
-    if "response_contract_version" not in columns:
-        connection.execute(
-            """
-            ALTER TABLE paper_extractions
-            ADD COLUMN response_contract_version TEXT NOT NULL
-            DEFAULT 'legacy-single-mechanism-v1'
-            """
-        )
+    for field_name, fallback in defaults.items():
+        if field_name not in upgraded or upgraded[field_name] in (None, [], ""):
+            upgraded[field_name] = fallback
+    return upgraded
 
 
 def load_run(connection, run_id: str):
@@ -93,6 +144,7 @@ def normalize_line(payload):
         if "paper_id" not in extraction and "paper_id" in payload:
             extraction = dict(extraction)
             extraction["paper_id"] = payload["paper_id"]
+        extraction = upgrade_legacy_extraction_contract(extraction)
         return {
             "paper_id": extraction["paper_id"],
             "contract_version": "legacy-single-mechanism-v1",
@@ -111,7 +163,7 @@ def normalize_line(payload):
                 raise SchemaValidationError(
                     f"$.mechanism_instances[{index}]: expected object"
                 )
-            normalized = dict(extraction)
+            normalized = upgrade_legacy_extraction_contract(extraction)
             if "paper_id" not in normalized:
                 if paper_id is None:
                     raise SchemaValidationError(
@@ -146,6 +198,7 @@ def normalize_line(payload):
     if "paper_id" not in payload:
         raise SchemaValidationError("$.paper_id: missing required key 'paper_id'")
 
+    payload = upgrade_legacy_extraction_contract(payload)
     return {
         "paper_id": payload["paper_id"],
         "contract_version": "legacy-single-mechanism-v1",
