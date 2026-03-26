@@ -1,0 +1,77 @@
+{
+  "version": "adjacent-lexicon-v1",
+  "families": {
+    "betting_sportsbook_pricing": [
+      "odds shading",
+      "line movement",
+      "book liability",
+      "handle imbalance",
+      "favorite-longshot bias",
+      "vig",
+      "trading room"
+    ],
+    "pari_mutuel_tournament_pricing": [
+      "pool imbalance",
+      "takeout",
+      "dividend odds",
+      "win pool",
+      "exotic payout",
+      "favorite-longshot",
+      "pool redistribution"
+    ],
+    "auction_market_design": [
+      "allocation rule",
+      "truthful bidding",
+      "double auction",
+      "reserve price",
+      "winner determination",
+      "price discovery",
+      "market clearing"
+    ],
+    "electricity_power_markets": [
+      "nodal pricing",
+      "locational marginal price",
+      "balancing market",
+      "congestion rent",
+      "ancillary services",
+      "unit commitment",
+      "reserve activation"
+    ],
+    "freight_logistics_transport_pricing": [
+      "backhaul",
+      "spot capacity",
+      "route auction",
+      "load board",
+      "capacity commitment",
+      "carrier rejection",
+      "lane imbalance"
+    ],
+    "defi_amm_onchain_market_design": [
+      "liquidity mining",
+      "impermanent loss",
+      "oracle lag",
+      "sandwich attack",
+      "constant product",
+      "fee tier",
+      "incentive program"
+    ],
+    "constrained_arbitrage_forced_flow": [
+      "funding stress",
+      "margin call",
+      "forced liquidation",
+      "inventory overhang",
+      "capital constraint",
+      "price pressure",
+      "fire sale"
+    ],
+    "fragmented_special_markets": [
+      "cat bond",
+      "weather derivative",
+      "parametric trigger",
+      "specialty exchange",
+      "thin venue",
+      "brokered liquidity",
+      "episodic order flow"
+    ]
+  }
+}

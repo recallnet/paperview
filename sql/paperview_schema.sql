@@ -3,6 +3,8 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS papers (
   paper_id TEXT PRIMARY KEY,
   source_corpus TEXT NOT NULL,
+  literature_family TEXT NOT NULL DEFAULT 'q_fin',
+  evaluation_split TEXT NOT NULL DEFAULT 'tuning',
   title TEXT,
   abstract TEXT,
   authors_json TEXT,
@@ -219,6 +221,12 @@ CREATE TABLE IF NOT EXISTS strategy_candidates (
 
 CREATE INDEX IF NOT EXISTS idx_papers_source_corpus
 ON papers (source_corpus);
+
+CREATE INDEX IF NOT EXISTS idx_papers_literature_family
+ON papers (literature_family);
+
+CREATE INDEX IF NOT EXISTS idx_papers_evaluation_split
+ON papers (evaluation_split);
 
 CREATE INDEX IF NOT EXISTS idx_paper_sections_paper_id
 ON paper_sections (paper_id);

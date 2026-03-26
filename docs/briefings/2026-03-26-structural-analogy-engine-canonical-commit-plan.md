@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C03-adjacent-literature-seeding`
+- Current commit focus: `C04-discovery-benchmark-construction`
 - Last updated: `2026-03-26`
 
 ---
@@ -179,7 +179,7 @@ This commit plan implements that order in concrete units.
 | --- | --- | --- | --- |
 | `C01` | `completed` | Adopt mechanism-first canonical model and repo contract | none |
 | `C02` | `completed` | Add insight-type, fragility, and anti-transfer schema | `C01` |
-| `C03` | `pending` | Seed adjacent literatures and holdout slices | `C01` |
+| `C03` | `completed` | Seed adjacent literatures and holdout slices | `C01` |
 | `C04` | `pending` | Build discovery benchmark and retrieval acceptance thresholds | `C02`, `C03` |
 | `C05` | `pending` | Refactor local store and extraction pipeline around mechanism instances | `C01`, `C02` |
 | `C06` | `pending` | Stabilize abstract extraction on mixed-family mechanism outputs | `C03`, `C05` |
@@ -312,7 +312,7 @@ This commit plan implements that order in concrete units.
 
 ## C03: Adjacent Literature Seeding
 
-- Status: `pending`
+- Status: `completed`
 - Scope: stop overfitting the ontology to q-fin
 - Depends on: `C01`
 
@@ -338,17 +338,26 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C03`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - added checked-in adjacent-family seed registry, jargon lexicons, and holdout policy under `configs/`
+  - extended the `papers` store surface plus metadata loader to stamp `literature_family` and `evaluation_split`
+  - updated pilot-batch tooling to support mixed-family selection while excluding reserved holdout rows
 - Completion notes:
+  - the repo now has explicit seed coverage for betting, pari-mutuel, auctions, electricity, freight, DeFi, constrained-arbitrage, and fragmented special-market families
+  - `fragmented_special_markets` is now reserved as a holdout family in the checked-in split policy
+  - adjacent seeding can be materialized into active-vs-holdout artifacts without polluting git with generated corpus data
 
 ### Upstream Impact Notes
 
-- Add notes here when earlier commits change seeding priorities or family definitions.
+- Completed in `C03`: adjacent-family seeding, per-family lexicons, and reserved holdout policy now exist as checked-in repo assets.
+- `C04` should use the `fragmented_special_markets` holdout policy from `C03` as one source of lexical-far benchmark candidates.
+- `C06` should tune on the active families from `C03` and keep the reserved holdout family out of prompt-iteration loops.
+- `C09` should treat the checked-in `literature_family` field as the canonical family label for exposure and manifold features.
 
 ## C04: Discovery Benchmark Construction
 
@@ -385,6 +394,7 @@ This commit plan implements that order in concrete units.
 
 - Inherits `C01`: benchmark storage should build on the draft `benchmark_pairs` table already checked into the local store schema.
 - Inherits `C02`: benchmark buckets and adjudication records should include the canonical `insight_type` labels so retrieval is judged on mechanism class as well as distance.
+- Inherits `C03`: use the checked-in holdout family policy and seed registry as the starting benchmark source set rather than inventing ad hoc family buckets.
 
 ## C05: Mechanism-Instance Store And Extraction Refactor
 
@@ -452,6 +462,7 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Inherits `C02`: prompt/runtime work must emit the mandatory insight-type and blocker fields cleanly enough to satisfy Gate A and the blocker-context reviewer.
+- Inherits `C03`: mixed-family prompt stabilization should pull from active adjacent families while preserving the reserved holdout split.
 
 ## C07: Section-Aware Text Preparation
 
@@ -554,6 +565,7 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Add notes here when earlier commits change domain families, labeling, or feature availability.
+- Inherits `C03`: exposure features should include `literature_family` and holdout-aware corpus membership rather than only source-corpus labels.
 
 ## C10: Multi-View Retrieval Stack
 

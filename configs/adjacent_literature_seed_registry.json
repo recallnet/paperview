@@ -1,0 +1,102 @@
+{
+  "version": "adjacent-seed-v1",
+  "anchor_corpus": "q_fin",
+  "families": [
+    {
+      "literature_family": "betting_sportsbook_pricing",
+      "seed_role": "active",
+      "source_corpus": "adjacent-betting-sportsbook",
+      "target_seed_count": 40,
+      "description": "Odds compilation, line movement, and bookmaker risk management work.",
+      "seed_queries": [
+        "sportsbook line movement inventory risk pricing",
+        "bookmaker odds shading informed demand",
+        "betting market maker liability balancing"
+      ]
+    },
+    {
+      "literature_family": "pari_mutuel_tournament_pricing",
+      "seed_role": "active",
+      "source_corpus": "adjacent-pari-mutuel-tournament",
+      "target_seed_count": 35,
+      "description": "Pool-based pricing, tournament odds adjustment, and payout-curve design.",
+      "seed_queries": [
+        "pari mutuel pool imbalance pricing",
+        "tournament market odds update pool pricing",
+        "pool betting favorite longshot adjustment"
+      ]
+    },
+    {
+      "literature_family": "auction_market_design",
+      "seed_role": "active",
+      "source_corpus": "adjacent-auction-market-design",
+      "target_seed_count": 40,
+      "description": "Allocation, bidding, and mechanism-design papers with tradable edge analogs.",
+      "seed_queries": [
+        "auction design allocation mechanism strategic bidding",
+        "double auction market design liquidity competition",
+        "mechanism design price discovery allocation"
+      ]
+    },
+    {
+      "literature_family": "electricity_power_markets",
+      "seed_role": "active",
+      "source_corpus": "adjacent-electricity-power",
+      "target_seed_count": 35,
+      "description": "Nodal pricing, balancing markets, congestion, and ancillary-service mechanisms.",
+      "seed_queries": [
+        "electricity balancing market congestion pricing",
+        "power market nodal price arbitrage risk",
+        "ancillary services market maker bidding"
+      ]
+    },
+    {
+      "literature_family": "freight_logistics_transport_pricing",
+      "seed_role": "active",
+      "source_corpus": "adjacent-freight-logistics",
+      "target_seed_count": 35,
+      "description": "Capacity auctions, route-pricing frictions, and logistics market design.",
+      "seed_queries": [
+        "freight market dynamic pricing capacity auction",
+        "logistics exchange route pricing imbalance",
+        "transportation market design spot capacity pricing"
+      ]
+    },
+    {
+      "literature_family": "defi_amm_onchain_market_design",
+      "seed_role": "active",
+      "source_corpus": "adjacent-defi-amm",
+      "target_seed_count": 40,
+      "description": "AMM microstructure, on-chain incentives, oracle design, and liquidity mining.",
+      "seed_queries": [
+        "amm liquidity incentive impermanent loss market making",
+        "on-chain market design oracle manipulation liquidity",
+        "defi reward program market maker inventory"
+      ]
+    },
+    {
+      "literature_family": "constrained_arbitrage_forced_flow",
+      "seed_role": "active",
+      "source_corpus": "adjacent-constrained-arbitrage",
+      "target_seed_count": 35,
+      "description": "Forced buyers/sellers, inventory constraints, and capital-friction arbitrage.",
+      "seed_queries": [
+        "constrained arbitrage forced flow inventory limits",
+        "capital constrained arbitrage price pressure",
+        "forced liquidation flow imbalance trading"
+      ]
+    },
+    {
+      "literature_family": "fragmented_special_markets",
+      "seed_role": "holdout",
+      "source_corpus": "adjacent-fragmented-special",
+      "target_seed_count": 30,
+      "description": "Catastrophe, weather, and other fragmented or thinly intermediated special markets.",
+      "seed_queries": [
+        "catastrophe risk market thin liquidity pricing",
+        "weather derivative fragmented market pricing",
+        "specialty insurance exchange fragmented venue arbitrage"
+      ]
+    }
+  ]
+}

@@ -13,6 +13,8 @@ unit for the structural analogy engine.
 - The active extraction contract now requires `insight_type` plus explicit
   fragility, capacity, failure-regime, and negative-transfer fields so
   promising candidates stay falsifiable.
+- The adjacent-literature seeding surface now lives in checked-in registries
+  under `configs/`, with explicit active-family versus holdout split policy.
 - Downstream retrieval, benchmarking, transfer review, and candidate-family
   work should target `mechanism_instances`, `mechanism_evidence_spans`,
   `transfer_hypotheses`, `candidate_families`, `analyst_labels`, and
@@ -186,10 +188,32 @@ npm run store:load-metadata
 The loader is idempotent: reruns update existing paper rows in place and refresh
 local PDF presence in `ingest_status` / `pdf_path`.
 
+For adjacent corpora, stamp the canonical family and split on ingest:
+
+```bash
+python3 scripts/load_metadata_store.py \
+  --metadata-jsonl <adjacent.jsonl> \
+  --pdf-dir <adjacent-pdfs> \
+  --source-corpus adjacent-defi-amm \
+  --literature-family defi_amm_onchain_market_design \
+  --evaluation-split tuning
+```
+
 Create the deterministic abstract-first pilot batch:
 
 ```bash
 npm run pilot:create
+```
+
+Build a mixed-family pilot while excluding holdout rows:
+
+```bash
+python3 scripts/create_pilot_batch.py \
+  --db-path data/structural-analogy/paperview.sqlite3 \
+  --source-corpus all \
+  --literature-families q_fin,defi_amm_onchain_market_design,electricity_power_markets \
+  --exclude-evaluation-split holdout \
+  --batch-name abstract-pilot-mixed-v1
 ```
 
 Prepare an abstract-only extraction run from that pilot batch:
@@ -296,6 +320,13 @@ Validate the checked-in Phase 1 schema artifacts:
 
 ```bash
 npm run schemas:validate
+```
+
+Materialize the checked-in adjacent seeding plan and reserved holdout slice:
+
+```bash
+python3 scripts/materialize_adjacent_seeding_plan.py \
+  --output-dir data/structural-analogy/adjacent-seeding/plan-v1
 ```
 
 ## Notes

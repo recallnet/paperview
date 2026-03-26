@@ -1,0 +1,14 @@
+{
+  "version": "adjacent-holdout-v1",
+  "policy": "reserved_from_prompt_tuning",
+  "evaluation_split": "holdout",
+  "reserved_families": [
+    "fragmented_special_markets"
+  ],
+  "reserved_queries": [
+    "catastrophe risk market thin liquidity pricing",
+    "weather derivative fragmented market pricing",
+    "specialty insurance exchange fragmented venue arbitrage"
+  ],
+  "acceptance_intent": "Use this slice for cross-domain evaluation and far-analog checks after prompt tuning on the active families."
+}

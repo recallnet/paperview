@@ -30,6 +30,7 @@ The structural analogy engine is a research pipeline with five functional layers
 
 1. Corpus layer
    - Harvest and track the relevant literature corpus locally.
+   - Stamp imported records with canonical `literature_family` and holdout/tuning split metadata.
    - Maintain metadata, PDFs, completeness state, and failure/retry accounting.
 
 2. Extraction layer
@@ -96,6 +97,10 @@ Examples of adjacent literatures we expect to matter:
 - electricity, freight, carbon, and other fragmented special markets
 - options relative-value and term-structure literature
 - constrained-arbitrage and forced-flow papers
+
+The repo now carries a checked-in adjacent-family seed registry, per-family
+jargon lexicons, and a reserved holdout policy so cross-domain expansion is
+explicit instead of ad hoc.
 
 ---
 
