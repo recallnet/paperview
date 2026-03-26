@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `all-canonical-commits-complete-awaiting-gate-c-review`
+- Current commit focus: `all-canonical-commits-complete-awaiting-real-gate-c-run`
 - Last updated: `2026-03-26`
 
 ---
@@ -79,7 +79,8 @@ The current bottleneck is also clear:
 - analyst feedback and weight updates now persist against the C11 mining queue
 - hard-gated ranking and family assembly now persist against the analyst-informed queue
 - final strategy briefs and minimal test plans now persist from the ranked family queue
-- the remaining work is evaluating the generated brief surface against Gate C and deciding whether more corpus/retrieval iteration is needed
+- Gate C review judgments and pass/fail summaries can now persist directly against the generated brief surface
+- the remaining work is executing that review on a larger real candidate surface and deciding whether more corpus/retrieval iteration is needed
 - the system now has the end-to-end implementation path in place, and the main open question is outcome quality rather than missing pipeline layers
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
@@ -241,6 +242,7 @@ This commit plan implements that order in concrete units.
 | `C12` | `completed` | Add analyst adjudication loop and weight update path | `C04`, `C09`, `C11` |
 | `C13` | `completed` | Add hard-gated candidate ranking and family assembly | `C08`, `C09`, `C11`, `C12` |
 | `C14` | `completed` | Generate final strategy briefs and minimal test plans | `C13` |
+| `C15` | `completed` | Persist Gate C review judgments and final success summary | `C14` |
 
 ---
 
@@ -904,14 +906,51 @@ This commit plan implements that order in concrete units.
 - Inherits completed `C12`: final briefs should cite the adjudicated queue position and the key analyst reasons captured during C12 so the brief packet preserves why a candidate survived human review.
 - Inherits completed `C13`: final briefs should anchor on the persisted `candidate_family_rankings` order and reuse the linked `transfer_hypotheses` plus representative `candidate_family_members` rather than hand-selecting source papers again.
 
+## C15: Gate C Review And Final Success Summary
+
+- Status: `completed`
+- Scope: persist the final human success review so Gate C is queryable rather than a doc-only conclusion
+- Depends on: `C14`
+
+### Deliverables
+
+- checked-in review script that ingests analyst Gate C judgments over persisted `strategy_briefs`
+- canonical SQLite persistence for per-brief Gate C judgments and run-level summaries
+- pass/fail summary against the three Gate C thresholds
+- doc update that distinguishes implementation completeness from outcome-success validation
+
+### Exit Criteria
+
+- repo can run a concrete Gate C review over `strategy_briefs` and persist whether the current brief surface passes
+
+### Completion Record
+
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C15`
+- Operator: `Codex`
+- Reviewer:
+- Verification:
+  - added `scripts/review_gate_c.py` plus `npm run gatec:review` to ingest JSONL analyst judgments against `strategy_briefs`
+  - extended `sql/paperview_schema.sql` with canonical `gate_c_brief_reviews` and `gate_c_review_summaries` persistence so final quality judgments are stored in SQLite rather than only narrated in docs
+  - verified the end-to-end C15 flow on `/tmp/paperview-c15-test.sqlite3` by reviewing the existing C14 fixture brief run and confirming persisted review rows, a persisted Gate C summary row, and status updates on the reviewed briefs
+- Completion notes:
+  - Gate C review now resolves briefs by `strategy_brief_id`, `candidate_family_id`, or `brief_name`, which keeps the analyst JSONL contract stable even if packet ordering changes
+  - the repo can now tell the difference between “pipeline implemented” and “pipeline successful” using a queryable run-level summary rather than a hand-written conclusion
+  - the C15 fixture review intentionally remains below Gate C thresholds because the fixture only contains three briefs; the next real work is running this review on a larger real-corpus brief set
+
+### Upstream Impact Notes
+
+- Inherits completed `C14`: Gate C judgments should attach to persisted `strategy_briefs` rather than raw ranking rows so final acceptance stays anchored on the actual review packet seen by the analyst.
+
 ---
 
 ## How To Operate This Document
 
 For each future work turn:
 
-1. Read `Canonical Status`, `Commit Board`, and the next non-completed commit.
-2. Advance one commit-sized unit only.
+1. Read `Canonical Status`, `Commit Board`, and the next non-completed commit if one exists.
+2. Advance one commit-sized unit only, or execute the next gate-review step when the board is exhausted.
 3. Do repo work end-to-end where possible.
 4. Update:
    - commit status

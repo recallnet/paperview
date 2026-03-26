@@ -551,6 +551,43 @@ CREATE TABLE IF NOT EXISTS strategy_briefs (
   UNIQUE (candidate_family_id, run_id, brief_version)
 );
 
+CREATE TABLE IF NOT EXISTS gate_c_brief_reviews (
+  gate_c_brief_review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id TEXT NOT NULL,
+  strategy_brief_id INTEGER NOT NULL,
+  candidate_family_id INTEGER NOT NULL,
+  reviewed_by TEXT NOT NULL DEFAULT 'analyst',
+  genuinely_new INTEGER,
+  worth_validation INTEGER,
+  new_executor_primitive INTEGER,
+  new_regime_filter INTEGER,
+  holdout_near_zero_overlap INTEGER,
+  review_notes TEXT,
+  evidence_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  FOREIGN KEY (strategy_brief_id) REFERENCES strategy_briefs(strategy_brief_id) ON DELETE CASCADE,
+  FOREIGN KEY (candidate_family_id) REFERENCES candidate_families(candidate_family_id) ON DELETE CASCADE,
+  UNIQUE (run_id, strategy_brief_id)
+);
+
+CREATE TABLE IF NOT EXISTS gate_c_review_summaries (
+  gate_c_review_summary_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id TEXT NOT NULL UNIQUE,
+  brief_run_id TEXT NOT NULL,
+  reviewed_count INTEGER NOT NULL DEFAULT 0,
+  genuinely_new_and_worth_validation_count INTEGER NOT NULL DEFAULT 0,
+  new_executor_or_regime_count INTEGER NOT NULL DEFAULT 0,
+  holdout_near_zero_overlap_count INTEGER NOT NULL DEFAULT 0,
+  gate_c_passed INTEGER NOT NULL DEFAULT 0,
+  summary_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  FOREIGN KEY (brief_run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_papers_source_corpus
 ON papers (source_corpus);
 
@@ -652,3 +689,9 @@ ON strategy_candidates (candidate_status);
 
 CREATE INDEX IF NOT EXISTS idx_strategy_briefs_run_rank
 ON strategy_briefs (run_id, brief_rank);
+
+CREATE INDEX IF NOT EXISTS idx_gate_c_brief_reviews_run_brief
+ON gate_c_brief_reviews (run_id, strategy_brief_id);
+
+CREATE INDEX IF NOT EXISTS idx_gate_c_review_summaries_brief_run
+ON gate_c_review_summaries (brief_run_id);
