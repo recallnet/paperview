@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C07-section-aware-text-preparation`
+- Current commit focus: `C08-normalization-and-structural-fingerprinting`
 - Last updated: `2026-03-26`
 
 ---
@@ -183,7 +183,7 @@ This commit plan implements that order in concrete units.
 | `C04` | `completed` | Build discovery benchmark and retrieval acceptance thresholds | `C02`, `C03` |
 | `C05` | `completed` | Refactor local store and extraction pipeline around mechanism instances | `C01`, `C02` |
 | `C06` | `completed` | Stabilize abstract extraction on mixed-family mechanism outputs | `C03`, `C05` |
-| `C07` | `pending` | Add section-aware text prep and evidence spans | `C05` |
+| `C07` | `completed` | Add section-aware text prep and evidence spans | `C05` |
 | `C08` | `pending` | Implement normalization and structural fingerprinting | `C05`, `C06`, `C07` |
 | `C09` | `pending` | Add exposure scoring and transfer manifold bootstrap | `C03`, `C08` |
 | `C10` | `pending` | Build multi-view retrieval stack | `C04`, `C08`, `C09` |
@@ -489,7 +489,7 @@ This commit plan implements that order in concrete units.
 
 ## C07: Section-Aware Text Preparation
 
-- Status: `pending`
+- Status: `completed`
 - Scope: move beyond abstracts into evidence-bearing sections
 - Depends on: `C05`
 
@@ -506,18 +506,26 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C07`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - added `scripts/prepare_section_evidence.py` to parse downloaded PDFs into `paper_sections` using `pypdf` via `uv`
+  - wired section preparation to log unreadable or missing files into `parse_failures` with `failure_stage = section_parse`
+  - upgraded canonical `mechanism_evidence_spans` from abstract fallback to section-backed snippets when parsed section text overlapped the mechanism label/summary
+  - verified the flow on a temp SQLite store with one real downloaded PDF and one missing-PDF case
 - Completion notes:
+  - section-aware text prep now exists as a repo-native workflow instead of plan prose only
+  - parsed sections preserve `section_id` anchors and `content_hash` values in the canonical store
+  - evidence spans only upgrade when section-level overlap is positive, so the C05 abstract fallback remains intact when full-text support is weak
+  - parse failures are now explicit and queryable instead of being lost as ad hoc operator errors
 
 ### Upstream Impact Notes
 
-- Inherits `C05`: abstract-backed evidence spans already exist, so section-aware parsing should upgrade canonical span provenance rather than inventing a second evidence table.
-- Inherits `C06`: section parsing should preserve the mixed-family wrapper contract and only replace abstract-backed evidence when section-level support is actually stronger.
+- Completed in `C07`: parsed PDF sections, section-backed evidence upgrades, and explicit `section_parse` failure logging now exist as checked-in repo workflows.
+- Completed in `C07`: section evidence only replaces the abstract fallback when parsed text provides a positive support match, preserving the C05 mechanism-store contract.
 
 ## C08: Normalization And Structural Fingerprinting
 
@@ -559,6 +567,7 @@ This commit plan implements that order in concrete units.
 
 - Inherits `C05`: normalization should read canonical mechanism rows plus `mechanism_json` / `evidence_confidence` rather than reparsing `paper_extractions`.
 - Inherits `C06`: normalization should expect true zero-mechanism papers in mixed-family runs and should not backfill phantom mechanism rows just to satisfy downstream shape assumptions.
+- Inherits `C07`: normalization can now use `paper_sections` and section-backed `mechanism_evidence_spans` as first-class inputs rather than only abstract summaries.
 
 ## C09: Exposure Scoring And Transfer Manifold Bootstrap
 
@@ -629,6 +638,7 @@ This commit plan implements that order in concrete units.
 - Inherits `C05`: sparse and dense retrieval should target canonical mechanism summaries and evidence spans, while respecting that benchmark bridges remain null when a paper maps to multiple active mechanisms.
 - Inherits `C06`: retrieval indexing should assume wrapper-style mixed-family runs may legitimately contain zero-mechanism papers and should index only accepted mechanism instances, not the empty wrapper rows.
 - Inherits `C06`: with accepted mixed-family mechanism rows remaining in SQLite and `sqlite-vec` now available locally, the first vector retrieval surface should stay SQLite-native unless a later capability gap proves otherwise.
+- Inherits `C07`: sparse retrieval can now target parsed discussion/model/result sections and section-backed evidence snippets instead of abstract-only text.
 
 ## C11: Queryless Mining And Local Reranking
 
@@ -668,6 +678,7 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Add notes here when earlier commits change retrieval surfaces or accepted mining modes.
+- Inherits `C07`: queryless mining should be able to inspect section-backed evidence snippets and section labels, not only mechanism summaries.
 
 ## C12: Analyst Adjudication And Weight Update
 

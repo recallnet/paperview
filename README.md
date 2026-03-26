@@ -19,6 +19,9 @@ unit for the structural analogy engine.
 - Mixed-family pilots now have a checked-in config plus materializer, and the
   mixed-family runtime can emit paper-level `mechanism_instances` wrappers
   instead of only legacy single-record outputs.
+- Downloaded PDFs can now be parsed into `paper_sections`, with failures logged
+  in `parse_failures` and evidence spans upgraded from abstract-only fallback
+  to section-backed snippets when the parsed text supports it.
 - The adjacent-literature seeding surface now lives in checked-in registries
   under `configs/`, with explicit active-family versus holdout split policy.
 - The discovery benchmark is now defined in a checked-in adjudicated pair set
@@ -195,6 +198,19 @@ npm run store:load-metadata
 
 The loader is idempotent: reruns update existing paper rows in place and refresh
 local PDF presence in `ingest_status` / `pdf_path`.
+
+Parse downloaded PDFs into canonical section storage and upgrade mechanism
+evidence spans from abstract fallback to section-backed snippets:
+
+```bash
+uv run --with pypdf python3 scripts/prepare_section_evidence.py \
+  --db-path data/structural-analogy/paperview.sqlite3 \
+  --limit 25
+```
+
+This stores parsed text into `paper_sections`, logs unreadable or missing PDFs
+to `parse_failures`, and only rewrites `mechanism_evidence_spans` when a parsed
+section has positive overlap with the mechanism label/summary.
 
 For adjacent corpora, stamp the canonical family and split on ingest:
 
@@ -396,6 +412,7 @@ The checked-in benchmark thresholds live in
 - `scripts/load_metadata_store.py` is the canonical way to populate the SQLite `papers` table from harvested metadata and current local PDF state.
 - `scripts/create_pilot_batch.py` is the canonical way to materialize a deterministic pilot batch under `data/structural-analogy/pilots/`.
 - `scripts/materialize_mixed_family_pilot.py` is the canonical way to materialize the checked-in cross-domain pilot defined in `configs/mixed_family_pilot_v1.json`.
+- `scripts/prepare_section_evidence.py` is the canonical way to parse downloaded PDFs into `paper_sections`, log section-level parse failures, and upgrade evidence spans from abstract fallback to section-backed snippets.
 - `scripts/create_extraction_run.py` is the canonical way to register an abstract-extraction run in SQLite and export prompt-ready requests under `data/structural-analogy/runs/`.
   Use `--max-requests` to regenerate capped benchmark slices from the actual prompt file; do not clone older `requests.jsonl` files forward when comparing prompt versions. The stored run config now records the `mechanism-instance-batch-v1` response contract and includes the paper’s `literature_family` / `evaluation_split` context for mixed-family prompt work.
 - `scripts/run_local_mlx_extraction.py` is the first local execution backend for prepared abstract-extraction runs on Apple Silicon via `mlx-lm`. It now preserves paper-level wrapper outputs when the model returns `mechanism_instances`.

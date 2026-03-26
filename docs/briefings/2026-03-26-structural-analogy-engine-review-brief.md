@@ -163,7 +163,12 @@ Exit condition:
 - papers can be processed at abstract-first and full-text levels
 
 Current state:
-- not started
+- in progress
+- a repo-native section parser now stores parsed PDF text in `paper_sections`
+- unreadable or missing PDFs now land in `parse_failures` with
+  `failure_stage = section_parse`
+- canonical evidence spans can now be upgraded from abstract fallback to
+  section-backed snippets when parsed sections provide a stronger match
 
 ## Phase 3: Local Extraction Pipeline
 
