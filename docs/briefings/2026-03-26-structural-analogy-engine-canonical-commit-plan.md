@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `live-store-reconciled-awaiting-real-downstream-materialization`
+- Current commit focus: `live-downstream-materialized-awaiting-analyst-triage`
 - Last updated: `2026-03-26`
 
 ---
@@ -82,7 +82,8 @@ The current bottleneck is also clear:
 - Gate C review judgments and pass/fail summaries can now persist directly against the generated brief surface
 - Gate C review packets and editable analyst templates can now be prepared directly from persisted briefs
 - the live SQLite store is now reconciled to the canonical mechanism-first schema and legacy valid `paper_extractions` have been backfilled into `mechanism_instances`
-- the remaining work is materializing the downstream live runs from that reconciled mechanism store, then collecting real analyst input on a larger candidate surface
+- the first live downstream chain has now been materialized from that reconciled mechanism store, including retrieval, bootstrap adjudication, ranking, provisional briefs, and a Gate C prep bundle
+- the remaining work is collecting real analyst input on that live brief surface and deciding whether the legacy slice is useful enough or whether newer extraction data is required
 - the system now has the end-to-end implementation path in place, and the main open question is outcome quality rather than missing pipeline layers
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
@@ -247,6 +248,7 @@ This commit plan implements that order in concrete units.
 | `C15` | `completed` | Persist Gate C review judgments and final success summary | `C14` |
 | `C16` | `completed` | Prepare analyst Gate C review packets and editable templates | `C15` |
 | `C17` | `completed` | Reconcile the live SQLite store and backfill legacy mechanism rows | `C05`, `C16` |
+| `C18` | `completed` | Materialize the first live downstream run and provisional brief queue | `C17` |
 
 ---
 
@@ -1021,6 +1023,46 @@ This commit plan implements that order in concrete units.
 
 - Inherits completed `C05`: reconciliation should preserve `paper_extractions` as the staging/audit surface while promoting valid rows into canonical `mechanism_instances`.
 - Inherits completed `C16`: live analyst review remains blocked on real brief runs, so the next downstream materialization should target `mechanism_fingerprints`, retrieval, ranking, and brief generation in the reconciled live store before expecting Gate C packets.
+
+## C18: Live Downstream Materialization And Provisional Brief Queue
+
+- Status: `completed`
+- Scope: turn the reconciled live mechanism store into a real downstream run chain and first analyst-triage brief surface
+- Depends on: `C17`
+
+### Deliverables
+
+- repo-native downstream materialization command from live `mechanism_instances` through normalization, retrieval, mining, bootstrap adjudication, ranking, brief generation, and Gate C prep
+- bootstrap label generator for the first live queryless queue
+- explicit provisional-brief path when a live legacy slice produces no passed C13 families
+- doc update that records the first live downstream run ids and output counts
+
+### Exit Criteria
+
+- live canonical DB has real downstream surfaces and a reviewable brief queue, even if the slice only supports provisional analyst triage
+
+### Completion Record
+
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C18`
+- Operator: `Codex`
+- Reviewer:
+- Verification:
+  - added `scripts/bootstrap_queryless_labels.py` plus `npm run labels:bootstrap-queryless` to turn live `queryless_candidate_hits` into provisional adjudication labels for the first analyst-triage pass
+  - added `scripts/materialize_live_downstream_run.py` plus `npm run live:materialize-downstream` to run the live C08-C16 chain end-to-end from the reconciled mechanism store
+  - updated `scripts/build_retrieval_stack.py` so abstract-backed evidence spans retain an `abstract_text` section label rather than looking evidence-empty to C13
+  - updated `scripts/generate_strategy_briefs.py` so runs with no passed C13 families can package the top rejected families as explicitly provisional analyst-triage briefs instead of failing before any live review packet exists
+  - verified the chain on `/tmp/paperview-c18c-test.sqlite3`, then ran it on `data/structural-analogy/paperview.sqlite3` with run prefix `live-legacy-bootstrap`, which produced `26` `mechanism_fingerprints`, `26` `mechanism_retrieval_documents`, `1560` `queryless_candidate_hits`, `1560` `adjudicated_queryless_hits`, `4` ranked families, `4` provisional `strategy_briefs`, and a Gate C review bundle under `data/structural-analogy/runs/live-legacy-bootstrap-c16/gate-c-review/`
+- Completion notes:
+  - the first live downstream run is now real and queryable, but it is still a legacy-slice bootstrap: all four generated briefs are provisional and all target `q_fin`
+  - the bootstrap label surface is explicitly for queue initialization and analyst triage, not for claiming human-reviewed novelty
+  - the live legacy slice still fails the spirit of Gate C because it produces no cross-family or holdout candidates, so analyst review should be used to decide whether newer extraction data is required rather than to declare success
+
+### Upstream Impact Notes
+
+- Inherits completed `C16`: the first live Gate C packet should preserve stable ids from the provisional brief run so later analyst judgments can cleanly supersede bootstrap adjudication.
+- Completed in `C18`: the next real decision point is no longer “can the repo materialize a live brief queue?” but “is the legacy live slice worth analyst time, or should we wait for richer mixed-family extraction output before deeper review?”
 
 ---
 

@@ -274,7 +274,7 @@ def load_evidence_bundles(connection, mechanism_ids):
         SELECT
           mes.mechanism_instance_id,
           mes.evidence_text,
-          COALESCE(ps.section_label, '') AS section_label
+          COALESCE(ps.section_label, mes.evidence_kind, '') AS section_label
         FROM mechanism_evidence_spans mes
         LEFT JOIN paper_sections ps
           ON ps.section_id = mes.section_id

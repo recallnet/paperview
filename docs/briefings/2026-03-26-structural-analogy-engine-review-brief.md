@@ -29,9 +29,10 @@ weights, a hard-gated ranked family queue, and generated strategy briefs. The
 repo now also has a persisted Gate C review path over those briefs, and the
 live SQLite store has been reconciled onto the mechanism-first schema with
 legacy valid extractions promoted into `mechanism_instances`. The next critical
-path is therefore materializing real downstream live runs and then executing
-Gate C review on real output rather than adding more pipeline plumbing by
-default.
+path is therefore evaluating the first live downstream brief surface, which now
+exists under the `live-legacy-bootstrap` run prefix, and deciding whether that
+legacy slice is worth analyst review or whether newer mixed-family extraction
+output is required before deeper evaluation.
 
 ---
 
@@ -318,8 +319,10 @@ Current state:
 - `review_gate_c.py` now writes persisted `gate_c_brief_reviews` and
   `gate_c_review_summaries` over those brief packets
 - the live DB now also contains reconciled canonical `mechanism_instances` from
-  legacy valid extraction rows, but the remaining question is still whether the
-  reviewed briefs are good enough under Gate C on real corpus output
+  legacy valid extraction rows, and `materialize_live_downstream_run.py` now
+  materializes the first live downstream queue from that surface
+- the remaining question is whether that live legacy brief queue is worth
+  analyst time and whether newer mixed-family extraction output is needed
 - not started
 
 ---
@@ -664,6 +667,8 @@ If those are approved, the remaining work becomes mostly execution and tuning ra
 - persisted Gate C brief reviews and run-level pass/fail summaries
 - repo-native live-store reconciliation/backfill from valid legacy
   `paper_extractions` into canonical `mechanism_instances`
+- repo-native live downstream materialization from reconciled mechanisms through
+  provisional briefs and Gate C prep
 
 ## Current Non-Implemented Surfaces
 

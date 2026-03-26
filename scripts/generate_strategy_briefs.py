@@ -50,6 +50,11 @@ def parse_args():
         default=10,
         help="Maximum number of top ranked queued families to package into briefs.",
     )
+    parser.add_argument(
+        "--include-provisional-rejected",
+        action="store_true",
+        help="When no families passed C13, package top rejected families as provisional analyst-triage briefs.",
+    )
     return parser.parse_args()
 
 
@@ -144,7 +149,9 @@ def slugify(value):
     return "".join(ch.lower() if ch.isalnum() else "-" for ch in (value or "")).strip("-")
 
 
-def load_ranked_families(connection, ranking_run_id: str, max_briefs: int):
+def load_ranked_families(
+    connection, ranking_run_id: str, max_briefs: int, include_provisional_rejected: bool
+):
     connection.row_factory = sqlite3.Row
     rows = connection.execute(
         """
@@ -172,6 +179,32 @@ def load_ranked_families(connection, ranking_run_id: str, max_briefs: int):
         """,
         (ranking_run_id, max_briefs),
     ).fetchall()
+    if not rows and include_provisional_rejected:
+        rows = connection.execute(
+            """
+            SELECT
+              cfr.candidate_family_ranking_id,
+              cfr.candidate_family_id,
+              cfr.family_rank,
+              cfr.gate_status,
+              cfr.base_utility_score,
+              cfr.diversity_penalty_score,
+              cfr.final_priority_score,
+              cfr.rationale_json,
+              cf.family_name,
+              cf.family_status,
+              cf.family_summary,
+              cf.blocker_requirement_status,
+              cf.family_json
+            FROM candidate_family_rankings cfr
+            JOIN candidate_families cf
+              ON cf.candidate_family_id = cfr.candidate_family_id
+            WHERE cfr.run_id = ?
+            ORDER BY cfr.family_rank
+            LIMIT ?
+            """,
+            (ranking_run_id, max_briefs),
+        ).fetchall()
     return [
         {
             **dict(row),
@@ -353,6 +386,7 @@ def build_brief_payload(family, members, hypotheses):
         "brief_name": family["family_name"],
         "mechanism_family": family["family_name"],
         "family_rank": family["family_rank"],
+        "gate_status": family["gate_status"],
         "target_domain": family["family_json"].get("target_domain"),
         "transfer_rationale": transfer_rationale,
         "tradecore_mapping": representative["candidate_document_json"].get("mechanism_traits", {}).get(
@@ -384,17 +418,31 @@ def render_markdown(brief):
         "",
         "## Summary",
         f"- Family rank: `{brief['family_rank']}`",
+        f"- Gate status: `{brief['gate_status']}`",
         f"- Final priority score: `{brief['final_priority_score']:.4f}`",
         f"- Target domain: `{brief['target_domain']}`",
         f"- Tradecore mapping: `{brief['tradecore_mapping']}`",
         "",
-        "## Mechanism",
-        f"- Representative source mechanism: `{brief['representative_source_mechanism']}`",
-        f"- Representative candidate mechanism: `{brief['representative_candidate_mechanism']}`",
-        f"- Candidate summary: {brief['representative_candidate_summary']}",
-        "",
-        "## Transfer Rationale",
     ]
+    if brief["gate_status"] != "passed":
+        lines.extend(
+            [
+                "## Provisional Status",
+                "- This brief comes from a rejected C13 family and is intended for provisional analyst triage only.",
+                "- Treat it as a bootstrap review packet, not as a passed-gates candidate claim.",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Mechanism",
+            f"- Representative source mechanism: `{brief['representative_source_mechanism']}`",
+            f"- Representative candidate mechanism: `{brief['representative_candidate_mechanism']}`",
+            f"- Candidate summary: {brief['representative_candidate_summary']}",
+            "",
+            "## Transfer Rationale",
+        ]
+    )
     for item in brief["transfer_rationale"]:
         lines.append(f"- {item}")
     lines.extend(["", "## Required Assumptions"])
@@ -439,6 +487,7 @@ def write_brief_files(run_id: str, brief):
 
 
 def persist_brief(connection, run_id: str, brief_version: str, family, brief, markdown_path: Path):
+    brief_status = "drafted" if brief["gate_status"] == "passed" else "provisional_drafted"
     connection.execute(
         """
         INSERT INTO strategy_briefs (
@@ -469,7 +518,7 @@ def persist_brief(connection, run_id: str, brief_version: str, family, brief, ma
             run_id,
             brief_version,
             brief["brief_name"],
-            "drafted",
+            brief_status,
             brief["family_rank"],
             str(markdown_path),
             json.dumps(brief, sort_keys=True),
@@ -489,7 +538,7 @@ def update_strategy_candidate(connection, family, brief):
           AND json_extract(candidate_json, '$.candidate_family_id') = ?
         """,
         (
-            "briefed",
+            "briefed" if brief["gate_status"] == "passed" else "briefed_provisional",
             brief["cheapest_validation_procedure"],
             now_utc(),
             family["family_name"],
@@ -509,6 +558,9 @@ def summarize(run_id: str, ranking_run_id: str, briefs):
         "run_id": run_id,
         "ranking_run_id": ranking_run_id,
         "brief_count": len(briefs),
+        "provisional_brief_count": sum(
+            1 for brief in briefs if brief["gate_status"] != "passed"
+        ),
         "target_domain_counts": dict(sorted(target_domains.items())),
         "briefs_with_holdout_language": holdout_count,
         "top_briefs": [
@@ -549,7 +601,12 @@ def main():
         )
         connection.commit()
 
-        ranked_families = load_ranked_families(connection, args.ranking_run_id, args.max_briefs)
+        ranked_families = load_ranked_families(
+            connection,
+            args.ranking_run_id,
+            args.max_briefs,
+            args.include_provisional_rejected,
+        )
         if not ranked_families:
             raise SystemExit(
                 "no passed candidate_family_rankings found for the requested run; complete C13 before running C14"
