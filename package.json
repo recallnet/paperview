@@ -37,6 +37,7 @@
     "queue:assess-live": "python3 scripts/assess_live_brief_queue.py",
     "gatec:prepare": "python3 scripts/prepare_gate_c_review.py",
     "gatec:review": "python3 scripts/review_gate_c.py",
+    "research:materialize-findings": "python3 scripts/materialize_research_finding_pack.py",
     "schemas:validate": "python3 scripts/validate_schema_examples.py",
     "docs:lint": "recall-docs-governance lint",
     "docs:lint:changed": "recall-docs-governance lint --changed"

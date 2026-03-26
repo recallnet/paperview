@@ -31,6 +31,7 @@ written: 2026-03-25
 - Use `scripts/materialize_live_downstream_run.py` to materialize the full live C08-C16 chain from the reconciled mechanism store rather than hand-running each stage.
 - Use the persisted brief packets to judge whether we have enough genuinely new candidates or need another retrieval/analogy iteration.
 - Use `scripts/review_gate_c.py` and the persisted `gate_c_review_summaries` surface so final success claims come from queryable review records rather than doc prose.
+- Use `scripts/materialize_research_finding_pack.py` to turn future snapshot and final-run family surfaces into the canonical cartography -> thesis -> evidence -> measurement artifact chain instead of ad hoc synthesis.
 - Treat the current `live-v22-v24-pass-subset` output as a provisional analyst-triage surface, not as evidence that Gate C is close.
 - Use `scripts/assess_live_brief_queue.py` to make the analyst-time decision explicit before handing off any live queue.
 - Keep the retrieval stack benchmarkable while swapping the dense backend from the deterministic baseline to the canonical local embedder.
@@ -201,6 +202,7 @@ written: 2026-03-25
 - Added `scripts/reconcile_canonical_store.py` plus `npm run store:reconcile-canonical` to upgrade older local SQLite files to the checked-in mechanism-first schema and backfill valid legacy `paper_extractions` into `mechanism_instances`.
 - Added `scripts/bootstrap_queryless_labels.py` plus `npm run labels:bootstrap-queryless` and `scripts/materialize_live_downstream_run.py` plus `npm run live:materialize-downstream` to create the first real live downstream run and provisional analyst-triage brief queue from the reconciled local store.
 - Added `scripts/assess_live_brief_queue.py` plus `npm run queue:assess-live` to persist an explicit analyst-readiness recommendation for a live brief queue run prefix.
+- Added `scripts/materialize_research_finding_pack.py` plus `npm run research:materialize-findings` and a research finding playbook doc so future snapshots and the final run can automatically emit `cluster-cartography`, `thesis_seed_pack`, `motif_evidence_pack`, and `measurement_spec_pack` from the same purified family surfaces.
 - Added `scripts/corpus_status.py` to report expected/downloaded/failure counts plus downloader PID and recent log context.
 - Phase 0 now has a canonical status command: `python3 scripts/corpus_status.py`.
 - Status check shows the background downloader is no longer running and stalled after 4 PDFs.
