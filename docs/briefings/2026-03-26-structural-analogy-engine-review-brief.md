@@ -191,6 +191,8 @@ Current state:
 - one 25-paper widened slice has already been ingested
 - the active ingest path now accepts `0..N` mechanism instances per paper and
   backfills older valid staging rows into the canonical mechanism store
+- a checked-in mixed-family pilot definition now exists, and the quality gate
+  reports Gate A rollout metrics on wrapper-style `mechanism_instances` outputs
 
 ## Phase 4: Normalization and Fingerprinting
 

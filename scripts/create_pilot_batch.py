@@ -51,6 +51,12 @@ def parse_args():
         help="Target number of already-downloaded PDFs to include when available.",
     )
     parser.add_argument(
+        "--min-per-literature-family",
+        type=int,
+        default=0,
+        help="Optional floor to preserve minimum representation per literature family when possible.",
+    )
+    parser.add_argument(
         "--batch-name",
         default="abstract-pilot-v1",
         help="Directory name for output artifacts.",
@@ -138,7 +144,25 @@ def fetch_candidates(
     return rows
 
 
-def stratified_sample(rows, desired_count, key_name):
+def allocate_group_floors(by_category, desired_count: int, min_per_group: int):
+    allocations = {category: 0 for category in by_category}
+    if min_per_group <= 0 or desired_count <= 0:
+        return allocations
+
+    ordered_categories = sorted(by_category)
+    allocated = 0
+    for _ in range(min_per_group):
+        for category in ordered_categories:
+            if allocated >= desired_count:
+                return allocations
+            if allocations[category] >= len(by_category[category]):
+                continue
+            allocations[category] += 1
+            allocated += 1
+    return allocations
+
+
+def stratified_sample(rows, desired_count, key_name, min_per_group=0):
     if desired_count <= 0 or not rows:
         return []
 
@@ -150,7 +174,7 @@ def stratified_sample(rows, desired_count, key_name):
         by_category.setdefault(row[key_name], []).append(row)
 
     total = len(rows)
-    allocations = {}
+    allocations = allocate_group_floors(by_category, desired_count, min_per_group)
     remainders = []
 
     for category, category_rows in by_category.items():
@@ -158,7 +182,10 @@ def stratified_sample(rows, desired_count, key_name):
         base = math.floor(exact)
         if base == 0 and exact > 0:
             base = 1
-        allocations[category] = min(base, len(category_rows))
+        allocations[category] = max(
+            allocations[category],
+            min(base, len(category_rows)),
+        )
         remainders.append((exact - math.floor(exact), category))
 
     allocated = sum(allocations.values())
@@ -203,6 +230,7 @@ def select_batch(
     exclude_evaluation_split: str | None,
     batch_size: int,
     downloaded_pdf_quota: int,
+    min_per_literature_family: int,
 ):
     downloaded_rows = fetch_candidates(
         connection=connection,
@@ -222,14 +250,24 @@ def select_batch(
     downloaded_target = min(downloaded_pdf_quota, batch_size, len(downloaded_rows))
     # @context decision -- Mixed-family pilots stratify on `literature_family` first so the
     # existing q-fin anchor corpus cannot drown adjacent-domain seeds once multiple corpora land.
-    downloaded_selected = stratified_sample(downloaded_rows, downloaded_target, "literature_family")
+    downloaded_selected = stratified_sample(
+        downloaded_rows,
+        downloaded_target,
+        "literature_family",
+        min_per_group=min_per_literature_family,
+    )
     selected_ids = {row["paper_id"] for row in downloaded_selected}
 
     remaining_needed = batch_size - len(downloaded_selected)
     remaining_pool = [
         row for row in all_rows if row["paper_id"] not in selected_ids
     ]
-    remaining_selected = stratified_sample(remaining_pool, remaining_needed, "literature_family")
+    remaining_selected = stratified_sample(
+        remaining_pool,
+        remaining_needed,
+        "literature_family",
+        min_per_group=min_per_literature_family,
+    )
 
     selected = downloaded_selected + remaining_selected
     selected = sorted(selected, key=lambda row: stable_rank(row["paper_id"]))
@@ -244,6 +282,7 @@ def write_outputs(
     excluded_evaluation_split: str | None,
     batch_size: int,
     downloaded_pdf_quota: int,
+    min_per_literature_family: int,
 ):
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -301,6 +340,7 @@ def write_outputs(
         "batch_size": len(selected_rows),
         "requested_batch_size": batch_size,
         "requested_downloaded_pdf_quota": downloaded_pdf_quota,
+        "requested_min_per_literature_family": min_per_literature_family,
         "source_corpus": source_corpus,
         "literature_families": literature_families or ["*"],
         "excluded_evaluation_split": excluded_evaluation_split,
@@ -334,6 +374,7 @@ def main():
             exclude_evaluation_split=args.exclude_evaluation_split,
             batch_size=args.batch_size,
             downloaded_pdf_quota=args.downloaded_pdf_quota,
+            min_per_literature_family=args.min_per_literature_family,
         )
     finally:
         connection.close()
@@ -346,6 +387,7 @@ def main():
         excluded_evaluation_split=args.exclude_evaluation_split,
         batch_size=args.batch_size,
         downloaded_pdf_quota=args.downloaded_pdf_quota,
+        min_per_literature_family=args.min_per_literature_family,
     )
 
     print(summary_path.read_text(encoding="utf-8").strip())

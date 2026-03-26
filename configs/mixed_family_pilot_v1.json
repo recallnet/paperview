@@ -1,0 +1,18 @@
+{
+  "batch_name": "abstract-pilot-mixed-v1",
+  "batch_size": 56,
+  "downloaded_pdf_quota": 21,
+  "exclude_evaluation_split": "holdout",
+  "literature_families": [
+    "q_fin",
+    "sports_betting_market_making",
+    "pari_mutuel_and_tournament_pricing",
+    "auction_market_design",
+    "electricity_power_markets",
+    "freight_transport_pricing",
+    "defi_amm_onchain_market_design",
+    "constrained_arbitrage_forced_flow"
+  ],
+  "min_per_literature_family": 4,
+  "source_corpus": "all"
+}

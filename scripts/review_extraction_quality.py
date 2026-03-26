@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from ingest_extraction_responses import normalize_line
 from validate_schema_examples import SchemaValidationError, load_json, validate
 
 
@@ -12,10 +13,12 @@ DEFAULT_SCHEMA_PATH = ROOT / "schemas" / "extraction.schema.json"
 
 BLOCKING_FLAGS = {
     "parse_not_ok",
+    "empty_mechanism_batch_for_market_signal",
     "generic_model_paper_fit_too_high",
     "generic_model_paper_prediction_portability_too_high",
     "generic_model_paper_novel_portability_too_high",
     "no_executor_mechanism_but_high_tradecore_fit",
+    "off_domain_paper_not_collapsed",
     "prediction_market_domain_not_supported",
     "high_fit_without_specific_why_missed",
     "placeholder_mechanism_name",
@@ -75,7 +78,24 @@ DOMAIN_KEYWORDS = {
     "prediction_markets": ["prediction market", "event market", "binary contract", "yes/no market"],
     "auction_design": ["auction", "bidding", "allocation mechanism"],
     "market_microstructure": ["order book", "bid-ask", "microstructure", "market maker"],
+    "sports_betting": ["sports betting", "sportsbook", "betting market", "odds"],
+    "pari_mutuel": ["pari-mutuel", "parimutuel", "horse racing", "tote"],
+    "electricity": ["electricity market", "power market", "grid", "balancing market"],
+    "weather": ["weather derivative", "weather market", "temperature contract"],
 }
+
+OFF_DOMAIN_TERMS = [
+    "facility location",
+    "route planning",
+    "supply chain",
+    "transportation network",
+    "medical resource",
+    "moral philosophy",
+    "moral agent",
+    "regulatory barrier",
+    "country-year",
+    "ai ethics",
+]
 
 PROMISING_BANDS = {"medium", "high"}
 SPECIFICITY_ARRAY_FIELDS = [
@@ -139,17 +159,22 @@ def has_specific_non_other(values):
     return any(str(value).strip().lower() not in {"", "other"} for value in values)
 
 
-def assess_row(row, schema):
-    extraction = dict(row.get("extraction") or {})
-    if "paper_id" not in extraction and "paper_id" in row:
-        extraction["paper_id"] = row["paper_id"]
+def build_abstract_like(row):
+    request_payload = row.get("request_payload") or {}
+    if not isinstance(request_payload, dict):
+        request_payload = {}
+    return (
+        f"{row.get('prompt', '')}\n"
+        f"{row.get('raw_text', '')}\n"
+        f"{request_payload.get('title', '')}\n"
+        f"{request_payload.get('abstract', '')}\n"
+        f"{request_payload.get('literature_family', '')}\n"
+        f"{request_payload.get('primary_category', '')}"
+    ).lower()
 
-    abstract_like = f"{row.get('prompt', '')}\n{row.get('raw_text', '')}".lower()
+
+def assess_extraction(extraction, abstract_like: str, schema):
     flags = []
-
-    if row.get("parse_status") != "ok":
-        flags.append("parse_not_ok")
-        return flags
 
     try:
         validate(schema, extraction)
@@ -204,6 +229,76 @@ def assess_row(row, schema):
     return flags
 
 
+def has_market_signal(text: str):
+    if contains_any(text, TRADECORE_MECHANISM_TERMS):
+        return True
+    for needles in DOMAIN_KEYWORDS.values():
+        if contains_any(text, needles):
+            return True
+    return False
+
+
+def assess_row(row, schema):
+    abstract_like = build_abstract_like(row)
+    if row.get("parse_status") != "ok":
+        return {
+            "paper_id": row.get("paper_id"),
+            "mechanism_count": 0,
+            "flags": ["parse_not_ok"],
+            "mechanism_reviews": [],
+        }
+
+    try:
+        normalized_payload = normalize_line(row)
+    except (SchemaValidationError, KeyError) as exc:
+        return {
+            "paper_id": row.get("paper_id"),
+            "mechanism_count": 0,
+            "flags": [compact_schema_error(str(exc))],
+            "mechanism_reviews": [],
+        }
+
+    paper_flags = []
+    if not normalized_payload["mechanism_instances"] and has_market_signal(abstract_like):
+        # @context decision -- C06 allows `0..N` mechanism instances per paper, but an empty batch is
+        # only acceptable when the abstract truly lacks transferable mechanism cues. Otherwise the
+        # mixed-family runtime can hide retrieval-relevant mechanisms by collapsing them to nothing.
+        paper_flags.append("empty_mechanism_batch_for_market_signal")
+
+    mechanism_reviews = []
+    for extraction in normalized_payload["mechanism_instances"]:
+        flags = assess_extraction(extraction, abstract_like, schema)
+        if contains_any(abstract_like, OFF_DOMAIN_TERMS) and (
+            extraction.get("tradecore_fit") in PROMISING_BANDS
+            or extraction.get("prediction_market_portability") in PROMISING_BANDS
+            or extraction.get("novel_market_portability") in PROMISING_BANDS
+        ):
+            flags.append("off_domain_paper_not_collapsed")
+
+        mechanism_reviews.append(
+            {
+                "paper_id": extraction.get("paper_id"),
+                "mechanism_name": extraction.get("mechanism_name"),
+                "flags": flags,
+                "blocking_flags": classify_flags(flags)[0],
+                "warning_flags": classify_flags(flags)[1],
+                "gate_status": (
+                    "blocking"
+                    if classify_flags(flags)[0]
+                    else ("warning" if classify_flags(flags)[1] else "pass")
+                ),
+                "extraction": extraction,
+            }
+        )
+
+    return {
+        "paper_id": normalized_payload["paper_id"],
+        "mechanism_count": len(normalized_payload["mechanism_instances"]),
+        "flags": paper_flags,
+        "mechanism_reviews": mechanism_reviews,
+    }
+
+
 def classify_flags(flags):
     blocking = []
     warnings = []
@@ -228,32 +323,98 @@ def build_report(rows, schema):
     flagged = 0
     blocking_items = 0
     warning_items = 0
+    mechanism_count = 0
+    accepted_mechanism_count = 0
+    accepted_with_evidence_and_blockers = 0
+    unsupported_enum_count = 0
+    ambiguous_normalization_count = 0
     for row in rows:
-        flags = assess_row(row, schema)
-        blocking_flags, warning_flags = classify_flags(flags)
+        assessment = assess_row(row, schema)
+        blocking_flags, warning_flags = classify_flags(assessment["flags"])
+        mechanism_has_blocking = any(
+            review["blocking_flags"] for review in assessment["mechanism_reviews"]
+        )
+        mechanism_has_warning = any(
+            review["warning_flags"] for review in assessment["mechanism_reviews"]
+        )
+        mechanism_count += assessment["mechanism_count"]
+        for mechanism_review in assessment["mechanism_reviews"]:
+            if any(
+                flag.startswith("schema_invalid:") and "invalid enum value" in flag
+                for flag in mechanism_review["flags"]
+            ):
+                unsupported_enum_count += 1
+            if any(
+                flag.startswith("domain_not_supported:")
+                for flag in mechanism_review["flags"]
+            ):
+                ambiguous_normalization_count += 1
+            if not mechanism_review["blocking_flags"] and not mechanism_review["warning_flags"]:
+                accepted_mechanism_count += 1
+                accepted_with_evidence_and_blockers += 1 if any(
+                    has_specific_non_other(
+                        mechanism_review["extraction"].get(field)
+                    )
+                    for field in SPECIFICITY_ARRAY_FIELDS
+                ) else 0
         payload = {
-            "paper_id": row.get("paper_id"),
+            "paper_id": assessment["paper_id"],
             "parse_status": row.get("parse_status"),
-            "flags": flags,
+            "flags": assessment["flags"],
             "blocking_flags": blocking_flags,
             "warning_flags": warning_flags,
-            "gate_status": "blocking" if blocking_flags else ("warning" if warning_flags else "pass"),
-            "extraction": row.get("extraction"),
+            "gate_status": (
+                "blocking"
+                if blocking_flags or mechanism_has_blocking
+                else (
+                    "warning"
+                    if warning_flags or mechanism_has_warning
+                    else "pass"
+                )
+            ),
+            "mechanism_count": assessment["mechanism_count"],
+            "mechanism_reviews": assessment["mechanism_reviews"],
         }
-        if flags:
+        if assessment["flags"] or any(
+            review["flags"] for review in assessment["mechanism_reviews"]
+        ):
             flagged += 1
-        if blocking_flags:
+        if blocking_flags or mechanism_has_blocking:
             blocking_items += 1
-        elif warning_flags:
+        elif warning_flags or mechanism_has_warning:
             warning_items += 1
         reviewed.append(payload)
 
     return {
         "reviewed_count": len(reviewed),
+        "mechanism_count": mechanism_count,
         "flagged_count": flagged,
         "flagged_ratio": (flagged / len(reviewed)) if reviewed else 0.0,
         "blocking_count": blocking_items,
         "warning_count": warning_items,
+        "accepted_mechanism_count": accepted_mechanism_count,
+        "semantic_pass_rate": (
+            accepted_mechanism_count / mechanism_count
+            if mechanism_count
+            else 1.0
+        ),
+        "unsupported_enum_count": unsupported_enum_count,
+        "unsupported_enum_ratio": (
+            unsupported_enum_count / mechanism_count
+            if mechanism_count
+            else 0.0
+        ),
+        "ambiguous_normalization_count": ambiguous_normalization_count,
+        "ambiguous_normalization_ratio": (
+            ambiguous_normalization_count / mechanism_count
+            if mechanism_count
+            else 0.0
+        ),
+        "accepted_with_evidence_and_blockers_ratio": (
+            accepted_with_evidence_and_blockers / accepted_mechanism_count
+            if accepted_mechanism_count
+            else 1.0
+        ),
         "gate_status": "blocking" if blocking_items else ("warning" if warning_items else "pass"),
         "items": reviewed,
     }

@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C06-mixed-family-abstract-extraction-stability`
+- Current commit focus: `C07-section-aware-text-preparation`
 - Last updated: `2026-03-26`
 
 ---
@@ -182,7 +182,7 @@ This commit plan implements that order in concrete units.
 | `C03` | `completed` | Seed adjacent literatures and holdout slices | `C01` |
 | `C04` | `completed` | Build discovery benchmark and retrieval acceptance thresholds | `C02`, `C03` |
 | `C05` | `completed` | Refactor local store and extraction pipeline around mechanism instances | `C01`, `C02` |
-| `C06` | `pending` | Stabilize abstract extraction on mixed-family mechanism outputs | `C03`, `C05` |
+| `C06` | `completed` | Stabilize abstract extraction on mixed-family mechanism outputs | `C03`, `C05` |
 | `C07` | `pending` | Add section-aware text prep and evidence spans | `C05` |
 | `C08` | `pending` | Implement normalization and structural fingerprinting | `C05`, `C06`, `C07` |
 | `C09` | `pending` | Add exposure scoring and transfer manifold bootstrap | `C03`, `C08` |
@@ -446,7 +446,7 @@ This commit plan implements that order in concrete units.
 
 ## C06: Mixed-Family Abstract Extraction Stability
 
-- Status: `pending`
+- Status: `completed`
 - Scope: get abstract extraction stable on mechanism instances across adjacent literatures
 - Depends on: `C03`, `C05`
 
@@ -466,20 +466,26 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C06`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - added a checked-in mixed-family pilot definition plus `scripts/materialize_mixed_family_pilot.py` so active-family batches can be rebuilt with a minimum per-family floor
+  - updated run preparation and local MLX output handling so mixed-family runs carry `literature_family` context and preserve the `mechanism-instance-batch-v1` paper-level wrapper
+  - updated the reviewer and gate summary to score wrapper-style outputs, block empty batches on mechanism-like abstracts, and report Gate A rollout metrics
+  - verified a temp mixed-family smoke slice with one row per requested family, `semantic_pass_rate = 1.0`, `unsupported_enum_ratio = 0.0`, `accepted_with_evidence_and_blockers_ratio = 1.0`, and canonical ingest into `mechanism_instances`
 - Completion notes:
+  - mixed-family pilots now have a checked-in config with per-family coverage floors rather than relying on ad hoc CLI flags
+  - `prompts/abstract-extraction-v26.md` now returns `0..N` mechanism instances per paper through the canonical wrapper contract
+  - off-domain freight/logistics-style abstracts can collapse to an empty mechanism batch, while mechanism-like abstracts are blocked if they collapse to nothing
+  - the repo now has explicit Gate A metrics on mixed-family wrapper outputs instead of only raw blocking/warning counts
 
 ### Upstream Impact Notes
 
-- Inherits `C02`: prompt/runtime work must emit the mandatory insight-type and blocker fields cleanly enough to satisfy Gate A and the blocker-context reviewer.
-- Inherits `C03`: mixed-family prompt stabilization should pull from active adjacent families while preserving the reserved holdout split.
-- Inherits `C04`: quality work should avoid tuning directly on the adjudicated holdout far-analog pairs that now define retrieval acceptance.
-- Inherits `C05`: the runtime should emit the paper-level `mechanism_instances` batch contract directly and treat legacy single-record rows only as backward-compatible fallback input.
+- Completed in `C06`: mixed-family pilot materialization, wrapper-style prompt/runtime output, and Gate A metrics now exist as checked-in repo workflows.
+- Completed in `C06`: the reviewer now treats empty `mechanism_instances` batches as acceptable only for genuinely non-mechanistic abstracts, not as a silent fallback for mechanism-like papers.
 
 ## C07: Section-Aware Text Preparation
 
@@ -511,6 +517,7 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Inherits `C05`: abstract-backed evidence spans already exist, so section-aware parsing should upgrade canonical span provenance rather than inventing a second evidence table.
+- Inherits `C06`: section parsing should preserve the mixed-family wrapper contract and only replace abstract-backed evidence when section-level support is actually stronger.
 
 ## C08: Normalization And Structural Fingerprinting
 
@@ -551,6 +558,7 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Inherits `C05`: normalization should read canonical mechanism rows plus `mechanism_json` / `evidence_confidence` rather than reparsing `paper_extractions`.
+- Inherits `C06`: normalization should expect true zero-mechanism papers in mixed-family runs and should not backfill phantom mechanism rows just to satisfy downstream shape assumptions.
 
 ## C09: Exposure Scoring And Transfer Manifold Bootstrap
 
@@ -583,6 +591,7 @@ This commit plan implements that order in concrete units.
 
 - Add notes here when earlier commits change domain families, labeling, or feature availability.
 - Inherits `C03`: exposure features should include `literature_family` and holdout-aware corpus membership rather than only source-corpus labels.
+- Inherits `C06`: exposure work should use the checked-in mixed-family pilot and Gate A metrics as its first non-q-fin calibration slice.
 
 ## C10: Multi-View Retrieval Stack
 
@@ -618,6 +627,8 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Inherits `C05`: sparse and dense retrieval should target canonical mechanism summaries and evidence spans, while respecting that benchmark bridges remain null when a paper maps to multiple active mechanisms.
+- Inherits `C06`: retrieval indexing should assume wrapper-style mixed-family runs may legitimately contain zero-mechanism papers and should index only accepted mechanism instances, not the empty wrapper rows.
+- Inherits `C06`: with accepted mixed-family mechanism rows remaining in SQLite and `sqlite-vec` now available locally, the first vector retrieval surface should stay SQLite-native unless a later capability gap proves otherwise.
 
 ## C11: Queryless Mining And Local Reranking
 

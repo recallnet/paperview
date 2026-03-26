@@ -89,9 +89,11 @@ def load_batch(batch_path: Path, max_requests=None):
     return rows
 
 
-def build_prompt(prompt_template: str, row):
-    payload = {
+def build_request_payload(row):
+    return {
         "paper_id": row["paper_id"],
+        "literature_family": row.get("literature_family", "unknown"),
+        "evaluation_split": row.get("evaluation_split", "unknown"),
         "title": row["title"],
         "primary_category": row["primary_category"],
         "published_at": row["published_at"],
@@ -99,6 +101,10 @@ def build_prompt(prompt_template: str, row):
         "ingest_status": row["ingest_status"],
         "abstract": row["abstract"],
     }
+
+
+def build_prompt(prompt_template: str, row):
+    payload = build_request_payload(row)
     return textwrap.dedent(
         f"""{prompt_template}
 
@@ -185,6 +191,8 @@ def main():
                 "prompt_version": args.prompt_version,
                 "model_name": args.model_name,
                 "request_kind": "abstract_extraction",
+                "response_contract_version": "mechanism-instance-batch-v1",
+                "request_payload": build_request_payload(row),
                 "prompt": build_prompt(prompt_template, row),
             }
         )

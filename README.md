@@ -16,6 +16,9 @@ unit for the structural analogy engine.
 - The active extraction contract now requires `insight_type` plus explicit
   fragility, capacity, failure-regime, and negative-transfer fields so
   promising candidates stay falsifiable.
+- Mixed-family pilots now have a checked-in config plus materializer, and the
+  mixed-family runtime can emit paper-level `mechanism_instances` wrappers
+  instead of only legacy single-record outputs.
 - The adjacent-literature seeding surface now lives in checked-in registries
   under `configs/`, with explicit active-family versus holdout split policy.
 - The discovery benchmark is now defined in a checked-in adjudicated pair set
@@ -213,13 +216,14 @@ npm run pilot:create
 Build a mixed-family pilot while excluding holdout rows:
 
 ```bash
-python3 scripts/create_pilot_batch.py \
-  --db-path data/structural-analogy/paperview.sqlite3 \
-  --source-corpus all \
-  --literature-families q_fin,defi_amm_onchain_market_design,electricity_power_markets \
-  --exclude-evaluation-split holdout \
-  --batch-name abstract-pilot-mixed-v1
+python3 scripts/materialize_mixed_family_pilot.py \
+  --db-path data/structural-analogy/paperview.sqlite3
 ```
+
+The checked-in mixed-family pilot definition lives in
+`configs/mixed_family_pilot_v1.json`. It excludes the reserved holdout split
+and enforces a minimum per-family floor so adjacent literatures cannot vanish
+behind the much larger q-fin pool.
 
 Prepare an abstract-only extraction run from that pilot batch:
 
@@ -280,6 +284,10 @@ paper case in targeted smoke-test form by producing a concrete title-derived
 mechanism name. The first full v18 `50`-paper verification rerun is also a
 real improvement over v14: it is down to `2` blocking rows and `1` warning.
 
+For mixed-family mechanism-batch runs, use `prompts/abstract-extraction-v26.md`.
+That prompt returns the paper-level `mechanism-instance-batch-v1` wrapper with
+`0..N` mechanism instances per paper instead of the older single-record output.
+
 Ingest validated extraction responses back into SQLite:
 
 ```bash
@@ -295,6 +303,11 @@ mechanism-first store becomes the real downstream surface.
 The ingest path now accepts either the older single-record response format or a
 paper-level wrapper with `mechanism_instances`, so one paper can yield `0..N`
 canonical mechanism rows without changing the gate-and-ingest workflow.
+
+The quality report now also emits Gate A rollout metrics such as
+`semantic_pass_rate`, `unsupported_enum_ratio`,
+`ambiguous_normalization_ratio`, and
+`accepted_with_evidence_and_blockers_ratio`.
 
 The validated extraction payload now requires:
 
@@ -382,13 +395,15 @@ The checked-in benchmark thresholds live in
 - `scripts/init_local_store.py` is the canonical way to initialize the local SQLite store at `data/structural-analogy/paperview.sqlite3`.
 - `scripts/load_metadata_store.py` is the canonical way to populate the SQLite `papers` table from harvested metadata and current local PDF state.
 - `scripts/create_pilot_batch.py` is the canonical way to materialize a deterministic pilot batch under `data/structural-analogy/pilots/`.
+- `scripts/materialize_mixed_family_pilot.py` is the canonical way to materialize the checked-in cross-domain pilot defined in `configs/mixed_family_pilot_v1.json`.
 - `scripts/create_extraction_run.py` is the canonical way to register an abstract-extraction run in SQLite and export prompt-ready requests under `data/structural-analogy/runs/`.
-  Use `--max-requests` to regenerate capped benchmark slices from the actual prompt file; do not clone older `requests.jsonl` files forward when comparing prompt versions. The stored run config now records the `mechanism-instance-batch-v1` response contract so later runtimes can emit `0..N` mechanism instances per paper explicitly.
-- `scripts/run_local_mlx_extraction.py` is the first local execution backend for prepared abstract-extraction runs on Apple Silicon via `mlx-lm`.
+  Use `--max-requests` to regenerate capped benchmark slices from the actual prompt file; do not clone older `requests.jsonl` files forward when comparing prompt versions. The stored run config now records the `mechanism-instance-batch-v1` response contract and includes the paper’s `literature_family` / `evaluation_split` context for mixed-family prompt work.
+- `scripts/run_local_mlx_extraction.py` is the first local execution backend for prepared abstract-extraction runs on Apple Silicon via `mlx-lm`. It now preserves paper-level wrapper outputs when the model returns `mechanism_instances`.
 - `scripts/ingest_extraction_responses.py` is the canonical way to validate model outputs against the extraction schema, keep a per-paper staging snapshot in `paper_extractions`, and promote accepted rows into `mechanism_instances` plus `mechanism_evidence_spans`.
 - `scripts/review_extraction_quality.py` is the canonical pre-scale quality gate for semantically wrong but schema-valid outputs.
-  It now classifies findings into `blocking` vs `warning` and can exit non-zero on blocking results.
+  It now classifies findings into `blocking` vs `warning`, understands paper-level `mechanism_instances` wrappers, and reports Gate A rollout metrics for mixed-family slices.
 - `scripts/review_and_ingest_extractions.py` is the canonical policy command when a run should only ingest after passing the quality gate.
+- `prompts/abstract-extraction-v26.md` is the current mixed-family mechanism-batch prompt surface.
 - `scripts/promote_paper_extractions.py` is the canonical backfill path when an older SQLite file still has valid staging rows that predate the C05 mechanism-store promotion.
 - `prompts/abstract-extraction-v10.md` is the current active widened-slice prompt iteration.
 - `prompts/abstract-extraction-v8.md` is the previous strongest batch-stable widened prompt baseline.
