@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C10-multi-view-retrieval-stack`
+- Current commit focus: `C11-queryless-mining-and-local-reranking`
 - Last updated: `2026-03-26`
 
 ---
@@ -74,8 +74,9 @@ The current bottleneck is also clear:
 
 - abstract extraction quality is stable enough to support downstream retrieval work
 - exposure scoring and follow-up priors now exist at the mechanism level
-- but retrieval, analyst feedback, and final candidate assembly are still not built
-- embeddings and vector indexing are now the next capability surface, not schema, storage, or scoring bootstrap
+- a benchmarkable multi-view retrieval stack now exists across structured, sparse, dense, and graph views
+- but queryless mining, analyst feedback, and final candidate assembly are still not built
+- the next capability surface is candidate discovery and reranking on top of the persisted retrieval views
 - the system now has most of the local infrastructure it needs, but the retrieval and ranking layers still need to be implemented and benchmarked
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
@@ -232,7 +233,7 @@ This commit plan implements that order in concrete units.
 | `C07` | `completed` | Add section-aware text prep and evidence spans | `C05` |
 | `C08` | `completed` | Implement normalization and structural fingerprinting | `C05`, `C06`, `C07` |
 | `C09` | `completed` | Add exposure scoring and transfer manifold bootstrap | `C03`, `C08` |
-| `C10` | `pending` | Build multi-view retrieval stack | `C04`, `C08`, `C09` |
+| `C10` | `completed` | Build multi-view retrieval stack | `C04`, `C08`, `C09` |
 | `C11` | `pending` | Add queryless mining jobs and local reranking | `C10` |
 | `C12` | `pending` | Add analyst adjudication loop and weight update path | `C04`, `C09`, `C11` |
 | `C13` | `pending` | Add hard-gated candidate ranking and family assembly | `C08`, `C09`, `C11`, `C12` |
@@ -663,7 +664,7 @@ This commit plan implements that order in concrete units.
 
 ## C10: Multi-View Retrieval Stack
 
-- Status: `pending`
+- Status: `completed`
 - Scope: replace single-surface retrieval with structured + sparse + dense + graph retrieval
 - Depends on: `C04`, `C08`, `C09`
 
@@ -684,13 +685,18 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
-- Reviewer:
-- Verification:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in git history for this commit`
+- Operator: `Codex`
+- Reviewer: `not reviewed`
+- Verification: `python3 -m py_compile scripts/build_retrieval_stack.py scripts/benchmark_retrieval_stack.py`; `npm run codecontext:py -- scripts/build_retrieval_stack.py`; `npm run codecontext:py -- scripts/benchmark_retrieval_stack.py`; temp-store runs of `python3 scripts/build_retrieval_stack.py --db-path /tmp/paperview-c10-test.sqlite3 --run-id c10-build-test` and `python3 scripts/benchmark_retrieval_stack.py --db-path /tmp/paperview-c10-test.sqlite3 --retrieval-run-id c10-build-test --run-id c10-benchmark-test`
 - Completion notes:
+  - added `scripts/build_retrieval_stack.py` plus `npm run retrieve:build`
+  - added `scripts/benchmark_retrieval_stack.py` plus `npm run retrieve:benchmark`
+  - persisted canonical retrieval documents, dense embeddings, graph edges, and per-view benchmark results in SQLite
+  - implemented separate structured, sparse, dense, graph, citation-baseline, and hybrid retrieval views over canonical mechanism-level artifacts
+  - benchmark summaries now materialize Gate B-style comparison metrics from `benchmark_pairs`
 
 ### Upstream Impact Notes
 
@@ -702,6 +708,7 @@ This commit plan implements that order in concrete units.
 - Inherits completed `C09`: retrieval should join `mechanism_exposure_scores` directly and treat `underexploited_score` / `worth_followup_score` as first-class reranking priors rather than recomputing exposure heuristics in the query layer.
 - Inherits current local toolchain state: `sqlite-vec` and its Python binding are already installed, while MLX and `sentence-transformers` should be treated as the primary and fallback local embedding paths respectively.
 - Inherits the canonical vector strategy: the production ANN index should start with `Qwen/Qwen3-Embedding-0.6B` at `512` dimensions, while `BAAI/bge-m3` stays a separate exploratory index and `Alibaba-NLP/gte-Qwen2-7B-instruct` stays a reranking-only surface.
+- Completed in `C10`: the first shipped dense baseline is deterministic hashing so the retrieval contract is benchmarkable even before the canonical local embedder is wired in; later work should swap the backend, not redesign the retrieval tables or benchmark loop.
 
 ## C11: Queryless Mining And Local Reranking
 
@@ -744,6 +751,7 @@ This commit plan implements that order in concrete units.
 - Inherits `C07`: queryless mining should be able to inspect section-backed evidence snippets and section labels, not only mechanism summaries.
 - Inherits completed `C09`: mining jobs should use `underexploited_score` to prioritize rare/high-fit mechanisms before adding heavier reranking passes.
 - Inherits the canonical vector strategy: queryless mining should compare candidates within one production vector space at a time, while any `bge-m3` exploratory mining or `gte-Qwen2-7B-instruct` reranking should be logged as separate phases rather than blended scores.
+- Inherits completed `C10`: queryless mining should read persisted `mechanism_retrieval_documents`, `mechanism_dense_embeddings`, and `mechanism_graph_edges` instead of rebuilding candidate corpora inline.
 
 ## C12: Analyst Adjudication And Weight Update
 
@@ -783,6 +791,7 @@ This commit plan implements that order in concrete units.
 - Add notes here when earlier commits change candidate contracts or feature semantics.
 - Inherits `C08`: family assembly and hard gating should cluster on canonical mechanism-level fingerprints and can down-rank families that rely heavily on queued normalization ambiguities.
 - Inherits completed `C09`: analyst feedback should attach to persisted mechanism-level feature rows in `mechanism_exposure_scores` so weight updates do not have to reconstruct the bootstrap feature set from raw JSON.
+- Inherits completed `C10`: analyst adjudication should store view-aware evidence against persisted retrieval ranks and candidate lists from `retrieval_benchmark_results`, not only against manually assembled examples.
 
 ## C13: Hard-Gated Candidate Ranking And Family Assembly
 
@@ -821,6 +830,7 @@ This commit plan implements that order in concrete units.
 
 - Inherits `C02`: the hard-gate layer should use the canonical blocker fields directly rather than reconstructing fragility or anti-transfer heuristics downstream.
 - Inherits completed `C09`: ranking should consume persisted `exposure_score`, `underexploited_score`, and `worth_followup_score` as canonical priors before adding family-level aggregation.
+- Inherits completed `C10`: candidate family assembly should start from persisted hybrid retrieval neighborhoods and benchmarked retrieval views, not from a single dense nearest-neighbor list.
 
 ## C14: Strategy Briefs And Minimal Test Plans
 

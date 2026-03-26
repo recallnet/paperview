@@ -244,10 +244,14 @@ Exit condition:
 - the system can retrieve non-obvious but structurally relevant papers
 
 Current state:
-- retrieval not started yet, but the upstream scoring surface now exists
-- `mechanism_exposure_scores` can already persist mechanism-level exposure,
-  underexploited, and bootstrap follow-up priors for later retrieval and
-  ranking layers
+- in progress
+- the repo now persists `mechanism_retrieval_documents`,
+  `mechanism_dense_embeddings`, `mechanism_graph_edges`, and
+  `retrieval_benchmark_results`
+- separate structured, sparse, dense, graph, citation-baseline, and hybrid
+  views can now be benchmarked against the checked-in discovery benchmark
+- the first shipped dense baseline is deterministic so the retrieval contract
+  is runnable before the canonical local embedder is wired in
 
 ## Phase 6: Scoring and Review Queue
 
@@ -298,7 +302,8 @@ The intended stack is deliberately local-first and lightweight.
 - `SQLite`
   - canonical local write store for v1
   - tables for papers, sections, extractions, fingerprints, exposure scores,
-    embeddings, edges, and candidates
+    retrieval documents, mechanism embeddings, graph edges, benchmark results,
+    and candidates
 - `JSONL`
   - run artifacts
   - request/response files

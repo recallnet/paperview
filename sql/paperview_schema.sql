@@ -275,6 +275,90 @@ CREATE TABLE IF NOT EXISTS mechanism_exposure_scores (
   UNIQUE (mechanism_instance_id, run_id, score_version)
 );
 
+-- @context decision: C10 persists retrieval-ready text surfaces separately from
+-- raw extractions so structured, sparse, dense, and graph views can share one
+-- canonical mechanism-level corpus without each view rebuilding ad hoc text.
+CREATE TABLE IF NOT EXISTS mechanism_retrieval_documents (
+  retrieval_document_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mechanism_instance_id INTEGER NOT NULL,
+  paper_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  retrieval_version TEXT NOT NULL,
+  mechanism_summary_text TEXT NOT NULL,
+  causal_chain_text TEXT NOT NULL,
+  transfer_rationale_text TEXT NOT NULL,
+  fingerprint_text TEXT NOT NULL,
+  sparse_document_text TEXT NOT NULL,
+  evidence_text TEXT NOT NULL,
+  source_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (mechanism_instance_id, run_id, retrieval_version)
+);
+
+CREATE TABLE IF NOT EXISTS mechanism_dense_embeddings (
+  mechanism_dense_embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mechanism_instance_id INTEGER NOT NULL,
+  paper_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  retrieval_version TEXT NOT NULL,
+  embedding_backend TEXT NOT NULL,
+  model_name TEXT NOT NULL,
+  embedding_surface TEXT NOT NULL,
+  embedding_dim INTEGER NOT NULL,
+  vector_json TEXT NOT NULL,
+  source_text_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (mechanism_instance_id, run_id, retrieval_version, embedding_surface, model_name)
+);
+
+CREATE TABLE IF NOT EXISTS mechanism_graph_edges (
+  mechanism_graph_edge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_mechanism_instance_id INTEGER NOT NULL,
+  target_mechanism_instance_id INTEGER NOT NULL,
+  run_id TEXT NOT NULL,
+  retrieval_version TEXT NOT NULL,
+  edge_kind TEXT NOT NULL,
+  edge_weight REAL NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (source_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (target_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (source_mechanism_instance_id, target_mechanism_instance_id, run_id, retrieval_version, edge_kind)
+);
+
+CREATE TABLE IF NOT EXISTS retrieval_benchmark_results (
+  retrieval_benchmark_result_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  benchmark_pair_id INTEGER NOT NULL,
+  source_mechanism_instance_id INTEGER NOT NULL,
+  candidate_mechanism_instance_id INTEGER NOT NULL,
+  run_id TEXT NOT NULL,
+  retrieval_version TEXT NOT NULL,
+  view_name TEXT NOT NULL,
+  candidate_rank INTEGER,
+  reciprocal_rank REAL NOT NULL,
+  hit_at_5 INTEGER NOT NULL DEFAULT 0,
+  hit_at_20 INTEGER NOT NULL DEFAULT 0,
+  top_candidate_ids_json TEXT NOT NULL DEFAULT '[]',
+  metrics_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (benchmark_pair_id) REFERENCES benchmark_pairs(benchmark_pair_id) ON DELETE CASCADE,
+  FOREIGN KEY (source_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (candidate_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (benchmark_pair_id, run_id, retrieval_version, view_name)
+);
+
 CREATE TABLE IF NOT EXISTS paper_embeddings (
   embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
   paper_id TEXT NOT NULL,
@@ -374,6 +458,18 @@ ON mechanism_exposure_scores (mechanism_instance_id);
 
 CREATE INDEX IF NOT EXISTS idx_mechanism_exposure_scores_run_id
 ON mechanism_exposure_scores (run_id);
+
+CREATE INDEX IF NOT EXISTS idx_mechanism_retrieval_documents_mechanism_instance_id
+ON mechanism_retrieval_documents (mechanism_instance_id);
+
+CREATE INDEX IF NOT EXISTS idx_mechanism_dense_embeddings_mechanism_surface
+ON mechanism_dense_embeddings (mechanism_instance_id, embedding_surface);
+
+CREATE INDEX IF NOT EXISTS idx_mechanism_graph_edges_source_target
+ON mechanism_graph_edges (source_mechanism_instance_id, target_mechanism_instance_id);
+
+CREATE INDEX IF NOT EXISTS idx_retrieval_benchmark_results_pair_view
+ON retrieval_benchmark_results (benchmark_pair_id, view_name);
 
 CREATE INDEX IF NOT EXISTS idx_paper_embeddings_paper_id
 ON paper_embeddings (paper_id);
