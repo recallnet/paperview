@@ -18,15 +18,15 @@ written: 2026-03-25
 ## Status
 
 - Overall status: `active`
-- Current phase: `phase-5.5-analyst-adjudication-and-weight-update`
+- Current phase: `phase-6-candidate-family-ranking`
 - Owner: `unassigned`
 - Last updated: `2026-03-26`
 - Working mode: `local-first`
 
 ## Current Focus
 
-- Use persisted `queryless_candidate_hits` as the analyst-facing candidate queue rather than reconstructing pairs from retrieval-only tables.
-- Add the first analyst adjudication and weight-update loop on top of C11 reranker outputs.
+- Use `adjudicated_queryless_hits` as the analyst-informed candidate queue rather than raw C11 mining ranks.
+- Build the first hard-gated candidate ranking and family assembly pass on top of persisted analyst weight updates.
 - Keep the retrieval stack benchmarkable while swapping the dense backend from the deterministic baseline to the canonical local embedder.
 - Finish the `q-fin` PDF pull and verify corpus completeness.
 - Use repo-native launch/status commands for the corpus pull rather than ad hoc shell commands.
@@ -93,8 +93,8 @@ written: 2026-03-25
 | Fingerprint ontology | `in_progress` | The active fingerprint contract now maps accepted mechanism instances into mechanism-level normalized facets plus deterministic `fingerprint_text`, and ambiguous mappings are queued in `normalization_reviews`; broader retrieval-side calibration remains open. |
 | Discovery benchmark | `in_progress` | A checked-in retrieval benchmark definition now exists with adjudicated lexical/structural buckets, explicit baselines, materialization into `benchmark_pairs`, and view-level metrics in `retrieval_benchmark_results`; analyst acceptance labels are still needed to close Gate B fully. |
 | Embeddings + graph | `in_progress` | `scripts/build_retrieval_stack.py` now persists canonical `mechanism_retrieval_documents`, dense embeddings across the four C10 surfaces, and mechanism-level graph edges; the current dense backend is deterministic hashing and should later be swapped to the canonical local embedder without changing the retrieval contract. |
-| Candidate scoring | `in_progress` | `scripts/score_mechanism_exposure.py` now persists `mechanism_exposure_scores` with mechanism-level `exposure_score`, `underexploited_score`, and bootstrap `worth_followup_score` rows derived from fingerprints, family metadata, benchmark-linked mechanism ids, and any future analyst labels. |
-| Human review queue | `in_progress` | `scripts/mine_queryless_candidates.py` now persists ranked `queryless_candidate_hits` across six zero-query discovery modes with explicit structural, lexical-distance, transfer-plausibility, and blocker-burden sub-scores plus rationale payloads for later analyst adjudication. |
+| Candidate scoring | `in_progress` | `scripts/score_mechanism_exposure.py` now persists `mechanism_exposure_scores` with mechanism-level `exposure_score`, `underexploited_score`, and bootstrap `worth_followup_score` rows derived from fingerprints, family metadata, benchmark-linked mechanism ids, and analyst labels; C12 now refreshes those scores after adjudication rather than leaving the bootstrap priors static. |
+| Human review queue | `in_progress` | `scripts/mine_queryless_candidates.py` persists raw `queryless_candidate_hits`, and `scripts/run_analyst_adjudication.py` now writes `analyst_labels`, `analyst_weight_updates`, and `adjudicated_queryless_hits` so the review queue can move from mined candidates to analyst-informed ranks. |
 
 ## Open Questions
 
@@ -187,6 +187,7 @@ written: 2026-03-25
 - Added `scripts/build_retrieval_stack.py` plus `npm run retrieve:build` to persist canonical retrieval documents, dense vectors, and mechanism-level graph edges from the mechanism store.
 - Added `scripts/benchmark_retrieval_stack.py` plus `npm run retrieve:benchmark` to score the separate retrieval views against `benchmark_pairs` and materialize Gate B-style comparison metrics.
 - Added `scripts/mine_queryless_candidates.py` plus `npm run mine:queryless` to persist ranked `queryless_candidate_hits` across six zero-query mining modes with explicit reranker sub-scores and rationale payloads.
+- Added `scripts/run_analyst_adjudication.py` plus `npm run adjudicate:analyst` to persist analyst adjudications, learn mode-wise reranker weights, refresh exposure priors from those labels, and materialize `adjudicated_queryless_hits`.
 - Added `scripts/corpus_status.py` to report expected/downloaded/failure counts plus downloader PID and recent log context.
 - Phase 0 now has a canonical status command: `python3 scripts/corpus_status.py`.
 - Status check shows the background downloader is no longer running and stalled after 4 PDFs.
@@ -1080,10 +1081,10 @@ Mitigations:
 
 ## Immediate Next Steps
 
-1. Build the first `C12` analyst adjudication loop on top of persisted `queryless_candidate_hits`.
-2. Attach accept / reject, non-obviousness, and strategy-brief-worthiness labels directly to the C11 mining queue and feed them into weight updates.
+1. Build the first `C13` hard-gated ranking pass on top of `adjudicated_queryless_hits` and `analyst_weight_updates`.
+2. Turn adjudicated hits into reusable `candidate_families` and `transfer_hypotheses` instead of leaving them as flat pairwise queue rows.
 3. Swap the dense retrieval backend from the deterministic baseline to the canonical local embedder without changing the retrieval storage contract.
-4. Use analyst labels plus benchmarked retrieval views to tune mining-mode weights rather than recomputing candidate features inline.
+4. Use analyst-informed reranks plus refreshed `mechanism_exposure_scores` as priors for family ranking rather than recomputing candidate features inline.
 5. Evaluate discovery quality on:
    - nearest fit
    - far analog

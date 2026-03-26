@@ -149,6 +149,7 @@ CREATE TABLE IF NOT EXISTS analyst_labels (
   mechanism_instance_id INTEGER,
   candidate_family_id INTEGER,
   benchmark_pair_id INTEGER,
+  queryless_candidate_hit_id INTEGER,
   label_kind TEXT NOT NULL,
   label_value TEXT NOT NULL,
   notes TEXT,
@@ -156,7 +157,8 @@ CREATE TABLE IF NOT EXISTS analyst_labels (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
   FOREIGN KEY (candidate_family_id) REFERENCES candidate_families(candidate_family_id) ON DELETE CASCADE,
-  FOREIGN KEY (benchmark_pair_id) REFERENCES benchmark_pairs(benchmark_pair_id) ON DELETE CASCADE
+  FOREIGN KEY (benchmark_pair_id) REFERENCES benchmark_pairs(benchmark_pair_id) ON DELETE CASCADE,
+  FOREIGN KEY (queryless_candidate_hit_id) REFERENCES queryless_candidate_hits(queryless_candidate_hit_id) ON DELETE CASCADE
 );
 
 -- @context requirement: `paper_extractions` remains in the store because the current abstract-first
@@ -398,6 +400,57 @@ CREATE TABLE IF NOT EXISTS queryless_candidate_hits (
   UNIQUE (source_mechanism_instance_id, candidate_mechanism_instance_id, run_id, mining_version, mining_mode)
 );
 
+-- @context decision: C12 persists learned analyst weights separately from raw
+-- C11 mining hits so the system can compare original reranker behavior against
+-- post-adjudication adjustments. Folding the learned coefficients into the hit
+-- rows would destroy auditability and make later ranking regressions opaque.
+CREATE TABLE IF NOT EXISTS analyst_weight_updates (
+  analyst_weight_update_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id TEXT NOT NULL,
+  queryless_run_id TEXT NOT NULL,
+  exposure_run_id TEXT,
+  mining_version TEXT NOT NULL,
+  score_version TEXT NOT NULL,
+  mining_mode TEXT NOT NULL,
+  update_kind TEXT NOT NULL DEFAULT 'mode_reranker',
+  target_label_kind TEXT NOT NULL DEFAULT 'accept',
+  training_example_count INTEGER NOT NULL DEFAULT 0,
+  positive_example_count INTEGER NOT NULL DEFAULT 0,
+  negative_example_count INTEGER NOT NULL DEFAULT 0,
+  weights_json TEXT NOT NULL DEFAULT '{}',
+  metrics_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  FOREIGN KEY (queryless_run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  FOREIGN KEY (exposure_run_id) REFERENCES extraction_runs(run_id) ON DELETE SET NULL,
+  UNIQUE (run_id, mining_mode, update_kind, target_label_kind)
+);
+
+CREATE TABLE IF NOT EXISTS adjudicated_queryless_hits (
+  adjudicated_queryless_hit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  queryless_candidate_hit_id INTEGER NOT NULL,
+  run_id TEXT NOT NULL,
+  analyst_weight_update_id INTEGER,
+  queryless_run_id TEXT NOT NULL,
+  mining_mode TEXT NOT NULL,
+  source_mechanism_instance_id INTEGER NOT NULL,
+  candidate_mechanism_instance_id INTEGER NOT NULL,
+  adjusted_score REAL NOT NULL,
+  adjusted_rank_within_source INTEGER NOT NULL,
+  score_delta REAL NOT NULL,
+  support_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (queryless_candidate_hit_id) REFERENCES queryless_candidate_hits(queryless_candidate_hit_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  FOREIGN KEY (analyst_weight_update_id) REFERENCES analyst_weight_updates(analyst_weight_update_id) ON DELETE SET NULL,
+  FOREIGN KEY (queryless_run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  FOREIGN KEY (source_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (candidate_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  UNIQUE (queryless_candidate_hit_id, run_id)
+);
+
 CREATE TABLE IF NOT EXISTS paper_embeddings (
   embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
   paper_id TEXT NOT NULL,
@@ -475,7 +528,7 @@ CREATE INDEX IF NOT EXISTS idx_benchmark_pairs_source_candidate
 ON benchmark_pairs (source_mechanism_instance_id, candidate_mechanism_instance_id);
 
 CREATE INDEX IF NOT EXISTS idx_analyst_labels_targets
-ON analyst_labels (mechanism_instance_id, candidate_family_id, benchmark_pair_id);
+ON analyst_labels (mechanism_instance_id, candidate_family_id, benchmark_pair_id, queryless_candidate_hit_id);
 
 CREATE INDEX IF NOT EXISTS idx_paper_extractions_paper_id
 ON paper_extractions (paper_id);
@@ -515,6 +568,12 @@ ON queryless_candidate_hits (source_mechanism_instance_id, mining_mode, rank_wit
 
 CREATE INDEX IF NOT EXISTS idx_queryless_candidate_hits_candidate
 ON queryless_candidate_hits (candidate_mechanism_instance_id);
+
+CREATE INDEX IF NOT EXISTS idx_analyst_weight_updates_mode
+ON analyst_weight_updates (queryless_run_id, mining_mode);
+
+CREATE INDEX IF NOT EXISTS idx_adjudicated_queryless_hits_source_mode
+ON adjudicated_queryless_hits (source_mechanism_instance_id, mining_mode, adjusted_rank_within_source);
 
 CREATE INDEX IF NOT EXISTS idx_paper_embeddings_paper_id
 ON paper_embeddings (paper_id);

@@ -28,6 +28,7 @@
     "retrieve:build": "python3 scripts/build_retrieval_stack.py",
     "retrieve:benchmark": "python3 scripts/benchmark_retrieval_stack.py",
     "mine:queryless": "python3 scripts/mine_queryless_candidates.py",
+    "adjudicate:analyst": "python3 scripts/run_analyst_adjudication.py",
     "schemas:validate": "python3 scripts/validate_schema_examples.py",
     "docs:lint": "recall-docs-governance lint",
     "docs:lint:changed": "recall-docs-governance lint --changed"
