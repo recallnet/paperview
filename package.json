@@ -30,6 +30,7 @@
     "mine:queryless": "python3 scripts/mine_queryless_candidates.py",
     "adjudicate:analyst": "python3 scripts/run_analyst_adjudication.py",
     "rank:candidates": "python3 scripts/build_candidate_family_ranking.py",
+    "briefs:generate": "python3 scripts/generate_strategy_briefs.py",
     "schemas:validate": "python3 scripts/validate_schema_examples.py",
     "docs:lint": "recall-docs-governance lint",
     "docs:lint:changed": "recall-docs-governance lint --changed"

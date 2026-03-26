@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C14-strategy-briefs-and-minimal-test-plans`
+- Current commit focus: `all-canonical-commits-complete-awaiting-gate-c-review`
 - Last updated: `2026-03-26`
 
 ---
@@ -78,9 +78,9 @@ The current bottleneck is also clear:
 - queryless mining and local reranking now persist ranked candidate hits across six zero-query discovery modes
 - analyst feedback and weight updates now persist against the C11 mining queue
 - hard-gated ranking and family assembly now persist against the analyst-informed queue
-- but final strategy briefs are still not built
-- the next capability surface is turning the ranked family queue into reviewable strategy briefs with minimal tests
-- the system now has most of the local infrastructure it needs, but the final-output layer still needs to be implemented and benchmarked
+- final strategy briefs and minimal test plans now persist from the ranked family queue
+- the remaining work is evaluating the generated brief surface against Gate C and deciding whether more corpus/retrieval iteration is needed
+- the system now has the end-to-end implementation path in place, and the main open question is outcome quality rather than missing pipeline layers
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
 
@@ -240,7 +240,7 @@ This commit plan implements that order in concrete units.
 | `C11` | `completed` | Add queryless mining jobs and local reranking | `C10` |
 | `C12` | `completed` | Add analyst adjudication loop and weight update path | `C04`, `C09`, `C11` |
 | `C13` | `completed` | Add hard-gated candidate ranking and family assembly | `C08`, `C09`, `C11`, `C12` |
-| `C14` | `pending` | Generate final strategy briefs and minimal test plans | `C13` |
+| `C14` | `completed` | Generate final strategy briefs and minimal test plans | `C13` |
 
 ---
 
@@ -860,7 +860,7 @@ This commit plan implements that order in concrete units.
 
 ## C14: Strategy Briefs And Minimal Test Plans
 
-- Status: `pending`
+- Status: `completed`
 - Scope: produce the actual research output that justifies the project
 - Depends on: `C13`
 
@@ -885,17 +885,22 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C14`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - added `scripts/generate_strategy_briefs.py` plus `npm run briefs:generate` to turn ranked family rows into persisted strategy brief packets and run-folder markdown/json artifacts
+  - extended `sql/paperview_schema.sql` with canonical `strategy_briefs` persistence so final candidate packets are queryable from SQLite rather than only living as filesystem artifacts
+  - verified the end-to-end C14 flow on `/tmp/paperview-c14-test.sqlite3` by running `generate_strategy_briefs.py` on the C13 fixture output, which produced `strategy_briefs`, marked promoted `strategy_candidates` as `briefed`, and wrote brief packets under `data/structural-analogy/runs/c14-brief-test/briefs/`
 - Completion notes:
+  - final brief packets now include transfer rationale, tradecore mapping, required assumptions, fragility/failure regimes, observable signals, minimal dataset, cheapest validation procedure, failure criteria, and what-would-change-our-mind sections
+  - brief generation now anchors on persisted `candidate_family_rankings`, `candidate_family_members`, and `transfer_hypotheses` rather than reselecting evidence from raw hit rows
+  - the implementation track is complete, but Gate C still requires evaluation on a larger real candidate surface because the fixture run only produced three drafted briefs, which is below the canonical success threshold of five
 
 ### Upstream Impact Notes
 
-- Add notes here when earlier commits change output expectations or validation design.
 - Inherits completed `C12`: final briefs should cite the adjudicated queue position and the key analyst reasons captured during C12 so the brief packet preserves why a candidate survived human review.
 - Inherits completed `C13`: final briefs should anchor on the persisted `candidate_family_rankings` order and reuse the linked `transfer_hypotheses` plus representative `candidate_family_members` rather than hand-selecting source papers again.
 

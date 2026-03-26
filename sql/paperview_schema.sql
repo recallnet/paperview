@@ -532,6 +532,25 @@ CREATE TABLE IF NOT EXISTS strategy_candidates (
   FOREIGN KEY (source_paper_id) REFERENCES papers(paper_id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS strategy_briefs (
+  strategy_brief_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  candidate_family_id INTEGER NOT NULL,
+  candidate_family_ranking_id INTEGER,
+  run_id TEXT NOT NULL,
+  brief_version TEXT NOT NULL,
+  brief_name TEXT NOT NULL,
+  brief_status TEXT NOT NULL DEFAULT 'drafted',
+  brief_rank INTEGER,
+  brief_markdown_path TEXT,
+  brief_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (candidate_family_id) REFERENCES candidate_families(candidate_family_id) ON DELETE CASCADE,
+  FOREIGN KEY (candidate_family_ranking_id) REFERENCES candidate_family_rankings(candidate_family_ranking_id) ON DELETE SET NULL,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (candidate_family_id, run_id, brief_version)
+);
+
 CREATE INDEX IF NOT EXISTS idx_papers_source_corpus
 ON papers (source_corpus);
 
@@ -630,3 +649,6 @@ ON paper_edges (source_paper_id, target_paper_id);
 
 CREATE INDEX IF NOT EXISTS idx_strategy_candidates_status
 ON strategy_candidates (candidate_status);
+
+CREATE INDEX IF NOT EXISTS idx_strategy_briefs_run_rank
+ON strategy_briefs (run_id, brief_rank);

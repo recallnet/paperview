@@ -25,9 +25,9 @@ The system’s end state is not “a pile of embeddings.” It is a reviewed pip
 The repo now also has a first persisted scoring surface for `exposure_score`,
 `underexploited_score`, and a bootstrap `worth_followup_score`, plus a
 persisted queryless mining queue, analyst-adjudicated reranks with learned mode
-weights, and a hard-gated ranked family queue. The next critical path is
-therefore strategy-brief generation rather than retrieval, adjudication, or
-family-assembly plumbing.
+weights, a hard-gated ranked family queue, and generated strategy briefs. The
+next critical path is therefore evaluating those briefs against the real Gate C
+success criteria rather than adding more pipeline plumbing by default.
 
 ---
 
@@ -306,6 +306,11 @@ Exit condition:
 - the system produces usable candidate packets, not just metadata and scores
 
 Current state:
+- in progress
+- `generate_strategy_briefs.py` now writes persisted `strategy_briefs` plus
+  run-folder markdown/json brief packets from the ranked family queue
+- the remaining question is whether those briefs are good enough under Gate C,
+  not whether the brief-generation layer exists
 - not started
 
 ---
@@ -645,10 +650,13 @@ If those are approved, the remaining work becomes mostly execution and tuning ra
   queue rows
 - persisted candidate families, family members, transfer hypotheses, and ranked
   family queue rows
+- persisted strategy briefs and reviewable brief packets with minimal test plans
 
 ## Current Non-Implemented Surfaces
 
-- final strategy-brief generation
+- no major implementation surface remains on the canonical path; the remaining
+  work is success-criterion review and any targeted quality iteration that review
+  demands
 
 ## Key Definitions
 
