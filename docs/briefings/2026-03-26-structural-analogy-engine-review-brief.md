@@ -214,7 +214,13 @@ Exit condition:
 - every accepted extraction has a normalized record and fingerprint
 
 Current state:
-- not started
+- in progress
+- active mechanism instances can now be normalized into controlled structural
+  facets defined by `schemas/fingerprint.schema.json`
+- normalization writes deterministic `fingerprint_text` plus full
+  `mechanism_fingerprints` records in SQLite
+- lossy or weak-evidence mappings are now queued explicitly in
+  `normalization_reviews`
 
 ## Phase 5: Embeddings, Graph, and Retrieval
 
@@ -407,7 +413,7 @@ Why it matters:
 
 Artifacts:
 - normalized ontology fields
-- fingerprint records for each accepted paper
+- fingerprint records for each accepted mechanism instance
 
 Why it matters:
 - this is the layer that enables analogy search rather than topic search
@@ -573,11 +579,11 @@ If those are approved, the remaining work becomes mostly execution and tuning ra
 - MLX local extraction runner
 - schema-aware quality reviewer
 - gate-and-ingest workflow
+- section-aware PDF parsing and evidence upgrades
+- mechanism-level normalization and fingerprint persistence
 
 ## Current Non-Implemented Surfaces
 
-- full-text PDF parsing and sectioning
-- normalization pass into fingerprints
 - embeddings layer
 - graph layer
 - candidate scoring

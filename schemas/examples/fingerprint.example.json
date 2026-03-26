@@ -1,0 +1,52 @@
+{
+  "fingerprint_version": "mechanism-fingerprint-v1",
+  "trigger": [
+    "parity_break",
+    "stale_update_window"
+  ],
+  "state_variables": [
+    "implied_probability",
+    "relative_price_spread",
+    "venue_latency_state",
+    "resolution_state"
+  ],
+  "actor_structure": [
+    "cross_venue_arbitrageurs",
+    "market_makers",
+    "retail_flow"
+  ],
+  "market_topology": [
+    "n_leg_basket",
+    "fragmented_cross_venue"
+  ],
+  "pricing_path": [
+    "parity_reversion",
+    "quote_refresh_capture"
+  ],
+  "execution_shape": [
+    "parallel_fok",
+    "recovery_gtc"
+  ],
+  "liquidity_regime": [
+    "thin_book",
+    "fragmented_venues",
+    "asynchronous_updates",
+    "observable_order_book"
+  ],
+  "capacity_limit": [
+    "thin_resting_liquidity",
+    "limited_hedge_capacity"
+  ],
+  "boundary_conditions": [
+    "linked_structure_stable",
+    "hedge_leg_tradeable",
+    "fees_bounded",
+    "resolution_rules_stable"
+  ],
+  "portability_blockers": [
+    "missing_market_structure",
+    "missing_dense_liquidity"
+  ],
+  "ambiguity_flags": [],
+  "fingerprint_text": "trigger=parity_break,stale_update_window | state_variables=implied_probability,relative_price_spread,venue_latency_state,resolution_state | actor_structure=cross_venue_arbitrageurs,market_makers,retail_flow | market_topology=n_leg_basket,fragmented_cross_venue | pricing_path=parity_reversion,quote_refresh_capture | execution_shape=parallel_fok,recovery_gtc | liquidity_regime=thin_book,fragmented_venues,asynchronous_updates,observable_order_book | capacity_limit=thin_resting_liquidity,limited_hedge_capacity | boundary_conditions=linked_structure_stable,hedge_leg_tradeable,fees_bounded,resolution_rules_stable | portability_blockers=missing_market_structure,missing_dense_liquidity"
+}

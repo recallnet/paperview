@@ -1,0 +1,249 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/fingerprint.schema.json",
+  "title": "Mechanism Structural Fingerprint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fingerprint_version",
+    "trigger",
+    "state_variables",
+    "actor_structure",
+    "market_topology",
+    "pricing_path",
+    "execution_shape",
+    "liquidity_regime",
+    "capacity_limit",
+    "boundary_conditions",
+    "portability_blockers",
+    "ambiguity_flags",
+    "fingerprint_text"
+  ],
+  "properties": {
+    "fingerprint_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "trigger": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "parity_break",
+          "stale_update_window",
+          "inventory_dislocation",
+          "subsidy_window",
+          "order_flow_shock",
+          "settlement_reset",
+          "information_diffusion_lag",
+          "term_structure_kink",
+          "allocation_rule_edge",
+          "queue_priority_shift",
+          "other"
+        ]
+      }
+    },
+    "state_variables": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "implied_probability",
+          "relative_price_spread",
+          "inventory_position",
+          "queue_rank",
+          "order_flow_imbalance",
+          "term_curve_state",
+          "reward_schedule",
+          "venue_latency_state",
+          "resolution_state",
+          "hedge_ratio",
+          "other"
+        ]
+      }
+    },
+    "actor_structure": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "cross_venue_arbitrageurs",
+          "market_makers",
+          "retail_flow",
+          "forced_hedgers",
+          "auction_bidders",
+          "latency_sensitive_arbitrageurs",
+          "rule_constrained_arbitrageurs",
+          "amm_rebalancers",
+          "passive_index_flow",
+          "other"
+        ]
+      }
+    },
+    "market_topology": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "two_leg_parity",
+          "n_leg_basket",
+          "term_structure",
+          "implication_graph",
+          "queue_value_mm",
+          "auction_allocation",
+          "inventory_recycling",
+          "fragmented_cross_venue",
+          "other"
+        ]
+      }
+    },
+    "pricing_path": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "parity_reversion",
+          "quote_refresh_capture",
+          "inventory_mean_reversion",
+          "reward_harvest",
+          "curve_relinking",
+          "queue_capture",
+          "auction_price_discovery",
+          "information_catchup",
+          "other"
+        ]
+      }
+    },
+    "execution_shape": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "maker_anchor",
+          "parallel_fok",
+          "sequential_fok",
+          "quote_ladder",
+          "recovery_gtc",
+          "inventory_rebalance",
+          "auction_take",
+          "latency_arb",
+          "other"
+        ]
+      }
+    },
+    "liquidity_regime": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "thin_book",
+          "fragmented_venues",
+          "discrete_ticks",
+          "asynchronous_updates",
+          "reward_subsidized",
+          "forced_flow",
+          "hedgeable_exposure",
+          "observable_order_book",
+          "low_latency_race",
+          "batch_auction",
+          "other"
+        ]
+      }
+    },
+    "capacity_limit": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "thin_resting_liquidity",
+          "limited_hedge_capacity",
+          "venue_rate_limits",
+          "inventory_budget_limits",
+          "capital_intensity",
+          "crowding_sensitive_edge",
+          "manual_market_specific_ops",
+          "compliance_or_rule_overhead",
+          "limited_event_frequency",
+          "other"
+        ]
+      }
+    },
+    "boundary_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "linked_structure_stable",
+          "hedge_leg_tradeable",
+          "fees_bounded",
+          "resolution_rules_stable",
+          "order_book_observable",
+          "inventory_rebalance_available",
+          "reward_schedule_persistent",
+          "capital_recycling_fast_enough",
+          "rule_change_tolerant",
+          "other"
+        ]
+      }
+    },
+    "portability_blockers": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "missing_market_structure",
+          "missing_latency_edge",
+          "missing_inventory_tools",
+          "missing_rule_surface",
+          "missing_reward_subsidy",
+          "missing_dense_liquidity",
+          "missing_observability",
+          "sparse_event_frequency",
+          "already_priced_in_target",
+          "other"
+        ]
+      }
+    },
+    "ambiguity_flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "contains_other_mapping",
+          "multiple_topology_candidates",
+          "weak_evidence_support",
+          "no_section_backing",
+          "sparse_state_variables",
+          "sparse_actor_structure",
+          "sparse_boundary_conditions",
+          "other"
+        ]
+      }
+    },
+    "fingerprint_text": {
+      "type": "string",
+      "minLength": 20
+    }
+  }
+}

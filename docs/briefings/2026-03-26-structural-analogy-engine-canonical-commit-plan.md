@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C08-normalization-and-structural-fingerprinting`
+- Current commit focus: `C09-exposure-scoring-and-transfer-manifold-bootstrap`
 - Last updated: `2026-03-26`
 
 ---
@@ -184,7 +184,7 @@ This commit plan implements that order in concrete units.
 | `C05` | `completed` | Refactor local store and extraction pipeline around mechanism instances | `C01`, `C02` |
 | `C06` | `completed` | Stabilize abstract extraction on mixed-family mechanism outputs | `C03`, `C05` |
 | `C07` | `completed` | Add section-aware text prep and evidence spans | `C05` |
-| `C08` | `pending` | Implement normalization and structural fingerprinting | `C05`, `C06`, `C07` |
+| `C08` | `completed` | Implement normalization and structural fingerprinting | `C05`, `C06`, `C07` |
 | `C09` | `pending` | Add exposure scoring and transfer manifold bootstrap | `C03`, `C08` |
 | `C10` | `pending` | Build multi-view retrieval stack | `C04`, `C08`, `C09` |
 | `C11` | `pending` | Add queryless mining jobs and local reranking | `C10` |
@@ -529,7 +529,7 @@ This commit plan implements that order in concrete units.
 
 ## C08: Normalization And Structural Fingerprinting
 
-- Status: `pending`
+- Status: `completed`
 - Scope: convert raw mechanism instances into comparable structural objects
 - Depends on: `C05`, `C06`, `C07`
 
@@ -555,19 +555,26 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C08`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - updated `schemas/fingerprint.schema.json`, `schemas/examples/fingerprint.example.json`, and `schemas/normalization_vocab.json` to the mechanism-level C08 facet contract
+  - extended `sql/paperview_schema.sql` with canonical `mechanism_fingerprints` and `normalization_reviews` tables while demoting `paper_fingerprints` to transitional status
+  - added `scripts/normalize_mechanism_fingerprints.py` to map active `mechanism_instances` plus section-backed evidence into deterministic `fingerprint_text` and queued ambiguity review rows
+  - verified schema validity, SQLite DDL, and a temp-store smoke test that normalized one active mechanism and queued one ambiguity review
 - Completion notes:
+  - normalization is now mechanism-first instead of paper-first, matching the C01 and C05 store contracts
+  - the canonical fingerprint surface now includes trigger, state variables, actor structure, market topology, pricing path, execution shape, liquidity regime, capacity limit, boundary conditions, and portability blockers
+  - ambiguous or lossy mappings are no longer silent; they land in `normalization_reviews` for operator follow-up
+  - the serialized `fingerprint_text` surface is now ready for C10 structured, sparse, and dense retrieval work
 
 ### Upstream Impact Notes
 
-- Inherits `C05`: normalization should read canonical mechanism rows plus `mechanism_json` / `evidence_confidence` rather than reparsing `paper_extractions`.
-- Inherits `C06`: normalization should expect true zero-mechanism papers in mixed-family runs and should not backfill phantom mechanism rows just to satisfy downstream shape assumptions.
-- Inherits `C07`: normalization can now use `paper_sections` and section-backed `mechanism_evidence_spans` as first-class inputs rather than only abstract summaries.
+- Completed in `C08`: active mechanism instances now normalize into canonical mechanism-level fingerprints plus deterministic `fingerprint_text`.
+- Completed in `C08`: lossy mappings now queue into `normalization_reviews` instead of disappearing as implicit heuristic choices.
 
 ## C09: Exposure Scoring And Transfer Manifold Bootstrap
 
@@ -601,6 +608,7 @@ This commit plan implements that order in concrete units.
 - Add notes here when earlier commits change domain families, labeling, or feature availability.
 - Inherits `C03`: exposure features should include `literature_family` and holdout-aware corpus membership rather than only source-corpus labels.
 - Inherits `C06`: exposure work should use the checked-in mixed-family pilot and Gate A metrics as its first non-q-fin calibration slice.
+- Inherits `C08`: exposure scoring can now use normalized trigger/topology/liquidity facets and ambiguity-review burden as explicit features rather than re-deriving them from raw extraction JSON.
 
 ## C10: Multi-View Retrieval Stack
 
@@ -639,6 +647,7 @@ This commit plan implements that order in concrete units.
 - Inherits `C06`: retrieval indexing should assume wrapper-style mixed-family runs may legitimately contain zero-mechanism papers and should index only accepted mechanism instances, not the empty wrapper rows.
 - Inherits `C06`: with accepted mixed-family mechanism rows remaining in SQLite and `sqlite-vec` now available locally, the first vector retrieval surface should stay SQLite-native unless a later capability gap proves otherwise.
 - Inherits `C07`: sparse retrieval can now target parsed discussion/model/result sections and section-backed evidence snippets instead of abstract-only text.
+- Inherits `C08`: structured retrieval should read `mechanism_fingerprints` directly, and dense retrieval should treat serialized `fingerprint_text` as a first-class embedding surface.
 
 ## C11: Queryless Mining And Local Reranking
 
@@ -716,6 +725,7 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Add notes here when earlier commits change candidate contracts or feature semantics.
+- Inherits `C08`: family assembly and hard gating should cluster on canonical mechanism-level fingerprints and can down-rank families that rely heavily on queued normalization ambiguities.
 
 ## C13: Hard-Gated Candidate Ranking And Family Assembly
 

@@ -176,6 +176,59 @@ CREATE TABLE IF NOT EXISTS paper_extractions (
   UNIQUE (paper_id, run_id, extraction_version)
 );
 
+-- @context decision: C08 moves the retrieval fingerprint surface onto
+-- `mechanism_instances`, not papers. A paper can hold multiple active mechanisms,
+-- so a paper-level fingerprint would collapse exactly the distinctions later
+-- retrieval and family assembly need to preserve.
+CREATE TABLE IF NOT EXISTS mechanism_fingerprints (
+  mechanism_fingerprint_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mechanism_instance_id INTEGER NOT NULL,
+  paper_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  fingerprint_version TEXT NOT NULL,
+  trigger_json TEXT NOT NULL,
+  state_variables_json TEXT NOT NULL,
+  actor_structure_json TEXT NOT NULL,
+  market_topology_json TEXT NOT NULL,
+  pricing_path_json TEXT NOT NULL,
+  execution_shape_json TEXT NOT NULL,
+  liquidity_regime_json TEXT NOT NULL,
+  capacity_limit_json TEXT NOT NULL,
+  boundary_conditions_json TEXT NOT NULL,
+  portability_blockers_json TEXT NOT NULL,
+  ambiguity_flags_json TEXT NOT NULL DEFAULT '[]',
+  serializer_version TEXT NOT NULL,
+  fingerprint_text TEXT NOT NULL,
+  fingerprint_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (mechanism_instance_id, run_id, fingerprint_version)
+);
+
+CREATE TABLE IF NOT EXISTS normalization_reviews (
+  normalization_review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mechanism_instance_id INTEGER NOT NULL,
+  paper_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  fingerprint_version TEXT NOT NULL,
+  review_status TEXT NOT NULL DEFAULT 'queued',
+  ambiguity_flags_json TEXT NOT NULL DEFAULT '[]',
+  candidate_mappings_json TEXT NOT NULL DEFAULT '{}',
+  review_notes TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (mechanism_instance_id, run_id, fingerprint_version)
+);
+
+-- `paper_fingerprints` remains only as a transitional table for older local
+-- files that predate C08. New normalization work should write
+-- `mechanism_fingerprints`.
 CREATE TABLE IF NOT EXISTS paper_fingerprints (
   fingerprint_id INTEGER PRIMARY KEY AUTOINCREMENT,
   paper_id TEXT NOT NULL,
@@ -272,6 +325,15 @@ ON paper_extractions (paper_id);
 
 CREATE INDEX IF NOT EXISTS idx_paper_fingerprints_paper_id
 ON paper_fingerprints (paper_id);
+
+CREATE INDEX IF NOT EXISTS idx_mechanism_fingerprints_mechanism_instance_id
+ON mechanism_fingerprints (mechanism_instance_id);
+
+CREATE INDEX IF NOT EXISTS idx_mechanism_fingerprints_run_id
+ON mechanism_fingerprints (run_id);
+
+CREATE INDEX IF NOT EXISTS idx_normalization_reviews_mechanism_instance_id
+ON normalization_reviews (mechanism_instance_id);
 
 CREATE INDEX IF NOT EXISTS idx_paper_embeddings_paper_id
 ON paper_embeddings (paper_id);

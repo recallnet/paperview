@@ -22,6 +22,9 @@ unit for the structural analogy engine.
 - Downloaded PDFs can now be parsed into `paper_sections`, with failures logged
   in `parse_failures` and evidence spans upgraded from abstract-only fallback
   to section-backed snippets when the parsed text supports it.
+- Active mechanism instances can now be normalized into
+  `mechanism_fingerprints`, with deterministic serialized facet text plus a
+  queued `normalization_reviews` surface for ambiguous mappings.
 - The adjacent-literature seeding surface now lives in checked-in registries
   under `configs/`, with explicit active-family versus holdout split policy.
 - The discovery benchmark is now defined in a checked-in adjudicated pair set
@@ -211,6 +214,20 @@ uv run --with pypdf python3 scripts/prepare_section_evidence.py \
 This stores parsed text into `paper_sections`, logs unreadable or missing PDFs
 to `parse_failures`, and only rewrites `mechanism_evidence_spans` when a parsed
 section has positive overlap with the mechanism label/summary.
+
+Normalize active mechanism instances into retrieval-ready structural
+fingerprints:
+
+```bash
+python3 scripts/normalize_mechanism_fingerprints.py \
+  --db-path data/structural-analogy/paperview.sqlite3 \
+  --limit 25
+```
+
+This writes deterministic mechanism-level fingerprints into
+`mechanism_fingerprints`, serializes the normalized facet surface into
+`fingerprint_text`, and queues any lossy or weak-evidence mappings into
+`normalization_reviews`.
 
 For adjacent corpora, stamp the canonical family and split on ingest:
 
@@ -417,6 +434,7 @@ The checked-in benchmark thresholds live in
   Use `--max-requests` to regenerate capped benchmark slices from the actual prompt file; do not clone older `requests.jsonl` files forward when comparing prompt versions. The stored run config now records the `mechanism-instance-batch-v1` response contract and includes the paper’s `literature_family` / `evaluation_split` context for mixed-family prompt work.
 - `scripts/run_local_mlx_extraction.py` is the first local execution backend for prepared abstract-extraction runs on Apple Silicon via `mlx-lm`. It now preserves paper-level wrapper outputs when the model returns `mechanism_instances`.
 - `scripts/ingest_extraction_responses.py` is the canonical way to validate model outputs against the extraction schema, keep a per-paper staging snapshot in `paper_extractions`, and promote accepted rows into `mechanism_instances` plus `mechanism_evidence_spans`.
+- `scripts/normalize_mechanism_fingerprints.py` is the canonical C08 path to convert active `mechanism_instances` plus section-backed evidence into deterministic `mechanism_fingerprints` and queued `normalization_reviews`.
 - `scripts/review_extraction_quality.py` is the canonical pre-scale quality gate for semantically wrong but schema-valid outputs.
   It now classifies findings into `blocking` vs `warning`, understands paper-level `mechanism_instances` wrappers, and reports Gate A rollout metrics for mixed-family slices.
 - `scripts/review_and_ingest_extractions.py` is the canonical policy command when a run should only ingest after passing the quality gate.
