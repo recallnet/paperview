@@ -33,6 +33,9 @@ path is therefore evaluating the first live downstream brief surface, which now
 exists under the `live-legacy-bootstrap` run prefix, and deciding whether that
 legacy slice is worth analyst review or whether newer mixed-family extraction
 output is required before deeper evaluation.
+That decision is now explicit in the repo: the current assessed recommendation
+is to wait for richer mixed-family extraction output before spending analyst
+time on the legacy live slice.
 
 ---
 
@@ -321,8 +324,11 @@ Current state:
 - the live DB now also contains reconciled canonical `mechanism_instances` from
   legacy valid extraction rows, and `materialize_live_downstream_run.py` now
   materializes the first live downstream queue from that surface
-- the remaining question is whether that live legacy brief queue is worth
-  analyst time and whether newer mixed-family extraction output is needed
+- `assess_live_brief_queue.py` now records that the current live legacy queue
+  should not consume analyst time yet because it has no passed families,
+  no cross-family hits, and no holdout coverage
+- the remaining question is therefore when richer mixed-family extraction output
+  will be available for the next live rerun
 - not started
 
 ---
@@ -669,6 +675,8 @@ If those are approved, the remaining work becomes mostly execution and tuning ra
   `paper_extractions` into canonical `mechanism_instances`
 - repo-native live downstream materialization from reconciled mechanisms through
   provisional briefs and Gate C prep
+- repo-native live brief-queue assessment with a persisted review-now vs
+  wait-for-richer-extractions recommendation
 
 ## Current Non-Implemented Surfaces
 

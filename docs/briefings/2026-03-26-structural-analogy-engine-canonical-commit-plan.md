@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `live-downstream-materialized-awaiting-analyst-triage`
+- Current commit focus: `legacy-live-slice-assessed-waiting-for-richer-extractions`
 - Last updated: `2026-03-26`
 
 ---
@@ -83,7 +83,8 @@ The current bottleneck is also clear:
 - Gate C review packets and editable analyst templates can now be prepared directly from persisted briefs
 - the live SQLite store is now reconciled to the canonical mechanism-first schema and legacy valid `paper_extractions` have been backfilled into `mechanism_instances`
 - the first live downstream chain has now been materialized from that reconciled mechanism store, including retrieval, bootstrap adjudication, ranking, provisional briefs, and a Gate C prep bundle
-- the remaining work is collecting real analyst input on that live brief surface and deciding whether the legacy slice is useful enough or whether newer extraction data is required
+- the first live queue has now been assessed explicitly and the repo-native recommendation is to wait for richer mixed-family extraction output before spending analyst time on the legacy slice
+- the remaining work is rerunning the live downstream chain on a richer mixed-family mechanism store and only then collecting analyst input on the resulting brief surface
 - the system now has the end-to-end implementation path in place, and the main open question is outcome quality rather than missing pipeline layers
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
@@ -249,6 +250,7 @@ This commit plan implements that order in concrete units.
 | `C16` | `completed` | Prepare analyst Gate C review packets and editable templates | `C15` |
 | `C17` | `completed` | Reconcile the live SQLite store and backfill legacy mechanism rows | `C05`, `C16` |
 | `C18` | `completed` | Materialize the first live downstream run and provisional brief queue | `C17` |
+| `C19` | `completed` | Assess the live brief queue and persist the analyst-time recommendation | `C18` |
 
 ---
 
@@ -1063,6 +1065,42 @@ This commit plan implements that order in concrete units.
 
 - Inherits completed `C16`: the first live Gate C packet should preserve stable ids from the provisional brief run so later analyst judgments can cleanly supersede bootstrap adjudication.
 - Completed in `C18`: the next real decision point is no longer “can the repo materialize a live brief queue?” but “is the legacy live slice worth analyst time, or should we wait for richer mixed-family extraction output before deeper review?”
+
+## C19: Live Brief Queue Assessment
+
+- Status: `completed`
+- Scope: turn the provisional live queue into an explicit analyst-time decision instead of leaving that judgment implicit in raw tables
+- Depends on: `C18`
+
+### Deliverables
+
+- repo-native assessment script for a live brief queue run prefix
+- persisted JSON/markdown assessment report with a concrete recommendation
+- decision rule that distinguishes “review now” from “wait for richer extractions”
+- doc update that records the assessed outcome of the current live legacy slice
+
+### Exit Criteria
+
+- repo can produce a persisted analyst-readiness assessment for a live brief queue without manual SQL inspection
+
+### Completion Record
+
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C19`
+- Operator: `Codex`
+- Reviewer:
+- Verification:
+  - added `scripts/assess_live_brief_queue.py` plus `npm run queue:assess-live` to evaluate a live run prefix and persist the assessment as JSON plus markdown
+  - ran the assessment on the live `live-legacy-bootstrap` run prefix, which wrote `data/structural-analogy/runs/live-legacy-bootstrap-assessment/live_brief_queue_assessment.json` and the matching `README.md`
+  - confirmed the assessment recommends `wait_for_richer_extractions` because the live legacy slice has `0` passed families, `4/4` provisional briefs, `0` cross-family hits, `0` holdout hits, and a top-ranked research-dead-end bucket
+- Completion notes:
+  - the remaining question is no longer whether the current live queue looks weak by inspection; the repo now records that judgment explicitly and durably
+  - the `live-legacy-bootstrap` queue is now formally treated as a bootstrap sanity check rather than the preferred analyst review target
+
+### Upstream Impact Notes
+
+- Completed in `C19`: the next critical-path run should start from richer mixed-family extraction output instead of spending analyst cycles on the assessed legacy same-family queue.
 
 ---
 
