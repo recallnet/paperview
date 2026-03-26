@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `legacy-live-slice-assessed-waiting-for-richer-extractions`
+- Current commit focus: `prepared-pilot-backlog-drained-awaiting-mixed-family-extraction-execution`
 - Last updated: `2026-03-26`
 
 ---
@@ -84,6 +84,9 @@ The current bottleneck is also clear:
 - the live SQLite store is now reconciled to the canonical mechanism-first schema and legacy valid `paper_extractions` have been backfilled into `mechanism_instances`
 - the first live downstream chain has now been materialized from that reconciled mechanism store, including retrieval, bootstrap adjudication, ranking, provisional briefs, and a Gate C prep bundle
 - the first live queue has now been assessed explicitly and the repo-native recommendation is to wait for richer mixed-family extraction output before spending analyst time on the legacy slice
+- the repo can now ingest the pass-only subset from a blocking reviewed extraction batch instead of forcing an all-or-nothing decision on mixed-quality pilot reruns
+- the prepared `v22` / `v23` / `v24` `50`-paper pilot reruns have now been drained through that pass-only path, expanding the live store from `26` to `153` active `mechanism_instances`
+- the refreshed live downstream chain now reaches `5` generated briefs and a ready Gate C packet under `live-v22-v24-pass-subset`, but the queue still fails the quality bar because all briefs remain provisional, single-domain, and same-family
 - the remaining work is rerunning the live downstream chain on a richer mixed-family mechanism store and only then collecting analyst input on the resulting brief surface
 - the system now has the end-to-end implementation path in place, and the main open question is outcome quality rather than missing pipeline layers
 
@@ -251,6 +254,7 @@ This commit plan implements that order in concrete units.
 | `C17` | `completed` | Reconcile the live SQLite store and backfill legacy mechanism rows | `C05`, `C16` |
 | `C18` | `completed` | Materialize the first live downstream run and provisional brief queue | `C17` |
 | `C19` | `completed` | Assess the live brief queue and persist the analyst-time recommendation | `C18` |
+| `C20` | `completed` | Drain the prepared pilot backlog through pass-only ingest and rerun the live downstream chain | `C19` |
 
 ---
 
@@ -1101,6 +1105,49 @@ This commit plan implements that order in concrete units.
 ### Upstream Impact Notes
 
 - Completed in `C19`: the next critical-path run should start from richer mixed-family extraction output instead of spending analyst cycles on the assessed legacy same-family queue.
+
+## C20: Prepared Pilot Backlog Drain And Live Queue Refresh
+
+- Status: `completed`
+- Scope: stop treating reviewed-but-blocking pilot reruns as unusable when most rows are clean, then use that path to expand the live mechanism store and refresh the downstream queue
+- Depends on: `C19`
+
+### Deliverables
+
+- repo-native pass-only ingest path for blocking reviewed extraction batches
+- accepted-subset artifacts persisted next to the original response files for audit
+- prepared `v22` / `v23` / `v24` pilot reruns ingested into the live canonical store through the pass-only path
+- refreshed live downstream run and queue assessment over the expanded store
+- doc update that distinguishes “same-family prepared backlog drained” from “mixed-family execution still pending”
+
+### Exit Criteria
+
+- the live store can absorb accepted rows from mixed-quality reviewed batches without ingesting blocked rows
+- the first meaningful prepared-batch backlog is materialized into `mechanism_instances`
+- the repo has a refreshed live downstream queue and an explicit assessment of whether that larger same-family slice is now worth analyst time
+
+### Completion Record
+
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C20`
+- Operator: `Codex`
+- Reviewer:
+- Verification:
+  - updated `scripts/review_and_ingest_extractions.py` so `--ingest-passing-subset-on-blocking` writes a pass-only artifact and ingests only the clean rows from a blocking reviewed batch
+  - used that path on `abstract_extraction-v22-pilot50`, `abstract_extraction-v23-pilot50`, and `abstract_extraction-v24-pilot50`, producing `127` accepted rows across the three prepared reruns and marking each run `partially_ingested_pass_subset`
+  - verified the live store expanded to `153` active `mechanism_instances`
+  - reran `scripts/materialize_live_downstream_run.py` with run prefix `live-v22-v24-pass-subset`, which produced `153` retrieval documents, `9180` queryless hits, `5` provisional briefs, and a Gate C packet under `data/structural-analogy/runs/live-v22-v24-pass-subset-c16/gate-c-review/`
+  - reran `scripts/assess_live_brief_queue.py` on `live-v22-v24-pass-subset`, which still recommends `wait_for_richer_extractions`
+- Completion notes:
+  - pass-only ingest preserves the review gate instead of diluting it: blocked rows stay out of the canonical mechanism store, but mostly-clean pilot reruns no longer stall the live corpus entirely
+  - draining the prepared same-family backlog was enough to hit the raw Gate C brief-count threshold of `5`, but not the quality threshold: all generated briefs are still `provisional_drafted`, `passed_family_count` remains `0`, and the queue is still concentrated in `q_fin`
+  - the critical-path blocker is now narrower and more concrete than before: it is not “run more prepared q-fin pilots,” it is “execute mixed-family extraction batches and ingest them into the live mechanism store”
+
+### Upstream Impact Notes
+
+- Completed in `C20`: the next critical-path unit should target mixed-family extraction execution and ingest, not additional same-family prepared pilot salvage.
+- Completed in `C20`: Gate C brief-count alone is not a meaningful success signal because the expanded same-family live slice can now generate `5` provisional briefs without producing any passed families, holdout hits, or cross-family candidates.
 
 ---
 

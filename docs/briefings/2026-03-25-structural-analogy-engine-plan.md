@@ -18,7 +18,7 @@ written: 2026-03-25
 ## Status
 
 - Overall status: `active`
-- Current phase: `phase-12-waiting-for-richer-mixed-family-output`
+- Current phase: `phase-12-same-family-backlog-drained-awaiting-mixed-family-output`
 - Owner: `unassigned`
 - Last updated: `2026-03-26`
 - Working mode: `local-first`
@@ -31,7 +31,7 @@ written: 2026-03-25
 - Use `scripts/materialize_live_downstream_run.py` to materialize the full live C08-C16 chain from the reconciled mechanism store rather than hand-running each stage.
 - Use the persisted brief packets to judge whether we have enough genuinely new candidates or need another retrieval/analogy iteration.
 - Use `scripts/review_gate_c.py` and the persisted `gate_c_review_summaries` surface so final success claims come from queryable review records rather than doc prose.
-- Treat the current `live-legacy-bootstrap` output as a provisional analyst-triage surface, not as evidence that Gate C is close.
+- Treat the current `live-v22-v24-pass-subset` output as a provisional analyst-triage surface, not as evidence that Gate C is close.
 - Use `scripts/assess_live_brief_queue.py` to make the analyst-time decision explicit before handing off any live queue.
 - Keep the retrieval stack benchmarkable while swapping the dense backend from the deterministic baseline to the canonical local embedder.
 - Finish the `q-fin` PDF pull and verify corpus completeness.
@@ -100,7 +100,7 @@ written: 2026-03-25
 | Discovery benchmark | `in_progress` | A checked-in retrieval benchmark definition now exists with adjudicated lexical/structural buckets, explicit baselines, materialization into `benchmark_pairs`, and view-level metrics in `retrieval_benchmark_results`; analyst acceptance labels are still needed to close Gate B fully. |
 | Embeddings + graph | `in_progress` | `scripts/build_retrieval_stack.py` now persists canonical `mechanism_retrieval_documents`, dense embeddings across the four C10 surfaces, and mechanism-level graph edges; the current dense backend is deterministic hashing and should later be swapped to the canonical local embedder without changing the retrieval contract. |
 | Candidate scoring | `in_progress` | `scripts/score_mechanism_exposure.py` now persists `mechanism_exposure_scores` with mechanism-level `exposure_score`, `underexploited_score`, and bootstrap `worth_followup_score` rows derived from fingerprints, family metadata, benchmark-linked mechanism ids, and analyst labels; C12 now refreshes those scores after adjudication rather than leaving the bootstrap priors static. |
-| Human review queue | `in_progress` | `scripts/mine_queryless_candidates.py` persists raw `queryless_candidate_hits`, `scripts/run_analyst_adjudication.py` writes `analyst_labels`, `analyst_weight_updates`, and `adjudicated_queryless_hits`, `scripts/build_candidate_family_ranking.py` turns that analyst-informed queue into gated `candidate_families`, `transfer_hypotheses`, `candidate_family_members`, `candidate_family_rankings`, and ranked `strategy_candidates`, `scripts/generate_strategy_briefs.py` packages the top ranked families into persisted `strategy_briefs` plus reviewable run-folder markdown/json packets, `scripts/prepare_gate_c_review.py` exports those briefs into analyst-ready Gate C review bundles, and `scripts/review_gate_c.py` turns the completed analyst judgments into persisted `gate_c_brief_reviews` and `gate_c_review_summaries`; `scripts/materialize_live_downstream_run.py` materialized a real live provisional queue under the `live-legacy-bootstrap` run prefix, and `scripts/assess_live_brief_queue.py` now explicitly recommends waiting for richer mixed-family extraction output before spending analyst time on that queue. |
+| Human review queue | `in_progress` | `scripts/mine_queryless_candidates.py` persists raw `queryless_candidate_hits`, `scripts/run_analyst_adjudication.py` writes `analyst_labels`, `analyst_weight_updates`, and `adjudicated_queryless_hits`, `scripts/build_candidate_family_ranking.py` turns that analyst-informed queue into gated `candidate_families`, `transfer_hypotheses`, `candidate_family_members`, `candidate_family_rankings`, and ranked `strategy_candidates`, `scripts/generate_strategy_briefs.py` packages the top ranked families into persisted `strategy_briefs` plus reviewable run-folder markdown/json packets, `scripts/prepare_gate_c_review.py` exports those briefs into analyst-ready Gate C review bundles, and `scripts/review_gate_c.py` turns the completed analyst judgments into persisted `gate_c_brief_reviews` and `gate_c_review_summaries`; `scripts/review_and_ingest_extractions.py` can now ingest the pass-only subset from blocking reviewed pilot batches, which was used to drain the prepared `v22` / `v23` / `v24` pilot backlog into the live store. The refreshed live run under `live-v22-v24-pass-subset` now reaches `153` active mechanisms and `5` provisional briefs, but `scripts/assess_live_brief_queue.py` still recommends waiting for richer mixed-family extraction output before spending analyst time on that queue. |
 
 ## Open Questions
 
@@ -1094,7 +1094,7 @@ Mitigations:
 
 ## Immediate Next Steps
 
-1. Wait for richer mixed-family extraction output instead of spending analyst time on the assessed `live-legacy-bootstrap` queue.
+1. Execute and ingest richer mixed-family extraction output instead of spending analyst time on the assessed `live-v22-v24-pass-subset` queue.
 2. Rerun `scripts/materialize_live_downstream_run.py` on that richer store once the live mechanism surface is no longer legacy-only.
 3. Run `scripts/assess_live_brief_queue.py` on the new live run prefix before handing the queue to an analyst.
 4. If a future assessed live queue recommends review, run `scripts/review_gate_c.py` on the completed template and record the outcome in `gate_c_review_summaries`.

@@ -28,14 +28,16 @@ persisted queryless mining queue, analyst-adjudicated reranks with learned mode
 weights, a hard-gated ranked family queue, and generated strategy briefs. The
 repo now also has a persisted Gate C review path over those briefs, and the
 live SQLite store has been reconciled onto the mechanism-first schema with
-legacy valid extractions promoted into `mechanism_instances`. The next critical
-path is therefore evaluating the first live downstream brief surface, which now
-exists under the `live-legacy-bootstrap` run prefix, and deciding whether that
-legacy slice is worth analyst review or whether newer mixed-family extraction
-output is required before deeper evaluation.
-That decision is now explicit in the repo: the current assessed recommendation
-is to wait for richer mixed-family extraction output before spending analyst
-time on the legacy live slice.
+legacy valid extractions promoted into `mechanism_instances`. The repo can now
+also ingest the pass-only subset from a blocking reviewed extraction batch,
+which was used to drain the prepared `v22` / `v23` / `v24` pilot backlog into
+the live store and refresh the live downstream queue under the
+`live-v22-v24-pass-subset` run prefix. That expanded the live mechanism store
+to `153` active mechanisms and produced `5` generated briefs, but the assessed
+recommendation still remains `wait_for_richer_extractions` because all current
+briefs are provisional, same-domain, and same-family. The next critical path is
+therefore mixed-family extraction execution and ingest, not more same-family
+pilot salvage.
 
 ---
 
