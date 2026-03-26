@@ -451,6 +451,47 @@ CREATE TABLE IF NOT EXISTS adjudicated_queryless_hits (
   UNIQUE (queryless_candidate_hit_id, run_id)
 );
 
+-- @context decision: C13 keeps family definitions (`candidate_families`) and
+-- run-specific ranking outputs separate. A family should survive across reruns,
+-- while the gated queue, diversity penalties, and representative members are
+-- specific to one analyst-informed ranking pass.
+CREATE TABLE IF NOT EXISTS candidate_family_members (
+  candidate_family_member_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  candidate_family_id INTEGER NOT NULL,
+  run_id TEXT NOT NULL,
+  adjudicated_queryless_hit_id INTEGER NOT NULL,
+  source_mechanism_instance_id INTEGER NOT NULL,
+  candidate_mechanism_instance_id INTEGER NOT NULL,
+  member_role TEXT NOT NULL DEFAULT 'representative_hypothesis',
+  support_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (candidate_family_id) REFERENCES candidate_families(candidate_family_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  FOREIGN KEY (adjudicated_queryless_hit_id) REFERENCES adjudicated_queryless_hits(adjudicated_queryless_hit_id) ON DELETE CASCADE,
+  FOREIGN KEY (source_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (candidate_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  UNIQUE (candidate_family_id, run_id, adjudicated_queryless_hit_id)
+);
+
+CREATE TABLE IF NOT EXISTS candidate_family_rankings (
+  candidate_family_ranking_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  candidate_family_id INTEGER NOT NULL,
+  run_id TEXT NOT NULL,
+  ranking_version TEXT NOT NULL,
+  family_rank INTEGER NOT NULL,
+  gate_status TEXT NOT NULL DEFAULT 'queued',
+  base_utility_score REAL NOT NULL,
+  diversity_penalty_score REAL NOT NULL DEFAULT 0.0,
+  final_priority_score REAL NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (candidate_family_id) REFERENCES candidate_families(candidate_family_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (candidate_family_id, run_id, ranking_version)
+);
+
 CREATE TABLE IF NOT EXISTS paper_embeddings (
   embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
   paper_id TEXT NOT NULL,
@@ -574,6 +615,12 @@ ON analyst_weight_updates (queryless_run_id, mining_mode);
 
 CREATE INDEX IF NOT EXISTS idx_adjudicated_queryless_hits_source_mode
 ON adjudicated_queryless_hits (source_mechanism_instance_id, mining_mode, adjusted_rank_within_source);
+
+CREATE INDEX IF NOT EXISTS idx_candidate_family_members_family_run
+ON candidate_family_members (candidate_family_id, run_id);
+
+CREATE INDEX IF NOT EXISTS idx_candidate_family_rankings_run_rank
+ON candidate_family_rankings (run_id, family_rank);
 
 CREATE INDEX IF NOT EXISTS idx_paper_embeddings_paper_id
 ON paper_embeddings (paper_id);

@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C13-hard-gated-candidate-ranking-and-family-assembly`
+- Current commit focus: `C14-strategy-briefs-and-minimal-test-plans`
 - Last updated: `2026-03-26`
 
 ---
@@ -77,9 +77,10 @@ The current bottleneck is also clear:
 - a benchmarkable multi-view retrieval stack now exists across structured, sparse, dense, and graph views
 - queryless mining and local reranking now persist ranked candidate hits across six zero-query discovery modes
 - analyst feedback and weight updates now persist against the C11 mining queue
-- but final candidate assembly is still not built
-- the next capability surface is hard-gated ranking and family assembly on top of the adjudicated queue
-- the system now has most of the local infrastructure it needs, but the family-assembly and final-output layers still need to be implemented and benchmarked
+- hard-gated ranking and family assembly now persist against the analyst-informed queue
+- but final strategy briefs are still not built
+- the next capability surface is turning the ranked family queue into reviewable strategy briefs with minimal tests
+- the system now has most of the local infrastructure it needs, but the final-output layer still needs to be implemented and benchmarked
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
 
@@ -238,7 +239,7 @@ This commit plan implements that order in concrete units.
 | `C10` | `completed` | Build multi-view retrieval stack | `C04`, `C08`, `C09` |
 | `C11` | `completed` | Add queryless mining jobs and local reranking | `C10` |
 | `C12` | `completed` | Add analyst adjudication loop and weight update path | `C04`, `C09`, `C11` |
-| `C13` | `pending` | Add hard-gated candidate ranking and family assembly | `C08`, `C09`, `C11`, `C12` |
+| `C13` | `completed` | Add hard-gated candidate ranking and family assembly | `C08`, `C09`, `C11`, `C12` |
 | `C14` | `pending` | Generate final strategy briefs and minimal test plans | `C13` |
 
 ---
@@ -811,7 +812,7 @@ This commit plan implements that order in concrete units.
 
 ## C13: Hard-Gated Candidate Ranking And Family Assembly
 
-- Status: `pending`
+- Status: `completed`
 - Scope: turn retrieval results into a disciplined review queue
 - Depends on: `C08`, `C09`, `C11`, `C12`
 
@@ -834,13 +835,19 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C13`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - added `scripts/build_candidate_family_ranking.py` plus `npm run rank:candidates` to turn adjudicated hits into gated family definitions, persisted transfer hypotheses, and ranked review-queue rows
+  - extended `sql/paperview_schema.sql` with `candidate_family_members` and `candidate_family_rankings` so family definitions remain stable while run-specific ranking outputs stay auditable
+  - verified the end-to-end C13 flow on `/tmp/paperview-c13-test.sqlite3` by running the C12 fixture chain plus `build_candidate_family_ranking.py`, which produced `candidate_families`, `candidate_family_members`, `transfer_hypotheses`, `candidate_family_rankings`, and ranked `strategy_candidates`
 - Completion notes:
+  - the hard-gate layer now enforces evidence threshold, explicit transfer path, explicit failure-mode/blocker surface, non-null tradecore mapping, and catastrophic-blocker rejection before families enter the queued review surface
+  - candidate families are now assembled from analyst-informed hits via deterministic structural signatures rather than ad hoc nearest-neighbor lists
+  - ranked family outputs now persist both base utility and diversity-penalized final priority so later brief generation can explain why a family was promoted or demoted
 
 ### Upstream Impact Notes
 
@@ -849,6 +856,7 @@ This commit plan implements that order in concrete units.
 - Inherits completed `C10`: candidate family assembly should start from persisted hybrid retrieval neighborhoods and benchmarked retrieval views, not from a single dense nearest-neighbor list.
 - Inherits completed `C11`: hard-gated ranking should start from persisted `queryless_candidate_hits` and preserve the mode-wise `structural_similarity_score`, `lexical_distance_score`, `transfer_plausibility_score`, and `blocker_penalty_score` as inspectable inputs into family assembly.
 - Inherits completed `C12`: hard-gated ranking should use `adjudicated_queryless_hits` as the default analyst-informed queue and read `analyst_weight_updates` to understand which modes and score components were promoted or demoted by analyst feedback.
+- Completed in `C13`: downstream brief generation should consume `candidate_family_rankings`, `candidate_family_members`, `candidate_families`, and `transfer_hypotheses` as the canonical ranked family surface rather than reconstructing candidate packets from raw hit-level tables.
 
 ## C14: Strategy Briefs And Minimal Test Plans
 
@@ -889,6 +897,7 @@ This commit plan implements that order in concrete units.
 
 - Add notes here when earlier commits change output expectations or validation design.
 - Inherits completed `C12`: final briefs should cite the adjudicated queue position and the key analyst reasons captured during C12 so the brief packet preserves why a candidate survived human review.
+- Inherits completed `C13`: final briefs should anchor on the persisted `candidate_family_rankings` order and reuse the linked `transfer_hypotheses` plus representative `candidate_family_members` rather than hand-selecting source papers again.
 
 ---
 

@@ -18,15 +18,15 @@ written: 2026-03-25
 ## Status
 
 - Overall status: `active`
-- Current phase: `phase-6-candidate-family-ranking`
+- Current phase: `phase-7-strategy-brief-generation`
 - Owner: `unassigned`
 - Last updated: `2026-03-26`
 - Working mode: `local-first`
 
 ## Current Focus
 
-- Use `adjudicated_queryless_hits` as the analyst-informed candidate queue rather than raw C11 mining ranks.
-- Build the first hard-gated candidate ranking and family assembly pass on top of persisted analyst weight updates.
+- Use `candidate_family_rankings` as the canonical ranked review queue rather than raw adjudicated hit rows.
+- Turn the top ranked families into strategy briefs with explicit transfer rationale, validation hooks, and failure criteria.
 - Keep the retrieval stack benchmarkable while swapping the dense backend from the deterministic baseline to the canonical local embedder.
 - Finish the `q-fin` PDF pull and verify corpus completeness.
 - Use repo-native launch/status commands for the corpus pull rather than ad hoc shell commands.
@@ -94,7 +94,7 @@ written: 2026-03-25
 | Discovery benchmark | `in_progress` | A checked-in retrieval benchmark definition now exists with adjudicated lexical/structural buckets, explicit baselines, materialization into `benchmark_pairs`, and view-level metrics in `retrieval_benchmark_results`; analyst acceptance labels are still needed to close Gate B fully. |
 | Embeddings + graph | `in_progress` | `scripts/build_retrieval_stack.py` now persists canonical `mechanism_retrieval_documents`, dense embeddings across the four C10 surfaces, and mechanism-level graph edges; the current dense backend is deterministic hashing and should later be swapped to the canonical local embedder without changing the retrieval contract. |
 | Candidate scoring | `in_progress` | `scripts/score_mechanism_exposure.py` now persists `mechanism_exposure_scores` with mechanism-level `exposure_score`, `underexploited_score`, and bootstrap `worth_followup_score` rows derived from fingerprints, family metadata, benchmark-linked mechanism ids, and analyst labels; C12 now refreshes those scores after adjudication rather than leaving the bootstrap priors static. |
-| Human review queue | `in_progress` | `scripts/mine_queryless_candidates.py` persists raw `queryless_candidate_hits`, and `scripts/run_analyst_adjudication.py` now writes `analyst_labels`, `analyst_weight_updates`, and `adjudicated_queryless_hits` so the review queue can move from mined candidates to analyst-informed ranks. |
+| Human review queue | `in_progress` | `scripts/mine_queryless_candidates.py` persists raw `queryless_candidate_hits`, `scripts/run_analyst_adjudication.py` writes `analyst_labels`, `analyst_weight_updates`, and `adjudicated_queryless_hits`, and `scripts/build_candidate_family_ranking.py` now turns that analyst-informed queue into gated `candidate_families`, `transfer_hypotheses`, `candidate_family_members`, `candidate_family_rankings`, and ranked `strategy_candidates`. |
 
 ## Open Questions
 
@@ -188,6 +188,7 @@ written: 2026-03-25
 - Added `scripts/benchmark_retrieval_stack.py` plus `npm run retrieve:benchmark` to score the separate retrieval views against `benchmark_pairs` and materialize Gate B-style comparison metrics.
 - Added `scripts/mine_queryless_candidates.py` plus `npm run mine:queryless` to persist ranked `queryless_candidate_hits` across six zero-query mining modes with explicit reranker sub-scores and rationale payloads.
 - Added `scripts/run_analyst_adjudication.py` plus `npm run adjudicate:analyst` to persist analyst adjudications, learn mode-wise reranker weights, refresh exposure priors from those labels, and materialize `adjudicated_queryless_hits`.
+- Added `scripts/build_candidate_family_ranking.py` plus `npm run rank:candidates` to hard-gate adjudicated hits, assemble structural `candidate_families`, persist `transfer_hypotheses`, and materialize diversity-aware `candidate_family_rankings`.
 - Added `scripts/corpus_status.py` to report expected/downloaded/failure counts plus downloader PID and recent log context.
 - Phase 0 now has a canonical status command: `python3 scripts/corpus_status.py`.
 - Status check shows the background downloader is no longer running and stalled after 4 PDFs.
@@ -1081,10 +1082,10 @@ Mitigations:
 
 ## Immediate Next Steps
 
-1. Build the first `C13` hard-gated ranking pass on top of `adjudicated_queryless_hits` and `analyst_weight_updates`.
-2. Turn adjudicated hits into reusable `candidate_families` and `transfer_hypotheses` instead of leaving them as flat pairwise queue rows.
+1. Build the first `C14` strategy-brief generator on top of `candidate_family_rankings`, `candidate_family_members`, and `transfer_hypotheses`.
+2. Turn the top gated families into reviewable candidate packets with transfer rationale, assumptions, failure modes, and cheapest validation steps.
 3. Swap the dense retrieval backend from the deterministic baseline to the canonical local embedder without changing the retrieval storage contract.
-4. Use analyst-informed reranks plus refreshed `mechanism_exposure_scores` as priors for family ranking rather than recomputing candidate features inline.
+4. Use the persisted family rankings as the brief-production order rather than re-ranking from raw candidate features inside the brief generator.
 5. Evaluate discovery quality on:
    - nearest fit
    - far analog

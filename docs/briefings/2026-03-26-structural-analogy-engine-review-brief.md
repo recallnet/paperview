@@ -24,9 +24,10 @@ The system’s end state is not “a pile of embeddings.” It is a reviewed pip
 
 The repo now also has a first persisted scoring surface for `exposure_score`,
 `underexploited_score`, and a bootstrap `worth_followup_score`, plus a
-persisted queryless mining queue and analyst-adjudicated reranks with learned
-mode weights. The next critical path is therefore hard-gated ranking and family
-assembly rather than initial retrieval or adjudication plumbing.
+persisted queryless mining queue, analyst-adjudicated reranks with learned mode
+weights, and a hard-gated ranked family queue. The next critical path is
+therefore strategy-brief generation rather than retrieval, adjudication, or
+family-assembly plumbing.
 
 ---
 
@@ -285,8 +286,11 @@ Current state:
   sub-scores plus evidence/rationale payloads
 - analyst adjudication now persists `analyst_labels`,
   `analyst_weight_updates`, and `adjudicated_queryless_hits`
-- the remaining gap is hard-gated family assembly, not queue materialization or
-  weight learning
+- hard-gated ranking now persists `candidate_families`,
+  `candidate_family_members`, `transfer_hypotheses`, and
+  `candidate_family_rankings`
+- the remaining gap is brief generation, not queue materialization, weight
+  learning, or family assembly
 
 ## Phase 7: Strategy Output and Handoff
 
@@ -639,10 +643,11 @@ If those are approved, the remaining work becomes mostly execution and tuning ra
 - persisted retrieval documents, mechanism embeddings, graph edges, benchmark
   results, queryless candidate hits, analyst weight updates, and adjudicated
   queue rows
+- persisted candidate families, family members, transfer hypotheses, and ranked
+  family queue rows
 
 ## Current Non-Implemented Surfaces
 
-- hard-gated family assembly
 - final strategy-brief generation
 
 ## Key Definitions
