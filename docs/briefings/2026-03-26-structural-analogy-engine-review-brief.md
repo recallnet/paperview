@@ -181,13 +181,16 @@ Work:
 
 Exit condition:
 - abstract extraction is batch-stable on meaningful pilot slices
-- validated outputs are ingested into a transitional `paper_extractions` buffer
+- validated outputs are captured in a transitional `paper_extractions` buffer
 - accepted mechanism records are promoted into canonical `mechanism_instances`
+  with evidence spans
 
 Current state:
 - in progress
 - benchmark slices and widened slices are already running through a real gate
 - one 25-paper widened slice has already been ingested
+- the active ingest path now accepts `0..N` mechanism instances per paper and
+  backfills older valid staging rows into the canonical mechanism store
 
 ## Phase 4: Normalization and Fingerprinting
 

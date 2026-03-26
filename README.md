@@ -10,6 +10,9 @@ unit for the structural analogy engine.
 - One paper may map to `0..N` mechanism instances.
 - `paper_extractions` is still used by the current abstract-first ingest path,
   but only as a transitional staging table.
+- Abstract-extraction runs now register a response contract that allows
+  `0..N` mechanism instances per paper, and accepted rows are promoted into
+  canonical `mechanism_instances` plus `mechanism_evidence_spans`.
 - The active extraction contract now requires `insight_type` plus explicit
   fragility, capacity, failure-regime, and negative-transfer fields so
   promising candidates stay falsifiable.
@@ -284,8 +287,14 @@ npm run extract:ingest -- --run-id <run_id> --responses-path <responses.jsonl>
 ```
 
 Today this command persists validated model output into transitional
-`paper_extractions` rows. That keeps the current extraction workflow usable
-while the mechanism-first persistence refactor is completed.
+`paper_extractions` rows and simultaneously promotes accepted mechanism records
+into canonical `mechanism_instances` plus abstract-backed
+`mechanism_evidence_spans`. That keeps the staging snapshot available while the
+mechanism-first store becomes the real downstream surface.
+
+The ingest path now accepts either the older single-record response format or a
+paper-level wrapper with `mechanism_instances`, so one paper can yield `0..N`
+canonical mechanism rows without changing the gate-and-ingest workflow.
 
 The validated extraction payload now requires:
 
@@ -338,6 +347,14 @@ python3 scripts/materialize_discovery_benchmark.py \
   --db-path data/structural-analogy/paperview.sqlite3
 ```
 
+Promote older valid `paper_extractions` rows into the canonical mechanism
+tables after pulling a pre-C05 SQLite file:
+
+```bash
+python3 scripts/promote_paper_extractions.py \
+  --db-path data/structural-analogy/paperview.sqlite3
+```
+
 The checked-in benchmark thresholds live in
 `configs/discovery_benchmark_definition.json` and require retrieval to:
 
@@ -366,12 +383,13 @@ The checked-in benchmark thresholds live in
 - `scripts/load_metadata_store.py` is the canonical way to populate the SQLite `papers` table from harvested metadata and current local PDF state.
 - `scripts/create_pilot_batch.py` is the canonical way to materialize a deterministic pilot batch under `data/structural-analogy/pilots/`.
 - `scripts/create_extraction_run.py` is the canonical way to register an abstract-extraction run in SQLite and export prompt-ready requests under `data/structural-analogy/runs/`.
-  Use `--max-requests` to regenerate capped benchmark slices from the actual prompt file; do not clone older `requests.jsonl` files forward when comparing prompt versions.
+  Use `--max-requests` to regenerate capped benchmark slices from the actual prompt file; do not clone older `requests.jsonl` files forward when comparing prompt versions. The stored run config now records the `mechanism-instance-batch-v1` response contract so later runtimes can emit `0..N` mechanism instances per paper explicitly.
 - `scripts/run_local_mlx_extraction.py` is the first local execution backend for prepared abstract-extraction runs on Apple Silicon via `mlx-lm`.
-- `scripts/ingest_extraction_responses.py` is the canonical way to validate model outputs against the extraction schema and persist them to `paper_extractions`.
+- `scripts/ingest_extraction_responses.py` is the canonical way to validate model outputs against the extraction schema, keep a per-paper staging snapshot in `paper_extractions`, and promote accepted rows into `mechanism_instances` plus `mechanism_evidence_spans`.
 - `scripts/review_extraction_quality.py` is the canonical pre-scale quality gate for semantically wrong but schema-valid outputs.
   It now classifies findings into `blocking` vs `warning` and can exit non-zero on blocking results.
 - `scripts/review_and_ingest_extractions.py` is the canonical policy command when a run should only ingest after passing the quality gate.
+- `scripts/promote_paper_extractions.py` is the canonical backfill path when an older SQLite file still has valid staging rows that predate the C05 mechanism-store promotion.
 - `prompts/abstract-extraction-v10.md` is the current active widened-slice prompt iteration.
 - `prompts/abstract-extraction-v8.md` is the previous strongest batch-stable widened prompt baseline.
 - `prompts/abstract-extraction-v9.md` is a targeted blocker-fix experiment for `2412.03618`, not yet the active batch prompt.

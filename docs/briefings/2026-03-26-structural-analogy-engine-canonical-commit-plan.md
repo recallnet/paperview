@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C05-mechanism-instance-store-and-extraction-refactor`
+- Current commit focus: `C06-mixed-family-abstract-extraction-stability`
 - Last updated: `2026-03-26`
 
 ---
@@ -181,7 +181,7 @@ This commit plan implements that order in concrete units.
 | `C02` | `completed` | Add insight-type, fragility, and anti-transfer schema | `C01` |
 | `C03` | `completed` | Seed adjacent literatures and holdout slices | `C01` |
 | `C04` | `completed` | Build discovery benchmark and retrieval acceptance thresholds | `C02`, `C03` |
-| `C05` | `pending` | Refactor local store and extraction pipeline around mechanism instances | `C01`, `C02` |
+| `C05` | `completed` | Refactor local store and extraction pipeline around mechanism instances | `C01`, `C02` |
 | `C06` | `pending` | Stabilize abstract extraction on mixed-family mechanism outputs | `C03`, `C05` |
 | `C07` | `pending` | Add section-aware text prep and evidence spans | `C05` |
 | `C08` | `pending` | Implement normalization and structural fingerprinting | `C05`, `C06`, `C07` |
@@ -405,7 +405,7 @@ This commit plan implements that order in concrete units.
 
 ## C05: Mechanism-Instance Store And Extraction Refactor
 
-- Status: `pending`
+- Status: `completed`
 - Scope: move the pipeline from `paper_extractions` toward mechanism-first persistence
 - Depends on: `C01`, `C02`
 
@@ -423,19 +423,26 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C05`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - extended the checked-in SQL contract with `mechanism_instances.evidence_confidence` plus `paper_extractions.response_contract_version`
+  - refactored `scripts/ingest_extraction_responses.py` so validated rows persist as per-paper staging snapshots and promote into canonical `mechanism_instances` plus `mechanism_evidence_spans`
+  - added a `promote_paper_extractions.py` backfill path for older valid staging rows and verified both ingest and backfill flows on a temp SQLite store
 - Completion notes:
+  - extraction runs now record a `mechanism-instance-batch-v1` response contract that allows `0..N` mechanism instances per paper
+  - accepted outputs now land in canonical mechanism tables with abstract-backed evidence spans and persisted confidence labels
+  - benchmark pairs now bridge from paper-level anchors to mechanism ids only when the paper-to-mechanism mapping is uniquely resolved
+  - `paper_extractions` remains available as a transitional per-paper snapshot rather than the downstream analysis unit
 
 ### Upstream Impact Notes
 
-- Inherits `C01`: refactor the active ingest path into the checked-in canonical tables instead of defining new mechanism-first storage names.
-- Inherits `C02`: persist the mandatory blocker and anti-transfer arrays into the explicit JSON columns already added to `mechanism_instances` and `transfer_hypotheses`.
-- Inherits `C04`: map benchmark pairs from paper-level anchors to mechanism instances without losing the benchmark keys or adjudication payload.
+- Completed in `C05`: the active ingest path now writes canonical `mechanism_instances` and `mechanism_evidence_spans`, while `paper_extractions` remains only a staging snapshot.
+- Completed in `C05`: extraction runs can declare `0..N` mechanism instances per paper via the checked-in `mechanism-instance-batch-v1` response contract.
+- Completed in `C05`: benchmark pairs bridge from paper ids to mechanism ids only when the mapping is unambiguous, preserving the `C04` benchmark keys and adjudication payload without inventing labels.
 
 ## C06: Mixed-Family Abstract Extraction Stability
 
@@ -472,6 +479,7 @@ This commit plan implements that order in concrete units.
 - Inherits `C02`: prompt/runtime work must emit the mandatory insight-type and blocker fields cleanly enough to satisfy Gate A and the blocker-context reviewer.
 - Inherits `C03`: mixed-family prompt stabilization should pull from active adjacent families while preserving the reserved holdout split.
 - Inherits `C04`: quality work should avoid tuning directly on the adjudicated holdout far-analog pairs that now define retrieval acceptance.
+- Inherits `C05`: the runtime should emit the paper-level `mechanism_instances` batch contract directly and treat legacy single-record rows only as backward-compatible fallback input.
 
 ## C07: Section-Aware Text Preparation
 
@@ -502,7 +510,7 @@ This commit plan implements that order in concrete units.
 
 ### Upstream Impact Notes
 
-- Add notes here when earlier commits change parsing expectations or section granularity.
+- Inherits `C05`: abstract-backed evidence spans already exist, so section-aware parsing should upgrade canonical span provenance rather than inventing a second evidence table.
 
 ## C08: Normalization And Structural Fingerprinting
 
@@ -542,7 +550,7 @@ This commit plan implements that order in concrete units.
 
 ### Upstream Impact Notes
 
-- Add notes here when earlier commits change ontology boundaries or normalization rules.
+- Inherits `C05`: normalization should read canonical mechanism rows plus `mechanism_json` / `evidence_confidence` rather than reparsing `paper_extractions`.
 
 ## C09: Exposure Scoring And Transfer Manifold Bootstrap
 
@@ -609,7 +617,7 @@ This commit plan implements that order in concrete units.
 
 ### Upstream Impact Notes
 
-- Add notes here when earlier commits change fingerprint structure, evidence spans, or benchmark definitions.
+- Inherits `C05`: sparse and dense retrieval should target canonical mechanism summaries and evidence spans, while respecting that benchmark bridges remain null when a paper maps to multiple active mechanisms.
 
 ## C11: Queryless Mining And Local Reranking
 
