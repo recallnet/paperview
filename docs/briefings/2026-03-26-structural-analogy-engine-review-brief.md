@@ -23,8 +23,10 @@ We are building a local-first research system that turns the literature corpus i
 The system’s end state is not “a pile of embeddings.” It is a reviewed pipeline that extracts mechanism records from papers, normalizes them into a controlled ontology, generates structural fingerprints, retrieves non-obvious analogs across domains, scores them for `tradecore` fit and novelty, and outputs a ranked review queue of candidate strategy mechanisms. This document is the exact plan, stack, and expected deliverables so the project can be reviewed before we push deeper.
 
 The repo now also has a first persisted scoring surface for `exposure_score`,
-`underexploited_score`, and a bootstrap `worth_followup_score`, so the next
-critical path is retrieval rather than scoring heuristics.
+`underexploited_score`, and a bootstrap `worth_followup_score`, plus a
+persisted queryless mining queue with explicit reranker sub-scores. The next
+critical path is therefore analyst adjudication and weight updates rather than
+initial retrieval plumbing.
 
 ---
 
@@ -252,6 +254,9 @@ Current state:
   views can now be benchmarked against the checked-in discovery benchmark
 - the first shipped dense baseline is deterministic so the retrieval contract
   is runnable before the canonical local embedder is wired in
+- queryless candidate discovery now persists ranked `queryless_candidate_hits`
+  across structural-near / lexical-far, tradecore-near / jargon-far, bridge,
+  holdout, contradiction, and rare-fingerprint mining modes
 
 ## Phase 6: Scoring and Review Queue
 
@@ -273,7 +278,13 @@ Exit condition:
 - we can inspect a candidate queue instead of raw retrieval output
 
 Current state:
-- not started
+- in progress
+- the repo now persists a first ranked candidate queue in
+  `queryless_candidate_hits`
+- each hit carries explicit structural, lexical-distance, transfer, and blocker
+  sub-scores plus evidence/rationale payloads
+- the remaining gap is analyst adjudication and weight updates, not queue
+  materialization
 
 ## Phase 7: Strategy Output and Handoff
 
@@ -623,12 +634,13 @@ If those are approved, the remaining work becomes mostly execution and tuning ra
 - gate-and-ingest workflow
 - section-aware PDF parsing and evidence upgrades
 - mechanism-level normalization and fingerprint persistence
+- persisted retrieval documents, mechanism embeddings, graph edges, benchmark
+  results, and queryless candidate hits
 
 ## Current Non-Implemented Surfaces
 
-- embeddings layer
-- graph layer
-- candidate scoring
+- analyst adjudication and weight updates
+- hard-gated family assembly
 - final strategy-brief generation
 
 ## Key Definitions

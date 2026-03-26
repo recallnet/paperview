@@ -348,23 +348,41 @@ def build_sparse_document_text(row, evidence_bundle):
 
 
 def build_source_payload(row, evidence_bundle):
+    mechanism_json = parse_json_object(row["mechanism_json"])
     return {
         "literature_family": row["literature_family"],
         "evaluation_split": row["evaluation_split"],
         "insight_type": row["insight_type"],
         "evidence_confidence": row["evidence_confidence"],
+        "mechanism_traits": {
+            "tradecore_fit": mechanism_json.get("tradecore_fit", "unknown"),
+            "prediction_market_portability": mechanism_json.get(
+                "prediction_market_portability", "unknown"
+            ),
+            "novel_market_portability": mechanism_json.get(
+                "novel_market_portability", "unknown"
+            ),
+            "likely_crowding": mechanism_json.get("likely_crowding", "unknown"),
+        },
         "fingerprint_facets": {
             "trigger": parse_json_array(row["trigger_json"]),
+            "state_variables": parse_json_array(row["state_variables_json"]),
             "actor_structure": parse_json_array(row["actor_structure_json"]),
             "market_topology": parse_json_array(row["market_topology_json"]),
             "pricing_path": parse_json_array(row["pricing_path_json"]),
             "execution_shape": parse_json_array(row["execution_shape_json"]),
             "liquidity_regime": parse_json_array(row["liquidity_regime_json"]),
+            "capacity_limit": parse_json_array(row["capacity_limit_json"]),
             "boundary_conditions": parse_json_array(row["boundary_conditions_json"]),
             "portability_blockers": parse_json_array(row["portability_blockers_json"]),
             "ambiguity_flags": parse_json_array(row["ambiguity_flags_json"]),
         },
         "section_labels": evidence_bundle.get("section_labels", []),
+        "required_assumptions": parse_json_array(row["required_assumptions_json"]),
+        "assumption_violations": parse_json_array(row["assumption_violations_json"]),
+        "fragility_flags": parse_json_array(row["fragility_flags_json"]),
+        "capacity_constraints": parse_json_array(row["capacity_constraints_json"]),
+        "failure_regimes": parse_json_array(row["failure_regimes_json"]),
         "exposure_score": row["exposure_score"],
         "underexploited_score": row["underexploited_score"],
         "worth_followup_score": row["worth_followup_score"],

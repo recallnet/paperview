@@ -359,6 +359,45 @@ CREATE TABLE IF NOT EXISTS retrieval_benchmark_results (
   UNIQUE (benchmark_pair_id, run_id, retrieval_version, view_name)
 );
 
+-- @context decision: C11 persists queryless mining hits as a first-class
+-- pairwise surface because later analyst adjudication and family assembly need
+-- auditable reranker sub-scores, evidence anchors, and mining-mode provenance.
+-- Reconstructing those later from transient top-k outputs would erase the exact
+-- reason a pair was surfaced and make C12/C13 impossible to debug.
+CREATE TABLE IF NOT EXISTS queryless_candidate_hits (
+  queryless_candidate_hit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_mechanism_instance_id INTEGER NOT NULL,
+  candidate_mechanism_instance_id INTEGER NOT NULL,
+  source_paper_id TEXT NOT NULL,
+  candidate_paper_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  retrieval_run_id TEXT NOT NULL,
+  retrieval_version TEXT NOT NULL,
+  mining_version TEXT NOT NULL,
+  mining_mode TEXT NOT NULL,
+  source_literature_family TEXT NOT NULL,
+  candidate_literature_family TEXT NOT NULL,
+  source_evaluation_split TEXT NOT NULL,
+  candidate_evaluation_split TEXT NOT NULL,
+  rank_within_source INTEGER NOT NULL,
+  is_cross_family INTEGER NOT NULL DEFAULT 0,
+  structural_similarity_score REAL NOT NULL,
+  lexical_distance_score REAL NOT NULL,
+  transfer_plausibility_score REAL NOT NULL,
+  blocker_penalty_score REAL NOT NULL,
+  reranker_score REAL NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (source_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (candidate_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  FOREIGN KEY (source_paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (candidate_paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  FOREIGN KEY (retrieval_run_id) REFERENCES extraction_runs(run_id) ON DELETE CASCADE,
+  UNIQUE (source_mechanism_instance_id, candidate_mechanism_instance_id, run_id, mining_version, mining_mode)
+);
+
 CREATE TABLE IF NOT EXISTS paper_embeddings (
   embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
   paper_id TEXT NOT NULL,
@@ -470,6 +509,12 @@ ON mechanism_graph_edges (source_mechanism_instance_id, target_mechanism_instanc
 
 CREATE INDEX IF NOT EXISTS idx_retrieval_benchmark_results_pair_view
 ON retrieval_benchmark_results (benchmark_pair_id, view_name);
+
+CREATE INDEX IF NOT EXISTS idx_queryless_candidate_hits_source_mode
+ON queryless_candidate_hits (source_mechanism_instance_id, mining_mode, rank_within_source);
+
+CREATE INDEX IF NOT EXISTS idx_queryless_candidate_hits_candidate
+ON queryless_candidate_hits (candidate_mechanism_instance_id);
 
 CREATE INDEX IF NOT EXISTS idx_paper_embeddings_paper_id
 ON paper_embeddings (paper_id);

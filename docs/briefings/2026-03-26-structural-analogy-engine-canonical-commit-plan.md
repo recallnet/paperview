@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C11-queryless-mining-and-local-reranking`
+- Current commit focus: `C12-analyst-adjudication-and-weight-update`
 - Last updated: `2026-03-26`
 
 ---
@@ -75,9 +75,10 @@ The current bottleneck is also clear:
 - abstract extraction quality is stable enough to support downstream retrieval work
 - exposure scoring and follow-up priors now exist at the mechanism level
 - a benchmarkable multi-view retrieval stack now exists across structured, sparse, dense, and graph views
-- but queryless mining, analyst feedback, and final candidate assembly are still not built
-- the next capability surface is candidate discovery and reranking on top of the persisted retrieval views
-- the system now has most of the local infrastructure it needs, but the retrieval and ranking layers still need to be implemented and benchmarked
+- queryless mining and local reranking now persist ranked candidate hits across six zero-query discovery modes
+- but analyst feedback and final candidate assembly are still not built
+- the next capability surface is analyst adjudication and weight update on top of the persisted mining queue
+- the system now has most of the local infrastructure it needs, but the analyst loop and hard-gated ranking layers still need to be implemented and benchmarked
 
 So the repo is not at zero. But it is also not yet pointed at the final product strongly enough.
 
@@ -234,7 +235,7 @@ This commit plan implements that order in concrete units.
 | `C08` | `completed` | Implement normalization and structural fingerprinting | `C05`, `C06`, `C07` |
 | `C09` | `completed` | Add exposure scoring and transfer manifold bootstrap | `C03`, `C08` |
 | `C10` | `completed` | Build multi-view retrieval stack | `C04`, `C08`, `C09` |
-| `C11` | `pending` | Add queryless mining jobs and local reranking | `C10` |
+| `C11` | `completed` | Add queryless mining jobs and local reranking | `C10` |
 | `C12` | `pending` | Add analyst adjudication loop and weight update path | `C04`, `C09`, `C11` |
 | `C13` | `pending` | Add hard-gated candidate ranking and family assembly | `C08`, `C09`, `C11`, `C12` |
 | `C14` | `pending` | Generate final strategy briefs and minimal test plans | `C13` |
@@ -712,7 +713,7 @@ This commit plan implements that order in concrete units.
 
 ## C11: Queryless Mining And Local Reranking
 
-- Status: `pending`
+- Status: `completed`
 - Scope: make the system inform us instead of waiting for manually specified themes
 - Depends on: `C10`
 
@@ -737,21 +738,28 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C11`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - added `scripts/mine_queryless_candidates.py` plus `npm run mine:queryless` to score and persist ranked hits across all six queryless mining modes
+  - extended `sql/paperview_schema.sql` with canonical `queryless_candidate_hits` persistence so later analyst/ranking work can read auditable reranker outputs instead of transient top-k lists
+  - enriched `scripts/build_retrieval_stack.py` `source_json` payloads with mechanism traits, blocker fields, and full fingerprint facets so C11 can rerank off persisted retrieval documents without re-reading raw extraction JSON
+  - verified the end-to-end C11 flow on `/tmp/paperview-c11-test.sqlite3` by running `build_retrieval_stack.py` and `mine_queryless_candidates.py`, which produced persisted ranked hits for all six mining modes
 - Completion notes:
+  - queryless mining now persists ranked candidate pairs for `structural_near_lexical_far`, `tradecore_near_jargon_far`, `bridge_mechanisms_across_families`, `zero_seed_vocabulary_holdouts`, `contradiction_mining`, and `rare_fingerprint_combinations_with_high_fit`
+  - each persisted hit now carries explicit `structural_similarity_score`, `lexical_distance_score`, `transfer_plausibility_score`, `blocker_penalty_score`, and mode-specific reranker output
+  - rationale payloads now retain section labels, mechanism traits, blocker context, evidence excerpts, and score breakdowns so later analyst adjudication can inspect why a pair surfaced
 
 ### Upstream Impact Notes
 
-- Add notes here when earlier commits change retrieval surfaces or accepted mining modes.
 - Inherits `C07`: queryless mining should be able to inspect section-backed evidence snippets and section labels, not only mechanism summaries.
 - Inherits completed `C09`: mining jobs should use `underexploited_score` to prioritize rare/high-fit mechanisms before adding heavier reranking passes.
 - Inherits the canonical vector strategy: queryless mining should compare candidates within one production vector space at a time, while any `bge-m3` exploratory mining or `gte-Qwen2-7B-instruct` reranking should be logged as separate phases rather than blended scores.
 - Inherits completed `C10`: queryless mining should read persisted `mechanism_retrieval_documents`, `mechanism_dense_embeddings`, and `mechanism_graph_edges` instead of rebuilding candidate corpora inline.
+- Completed in `C11`: downstream work should treat `queryless_candidate_hits` as the canonical ranked mining queue, including its per-mode reranker sub-scores and rationale payloads, rather than reconstructing candidate pairs from retrieval-only tables.
 
 ## C12: Analyst Adjudication And Weight Update
 
@@ -792,6 +800,7 @@ This commit plan implements that order in concrete units.
 - Inherits `C08`: family assembly and hard gating should cluster on canonical mechanism-level fingerprints and can down-rank families that rely heavily on queued normalization ambiguities.
 - Inherits completed `C09`: analyst feedback should attach to persisted mechanism-level feature rows in `mechanism_exposure_scores` so weight updates do not have to reconstruct the bootstrap feature set from raw JSON.
 - Inherits completed `C10`: analyst adjudication should store view-aware evidence against persisted retrieval ranks and candidate lists from `retrieval_benchmark_results`, not only against manually assembled examples.
+- Inherits completed `C11`: analyst adjudication should attach directly to persisted `queryless_candidate_hits` rows and their reranker sub-scores so accept/reject labels can update mode weights without reverse-engineering why a pair surfaced.
 
 ## C13: Hard-Gated Candidate Ranking And Family Assembly
 
@@ -831,6 +840,7 @@ This commit plan implements that order in concrete units.
 - Inherits `C02`: the hard-gate layer should use the canonical blocker fields directly rather than reconstructing fragility or anti-transfer heuristics downstream.
 - Inherits completed `C09`: ranking should consume persisted `exposure_score`, `underexploited_score`, and `worth_followup_score` as canonical priors before adding family-level aggregation.
 - Inherits completed `C10`: candidate family assembly should start from persisted hybrid retrieval neighborhoods and benchmarked retrieval views, not from a single dense nearest-neighbor list.
+- Inherits completed `C11`: hard-gated ranking should start from persisted `queryless_candidate_hits` and preserve the mode-wise `structural_similarity_score`, `lexical_distance_score`, `transfer_plausibility_score`, and `blocker_penalty_score` as inspectable inputs into family assembly.
 
 ## C14: Strategy Briefs And Minimal Test Plans
 
