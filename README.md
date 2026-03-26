@@ -15,6 +15,8 @@ unit for the structural analogy engine.
   promising candidates stay falsifiable.
 - The adjacent-literature seeding surface now lives in checked-in registries
   under `configs/`, with explicit active-family versus holdout split policy.
+- The discovery benchmark is now defined in a checked-in adjudicated pair set
+  with explicit retrieval acceptance thresholds, not only in prose.
 - Downstream retrieval, benchmarking, transfer review, and candidate-family
   work should target `mechanism_instances`, `mechanism_evidence_spans`,
   `transfer_hypotheses`, `candidate_families`, `analyst_labels`, and
@@ -328,6 +330,21 @@ Materialize the checked-in adjacent seeding plan and reserved holdout slice:
 python3 scripts/materialize_adjacent_seeding_plan.py \
   --output-dir data/structural-analogy/adjacent-seeding/plan-v1
 ```
+
+Materialize the adjudicated discovery benchmark into `benchmark_pairs`:
+
+```bash
+python3 scripts/materialize_discovery_benchmark.py \
+  --db-path data/structural-analogy/paperview.sqlite3
+```
+
+The checked-in benchmark thresholds live in
+`configs/discovery_benchmark_definition.json` and require retrieval to:
+
+- beat keyword, pure-dense, and citation-neighbor baselines on
+  `lexically_far_structurally_near` cases
+- surface at least `5` accepted non-seed-domain candidates in the top `20`
+- keep duplicate family rate at or below `25%`
 
 ## Notes
 

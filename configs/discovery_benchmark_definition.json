@@ -1,0 +1,233 @@
+{
+  "version": "discovery-benchmark-v1",
+  "acceptance_thresholds": {
+    "primary_metric": "top_20_accepted_non_seed_candidates",
+    "requirements": [
+      {
+        "metric": "beats_keyword_baseline_on_lexically_far_structurally_near",
+        "threshold": 1.0,
+        "comparison": "greater_than"
+      },
+      {
+        "metric": "beats_dense_baseline_on_lexically_far_structurally_near",
+        "threshold": 1.0,
+        "comparison": "greater_than"
+      },
+      {
+        "metric": "beats_citation_neighbor_baseline_on_lexically_far_structurally_near",
+        "threshold": 1.0,
+        "comparison": "greater_than"
+      },
+      {
+        "metric": "top_20_accepted_non_seed_candidates",
+        "threshold": 5,
+        "comparison": "greater_or_equal"
+      },
+      {
+        "metric": "duplicate_family_rate",
+        "threshold": 0.25,
+        "comparison": "less_or_equal"
+      }
+    ]
+  },
+  "pairs": [
+    {
+      "benchmark_key": "near-near-qfin-mm-vs-defi-mm",
+      "benchmark_bucket": "lexically_near_structurally_near",
+      "pair_kind": "obvious_neighbor",
+      "label_status": "adjudicated",
+      "source_paper": {
+        "paper_id": "anchor-qfin-market-making",
+        "literature_family": "q_fin",
+        "evaluation_split": "tuning",
+        "insight_type": "executable_strategy_primitive"
+      },
+      "candidate_paper": {
+        "paper_id": "candidate-defi-liquidity-mmaking",
+        "literature_family": "defi_amm_onchain_market_design",
+        "evaluation_split": "tuning",
+        "insight_type": "executable_strategy_primitive"
+      },
+      "adjudication": {
+        "expected_outcome": "easy_positive",
+        "rationale": "Both records are market-making and liquidity-supply mechanisms with vocabulary overlap and similar execution geometry."
+      }
+    },
+    {
+      "benchmark_key": "near-near-betting-vs-parimutuel-pricing",
+      "benchmark_bucket": "lexically_near_structurally_near",
+      "pair_kind": "obvious_neighbor",
+      "label_status": "adjudicated",
+      "source_paper": {
+        "paper_id": "anchor-betting-line-move",
+        "literature_family": "betting_sportsbook_pricing",
+        "evaluation_split": "tuning",
+        "insight_type": "market_design_exploit"
+      },
+      "candidate_paper": {
+        "paper_id": "candidate-parimutuel-pool-shift",
+        "literature_family": "pari_mutuel_tournament_pricing",
+        "evaluation_split": "tuning",
+        "insight_type": "market_design_exploit"
+      },
+      "adjudication": {
+        "expected_outcome": "easy_positive",
+        "rationale": "Pool-imbalance pricing and sportsbook line management are lexically and structurally close."
+      }
+    },
+    {
+      "benchmark_key": "near-far-qfin-forecast-vs-power-grid-risk",
+      "benchmark_bucket": "lexically_near_structurally_far",
+      "pair_kind": "hard_negative",
+      "label_status": "adjudicated",
+      "source_paper": {
+        "paper_id": "anchor-qfin-generic-forecast",
+        "literature_family": "q_fin",
+        "evaluation_split": "tuning",
+        "insight_type": "research_dead_end_worth_excluding"
+      },
+      "candidate_paper": {
+        "paper_id": "candidate-power-grid-forecasting",
+        "literature_family": "electricity_power_markets",
+        "evaluation_split": "tuning",
+        "insight_type": "monitoring_signal"
+      },
+      "adjudication": {
+        "expected_outcome": "negative",
+        "rationale": "The vocabulary overlaps around forecasting, but the mechanism shape is monitoring rather than tradable structural edge."
+      }
+    },
+    {
+      "benchmark_key": "near-far-auction-vs-betting-forecast",
+      "benchmark_bucket": "lexically_near_structurally_far",
+      "pair_kind": "hard_negative",
+      "label_status": "adjudicated",
+      "source_paper": {
+        "paper_id": "anchor-auction-price-discovery",
+        "literature_family": "auction_market_design",
+        "evaluation_split": "tuning",
+        "insight_type": "market_design_exploit"
+      },
+      "candidate_paper": {
+        "paper_id": "candidate-betting-outcome-forecast",
+        "literature_family": "betting_sportsbook_pricing",
+        "evaluation_split": "tuning",
+        "insight_type": "monitoring_signal"
+      },
+      "adjudication": {
+        "expected_outcome": "negative",
+        "rationale": "Shared pricing language is not enough; the candidate lacks the allocation and clearing structure of the auction anchor."
+      }
+    },
+    {
+      "benchmark_key": "far-near-qfin-basket-vs-fragmented-weather",
+      "benchmark_bucket": "lexically_far_structurally_near",
+      "pair_kind": "true_far_analog",
+      "label_status": "adjudicated",
+      "source_paper": {
+        "paper_id": "anchor-qfin-basket-completion",
+        "literature_family": "q_fin",
+        "evaluation_split": "tuning",
+        "insight_type": "executable_strategy_primitive"
+      },
+      "candidate_paper": {
+        "paper_id": "candidate-weather-fragmented-trigger",
+        "literature_family": "fragmented_special_markets",
+        "evaluation_split": "holdout",
+        "insight_type": "market_design_exploit"
+      },
+      "adjudication": {
+        "expected_outcome": "critical_positive",
+        "rationale": "This is the canonical holdout far analog: sparse special-market triggers mirror basket completion under fragmented venues without sharing q-fin vocabulary."
+      }
+    },
+    {
+      "benchmark_key": "far-near-defi-incentives-vs-electricity-balancing",
+      "benchmark_bucket": "lexically_far_structurally_near",
+      "pair_kind": "true_far_analog",
+      "label_status": "adjudicated",
+      "source_paper": {
+        "paper_id": "anchor-defi-liquidity-incentives",
+        "literature_family": "defi_amm_onchain_market_design",
+        "evaluation_split": "tuning",
+        "insight_type": "market_design_exploit"
+      },
+      "candidate_paper": {
+        "paper_id": "candidate-electricity-balancing-incentives",
+        "literature_family": "electricity_power_markets",
+        "evaluation_split": "tuning",
+        "insight_type": "market_design_exploit"
+      },
+      "adjudication": {
+        "expected_outcome": "positive",
+        "rationale": "Reward-program and balancing-market incentives are lexically distant but structurally both about subsidized liquidity and inventory smoothing."
+      }
+    },
+    {
+      "benchmark_key": "far-near-freight-capacity-vs-constrained-arb",
+      "benchmark_bucket": "lexically_far_structurally_near",
+      "pair_kind": "true_far_analog",
+      "label_status": "adjudicated",
+      "source_paper": {
+        "paper_id": "anchor-freight-capacity-auction",
+        "literature_family": "freight_logistics_transport_pricing",
+        "evaluation_split": "tuning",
+        "insight_type": "missing_executor_primitive"
+      },
+      "candidate_paper": {
+        "paper_id": "candidate-constrained-arb-capital-stress",
+        "literature_family": "constrained_arbitrage_forced_flow",
+        "evaluation_split": "tuning",
+        "insight_type": "regime_filter"
+      },
+      "adjudication": {
+        "expected_outcome": "positive",
+        "rationale": "Both mechanisms revolve around scarce capacity routing and forced-flow timing even though one talks lanes and the other capital stress."
+      }
+    },
+    {
+      "benchmark_key": "far-far-fragmented-weather-vs-generic-forecast",
+      "benchmark_bucket": "lexically_far_structurally_far",
+      "pair_kind": "hard_negative",
+      "label_status": "adjudicated",
+      "source_paper": {
+        "paper_id": "anchor-fragmented-cat-risk",
+        "literature_family": "fragmented_special_markets",
+        "evaluation_split": "holdout",
+        "insight_type": "crowding_or_decay_warning"
+      },
+      "candidate_paper": {
+        "paper_id": "candidate-generic-time-series-forecast",
+        "literature_family": "q_fin",
+        "evaluation_split": "tuning",
+        "insight_type": "research_dead_end_worth_excluding"
+      },
+      "adjudication": {
+        "expected_outcome": "negative",
+        "rationale": "No structural overlap and no useful lexical overlap; this pair should stay out of top ranks."
+      }
+    },
+    {
+      "benchmark_key": "far-far-auction-clearing-vs-weather-signal",
+      "benchmark_bucket": "lexically_far_structurally_far",
+      "pair_kind": "hard_negative",
+      "label_status": "adjudicated",
+      "source_paper": {
+        "paper_id": "anchor-auction-clearing-mechanism",
+        "literature_family": "auction_market_design",
+        "evaluation_split": "tuning",
+        "insight_type": "market_design_exploit"
+      },
+      "candidate_paper": {
+        "paper_id": "candidate-weather-signal-model",
+        "literature_family": "fragmented_special_markets",
+        "evaluation_split": "holdout",
+        "insight_type": "monitoring_signal"
+      },
+      "adjudication": {
+        "expected_outcome": "negative",
+        "rationale": "The candidate is a signal model for a holdout domain, not a clearing mechanism analog."
+      }
+    }
+  ]
+}

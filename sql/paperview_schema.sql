@@ -125,15 +125,22 @@ CREATE TABLE IF NOT EXISTS transfer_hypotheses (
 
 CREATE TABLE IF NOT EXISTS benchmark_pairs (
   benchmark_pair_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  benchmark_key TEXT NOT NULL,
+  source_paper_id TEXT,
+  candidate_paper_id TEXT,
   source_mechanism_instance_id INTEGER,
   candidate_mechanism_instance_id INTEGER,
+  benchmark_bucket TEXT NOT NULL DEFAULT 'lexically_far_structurally_near',
   pair_kind TEXT NOT NULL,
   label_status TEXT NOT NULL DEFAULT 'proposed',
   benchmark_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (source_paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (candidate_paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
   FOREIGN KEY (source_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
-  FOREIGN KEY (candidate_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE
+  FOREIGN KEY (candidate_mechanism_instance_id) REFERENCES mechanism_instances(mechanism_instance_id) ON DELETE CASCADE,
+  UNIQUE (benchmark_key)
 );
 
 CREATE TABLE IF NOT EXISTS analyst_labels (

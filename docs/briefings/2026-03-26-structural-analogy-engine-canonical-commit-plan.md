@@ -48,7 +48,7 @@ That is the living-plan rule for this document.
 - Canonical owner: `unassigned`
 - Working mode: `local-first`
 - Canonical execution unit: `commit`
-- Current commit focus: `C04-discovery-benchmark-construction`
+- Current commit focus: `C05-mechanism-instance-store-and-extraction-refactor`
 - Last updated: `2026-03-26`
 
 ---
@@ -180,7 +180,7 @@ This commit plan implements that order in concrete units.
 | `C01` | `completed` | Adopt mechanism-first canonical model and repo contract | none |
 | `C02` | `completed` | Add insight-type, fragility, and anti-transfer schema | `C01` |
 | `C03` | `completed` | Seed adjacent literatures and holdout slices | `C01` |
-| `C04` | `pending` | Build discovery benchmark and retrieval acceptance thresholds | `C02`, `C03` |
+| `C04` | `completed` | Build discovery benchmark and retrieval acceptance thresholds | `C02`, `C03` |
 | `C05` | `pending` | Refactor local store and extraction pipeline around mechanism instances | `C01`, `C02` |
 | `C06` | `pending` | Stabilize abstract extraction on mixed-family mechanism outputs | `C03`, `C05` |
 | `C07` | `pending` | Add section-aware text prep and evidence spans | `C05` |
@@ -361,7 +361,7 @@ This commit plan implements that order in concrete units.
 
 ## C04: Discovery Benchmark Construction
 
-- Status: `pending`
+- Status: `completed`
 - Scope: prevent retrieval from collapsing into obvious neighbors
 - Depends on: `C02`, `C03`
 
@@ -382,19 +382,26 @@ This commit plan implements that order in concrete units.
 
 ### Completion Record
 
-- Status: `pending`
-- Completed on:
-- Commit SHA:
-- Operator:
+- Status: `completed`
+- Completed on: `2026-03-26`
+- Commit SHA: `recorded in the completing git commit for C04`
+- Operator: `Codex`
 - Reviewer:
 - Verification:
+  - added a checked-in discovery benchmark definition with adjudicated bucket labels and explicit retrieval thresholds
+  - extended `benchmark_pairs` with stable benchmark keys plus paper-level source/candidate ids for pre-C05 storage
+  - added a materializer that loads the benchmark into SQLite and verified it on a temp store
 - Completion notes:
+  - the benchmark now covers all four lexical/structural buckets with adjudicated obvious neighbors, true far analogs, and hard negatives
+  - the holdout family from `C03` is now used directly in the lexical-far benchmark source set
+  - retrieval acceptance thresholds are now explicit and repo-local instead of implied by prose only
 
 ### Upstream Impact Notes
 
-- Inherits `C01`: benchmark storage should build on the draft `benchmark_pairs` table already checked into the local store schema.
-- Inherits `C02`: benchmark buckets and adjudication records should include the canonical `insight_type` labels so retrieval is judged on mechanism class as well as distance.
-- Inherits `C03`: use the checked-in holdout family policy and seed registry as the starting benchmark source set rather than inventing ad hoc family buckets.
+- Completed in `C04`: the repo now has a checked-in benchmark definition, retrieval thresholds, and materialization path in `benchmark_pairs`.
+- `C05` should map benchmark pairs from paper-level anchors to mechanism instances without losing the benchmark keys or adjudication payload.
+- `C10` should benchmark each retrieval surface against the `lexically_far_structurally_near` subset from `C04` before combining views.
+- `C12` should treat the `C04` adjudications as seed analyst labels and update them only through an explicit review path.
 
 ## C05: Mechanism-Instance Store And Extraction Refactor
 
@@ -428,6 +435,7 @@ This commit plan implements that order in concrete units.
 
 - Inherits `C01`: refactor the active ingest path into the checked-in canonical tables instead of defining new mechanism-first storage names.
 - Inherits `C02`: persist the mandatory blocker and anti-transfer arrays into the explicit JSON columns already added to `mechanism_instances` and `transfer_hypotheses`.
+- Inherits `C04`: map benchmark pairs from paper-level anchors to mechanism instances without losing the benchmark keys or adjudication payload.
 
 ## C06: Mixed-Family Abstract Extraction Stability
 
@@ -463,6 +471,7 @@ This commit plan implements that order in concrete units.
 
 - Inherits `C02`: prompt/runtime work must emit the mandatory insight-type and blocker fields cleanly enough to satisfy Gate A and the blocker-context reviewer.
 - Inherits `C03`: mixed-family prompt stabilization should pull from active adjacent families while preserving the reserved holdout split.
+- Inherits `C04`: quality work should avoid tuning directly on the adjudicated holdout far-analog pairs that now define retrieval acceptance.
 
 ## C07: Section-Aware Text Preparation
 

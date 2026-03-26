@@ -45,6 +45,7 @@ The structural analogy engine is a research pipeline with five functional layers
 4. Retrieval and scoring layer
    - Embed normalized summaries and fingerprints.
    - Build similarity, bridge-paper, and far-analog retrieval surfaces.
+   - Benchmark retrieval against adjudicated lexical/structural bucket pairs before calling it useful.
    - Score candidates by novelty, plausibility, evidence, and `tradecore` fit.
 
 5. Strategy output layer
@@ -101,6 +102,9 @@ Examples of adjacent literatures we expect to matter:
 The repo now carries a checked-in adjacent-family seed registry, per-family
 jargon lexicons, and a reserved holdout policy so cross-domain expansion is
 explicit instead of ad hoc.
+
+The repo now also carries a checked-in discovery benchmark definition with
+adjudicated near/far bucket labels and explicit retrieval acceptance thresholds.
 
 ---
 
