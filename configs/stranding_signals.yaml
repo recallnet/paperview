@@ -15,6 +15,7 @@ negation_terms:
 weights:
   instrument_gap: 0.28
   access_barrier: 0.24
+  implementation_barrier: 0.16
   result_specificity: 0.22
   resolution_mechanics: 0.18
   stranded_alpha_bonus: 0.08
@@ -25,6 +26,7 @@ weights:
 signal_caps:
   instrument_gap: 1.8
   access_barrier: 1.6
+  implementation_barrier: 1.6
   result_specificity: 1.6
   resolution_mechanics: 1.6
   survey_penalty: 1.4
@@ -60,6 +62,21 @@ signals:
       weight: 0.7
     - phrase: non-traded
       weight: 0.9
+  implementation_barrier:
+    - phrase: calibration
+      weight: 0.7
+    - phrase: not observable
+      weight: 1.1
+    - phrase: unobservable
+      weight: 1.0
+    - phrase: data unavailable
+      weight: 1.1
+    - phrase: data limitation
+      weight: 0.8
+    - phrase: computationally expensive
+      weight: 0.9
+    - phrase: implementation cost
+      weight: 0.8
   result_specificity:
     - phrase: closed-form
       weight: 1.3

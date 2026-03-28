@@ -401,11 +401,11 @@ Current status:
 - canonical `stranding_scores` foundation is implemented and live
 - current live score counts:
   - `scored_papers`: `17,323`
-  - `positive_score_papers`: `867`
-  - `realized_market_positive_papers`: `279`
-  - `stranded_alpha_positive_papers`: `750`
+  - `positive_score_papers`: `1,076`
+  - `realized_market_positive_papers`: `314`
+  - `stranded_alpha_positive_papers`: `943`
   - `top_score`: `0.412661`
-- the stage is not complete yet because low-diversity positives, explicit market-discourse leakage, and generic result-specificity cues are now all penalized without reintroducing a hard floor, and phrase-frequency dampening is now wired in, but later commits still need richer sparse features before the signal is ready for composite ranking
+- the stage is not complete yet because low-diversity positives, explicit market-discourse leakage, and generic result-specificity cues are now all penalized without reintroducing a hard floor, phrase-frequency dampening is wired in, and implementation/data-availability barriers are now represented, but later commits still need richer sparse features before the signal is ready for composite ranking
 
 ### `S09` Bridge / Composition / Contrast Operators
 
@@ -581,15 +581,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s08-idf-scaling-foundation`
-- Why this commit exists: add phrase-frequency dampening so ubiquitous sparse phrases are automatically downweighted instead of relying only on manual weights
+- Commit scope: `s08-implementation-barrier-signals`
+- Why this commit exists: add a missing sparse feature family for implementation and data-availability barriers so the stranding prior is not limited to instrument, access, result, and resolution cues
 - Stages touched: `S08`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`
-- Commands run: `python3 -m unittest -v tests.test_materialize_stranding_scores`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
-- Tests run: `tests.test_materialize_stranding_scores`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `sql/paperview_schema.sql`, `scripts/init_local_store.py`, `scripts/materialize_stranding_scores.py`, `tests/test_init_local_store.py`, `tests/test_materialize_stranding_scores.py`
+- Commands run: `python3 -m unittest -v tests.test_init_local_store tests.test_materialize_stranding_scores`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/init_local_store.py`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/init_local_store.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
+- Tests run: `tests.test_init_local_store`, `tests.test_materialize_stranding_scores`
 - Artifacts produced: `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
-- Acceptance result: `phrase-frequency dampening is now active and exposed in provenance as raw vs adjusted sparse totals; the fixture verifies common phrases are damped, while the live top-line counts remain unchanged at this corpus scale`
-- Open risks after commit: `idf dampening improves weighting discipline, but S08 still needs richer sparse features before the signal is ready to drive shortlist ranking`
+- Acceptance result: `implementation and data-availability barriers are now first-class sparse signals; the fixture proves the new family scores and the live positive surface widened from 867 to 1,076 with stranded-alpha positives rising to 943`
+- Open risks after commit: `the new feature family must add useful implementation-friction coverage without reintroducing broad generic over-inclusion`
 - Next intended commit: `S08 recall recovery via structured penalty refinement`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

@@ -188,6 +188,9 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
         access_barrier_score = normalized_score(
             signal_weight_totals["access_barrier"], signal_caps["access_barrier"], saturation_mode
         )
+        implementation_barrier_score = normalized_score(
+            signal_weight_totals["implementation_barrier"], signal_caps["implementation_barrier"], saturation_mode
+        )
         result_specificity_score = normalized_score(
             signal_weight_totals["result_specificity"], signal_caps["result_specificity"], saturation_mode
         )
@@ -199,6 +202,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             for feature_name in (
                 "instrument_gap",
                 "access_barrier",
+                "implementation_barrier",
                 "result_specificity",
                 "resolution_mechanics",
             )
@@ -228,6 +232,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
         stranding_score = (
             weights["instrument_gap"] * instrument_gap_score
             + weights["access_barrier"] * access_barrier_score
+            + weights["implementation_barrier"] * implementation_barrier_score
             + weights["result_specificity"] * result_specificity_score
             + weights["resolution_mechanics"] * resolution_mechanics_score
             + weights["stranded_alpha_bonus"] * stranded_alpha_bonus
@@ -261,6 +266,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
                 "stranding_score": round(stranding_score, 6),
                 "instrument_gap_score": instrument_gap_score,
                 "access_barrier_score": access_barrier_score,
+                "implementation_barrier_score": implementation_barrier_score,
                 "result_specificity_score": result_specificity_score,
                 "resolution_mechanics_score": resolution_mechanics_score,
                 "survey_penalty_score": survey_penalty_score,
@@ -305,13 +311,14 @@ def main():
               stranding_score,
               instrument_gap_score,
               access_barrier_score,
+              implementation_barrier_score,
               result_specificity_score,
               resolution_mechanics_score,
               survey_penalty_score,
               empirical_only_penalty_score,
               stranded_alpha_bonus,
               feature_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
@@ -322,6 +329,7 @@ def main():
                     row["stranding_score"],
                     row["instrument_gap_score"],
                     row["access_barrier_score"],
+                    row["implementation_barrier_score"],
                     row["result_specificity_score"],
                     row["resolution_mechanics_score"],
                     row["survey_penalty_score"],
