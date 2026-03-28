@@ -401,11 +401,11 @@ Current status:
 - canonical `stranding_scores` foundation is implemented and live
 - current live score counts:
   - `scored_papers`: `17,323`
-  - `positive_score_papers`: `1,076`
-  - `realized_market_positive_papers`: `314`
-  - `stranded_alpha_positive_papers`: `943`
+  - `positive_score_papers`: `810`
+  - `realized_market_positive_papers`: `281`
+  - `stranded_alpha_positive_papers`: `691`
   - `top_score`: `0.412661`
-- the stage is not complete yet because low-diversity positives, explicit market-discourse leakage, and generic result-specificity cues are now all penalized without reintroducing a hard floor, phrase-frequency dampening is wired in, and implementation/data-availability barriers are now represented, but later commits still need richer sparse features before the signal is ready for composite ranking
+- the stage is not complete yet because low-diversity positives, explicit market-discourse leakage, generic result-specificity cues, and thesis-free access-plus-resolution rows are now all penalized without reintroducing a hard floor, phrase-frequency dampening is wired in, and implementation/data-availability barriers are represented, but later commits still need richer sparse features before the signal is ready for composite ranking
 
 ### `S09` Bridge / Composition / Contrast Operators
 
@@ -581,15 +581,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s08-scorer-owned-implementation-migration`
-- Why this commit exists: localize the additive `implementation_barrier_score` migration inside the scorer stage so live DBs can materialize the new feature family without broader schema/init churn in the active commit surface
+- Commit scope: `s08-missing-thesis-penalty`
+- Why this commit exists: demote rows that only match access and resolution cues without any thesis-bearing signal from instrument, implementation, or result-specificity families
 - Stages touched: `S08`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`
 - Commands run: `python3 -m unittest -v tests.test_materialize_stranding_scores`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
 - Tests run: `tests.test_materialize_stranding_scores`
 - Artifacts produced: `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
-- Acceptance result: `the scorer now retrofits the missing implementation-barrier column on legacy stranding tables; the legacy fixture passes and the live rerun reproduces the 1,076-positive surface without relying on broader schema/init changes`
-- Open risks after commit: `the localized migration is now correct, but the canonical schema/init surfaces still need their own later cleanup commit if they are meant to become active`
+- Acceptance result: `the new missing-thesis penalty removes liquidation-style rows that lack instrument, implementation, or result-specificity support; the fixture zeros the access-plus-resolution-only paper and the live positive surface fell from 1,076 to 810`
+- Open risks after commit: `the penalty reduced weak over-inclusion, but later S08 commits still need richer sparse features so valid friction-only stranded papers are not underrepresented`
 - Next intended commit: `S08 recall recovery via structured penalty refinement`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
