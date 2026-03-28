@@ -401,10 +401,10 @@ Current status:
 - canonical `stranding_scores` foundation is implemented and live
 - current live score counts:
   - `scored_papers`: `17,323`
-  - `positive_score_papers`: `11,964`
-  - `stranded_alpha_positive_papers`: `11,371`
-  - `top_score`: `0.610972`
-- the stage is not complete yet because the sparse layer now has weighted phrase strength, but later commits still need stronger penalties, saturation controls, and BM25-style refinement
+  - `positive_score_papers`: `14`
+  - `stranded_alpha_positive_papers`: `13`
+  - `top_score`: `0.457925`
+- the stage is not complete yet because the current penalty floor sharply reduces weak over-inclusion but also collapses recall, so later commits must recover useful breadth without returning to generic drift
 
 ### `S09` Bridge / Composition / Contrast Operators
 
@@ -580,15 +580,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s08-sparse-weighting-refinement`
-- Why this commit exists: move the stranding lexicon from flat phrase counts to weighted sparse cues so strong stranded-result phrases outrank weak generic wording
+- Commit scope: `s08-penalty-and-saturation-refinement`
+- Why this commit exists: reduce weak over-inclusion in the sparse stranding layer by saturating repeated cues and zeroing out low-confidence composite scores
 - Stages touched: `S08`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`
 - Commands run: `python3 -m unittest -v tests.test_materialize_stranding_scores`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
 - Tests run: `tests.test_materialize_stranding_scores`
 - Artifacts produced: `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
-- Acceptance result: `weighted phrase cues are live; strong specificity cues outrank weak generic wording in the fixture, and the live top_score increased to 0.610972`
-- Open risks after commit: `the sparse layer still lacks stronger penalty refinement and saturation controls, so later S08 commits must reduce over-inclusion without collapsing genuinely stranded papers`
-- Next intended commit: `S08 penalty and saturation refinement`
+- Acceptance result: `saturation and minimum-score gating are live; the weak-characterization fixture now scores to zero, but live positive-score papers dropped sharply to 14`
+- Open risks after commit: `the current minimum-score gate is clearly too aggressive for corpus-scale recall, so the next S08 step must recover headroom with better penalty structure instead of simply lowering the threshold blindly`
+- Next intended commit: `S08 recall recovery via structured penalty refinement`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

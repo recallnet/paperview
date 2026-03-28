@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import re
 import sqlite3
 from pathlib import Path
@@ -68,10 +69,13 @@ def keyword_hits(
     return hits
 
 
-def normalized_score(weight_total: float, cap: float) -> float:
+def normalized_score(weight_total: float, cap: float, saturation_mode: str) -> float:
     if weight_total <= 0:
         return 0.0
-    return min(1.0, weight_total / cap)
+    ratio = weight_total / cap
+    if saturation_mode == "exponential":
+        return 1.0 - math.exp(-ratio)
+    return min(1.0, ratio)
 
 
 def normalize_phrase_entries(raw_entries: list[object]) -> list[dict]:
@@ -115,6 +119,8 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
         for feature_name, raw_entries in signal_config["signals"].items()
     }
     signal_caps = {feature_name: float(cap) for feature_name, cap in signal_config["signal_caps"].items()}
+    saturation_mode = str(signal_config.get("saturation_mode", "linear"))
+    minimum_stranding_score = float(signal_config.get("minimum_stranding_score", 0.0))
     negation_terms = signal_config.get("negation_terms", [])
     negation_window_chars = int(signal_config.get("negation_window_chars", 48))
     scored_rows = []
@@ -131,19 +137,23 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             feature_name: sum(hit["weight"] for hit in hits)
             for feature_name, hits in feature_hits.items()
         }
-        instrument_gap_score = normalized_score(signal_weight_totals["instrument_gap"], signal_caps["instrument_gap"])
-        access_barrier_score = normalized_score(signal_weight_totals["access_barrier"], signal_caps["access_barrier"])
+        instrument_gap_score = normalized_score(
+            signal_weight_totals["instrument_gap"], signal_caps["instrument_gap"], saturation_mode
+        )
+        access_barrier_score = normalized_score(
+            signal_weight_totals["access_barrier"], signal_caps["access_barrier"], saturation_mode
+        )
         result_specificity_score = normalized_score(
-            signal_weight_totals["result_specificity"], signal_caps["result_specificity"]
+            signal_weight_totals["result_specificity"], signal_caps["result_specificity"], saturation_mode
         )
         resolution_mechanics_score = normalized_score(
-            signal_weight_totals["resolution_mechanics"], signal_caps["resolution_mechanics"]
+            signal_weight_totals["resolution_mechanics"], signal_caps["resolution_mechanics"], saturation_mode
         )
         survey_penalty_score = normalized_score(
-            signal_weight_totals["survey_penalty"], signal_caps["survey_penalty"]
+            signal_weight_totals["survey_penalty"], signal_caps["survey_penalty"], saturation_mode
         )
         empirical_only_penalty_score = normalized_score(
-            signal_weight_totals["empirical_only_penalty"], signal_caps["empirical_only_penalty"]
+            signal_weight_totals["empirical_only_penalty"], signal_caps["empirical_only_penalty"], saturation_mode
         )
         stranded_alpha_bonus = 1.0 if paper_id in stranded_alpha_ids else 0.0
 
@@ -161,12 +171,19 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             - weights["empirical_only_penalty"] * empirical_only_penalty_score
         )
         stranding_score = max(0.0, min(1.0, stranding_score))
+        # @context requirement -- Weak composite scores are intentionally zeroed once positive and
+        # penalty signals have been combined. The stranding overlay should surface fewer, stronger
+        # stranded candidates instead of letting single weak cues drift above zero.
+        if stranding_score < minimum_stranding_score:
+            stranding_score = 0.0
 
         feature_payload = {
             "hits": {
                 feature_name: [hit["phrase"] for hit in hits] for feature_name, hits in feature_hits.items()
             },
             "weight_totals": signal_weight_totals,
+            "saturation_mode": saturation_mode,
+            "minimum_stranding_score": minimum_stranding_score,
             "primary_category": row["primary_category"],
             "published_at": row["published_at"],
             "is_stranded_alpha": paper_id in stranded_alpha_ids,
