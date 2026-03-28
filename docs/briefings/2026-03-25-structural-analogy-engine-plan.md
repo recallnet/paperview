@@ -274,7 +274,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S09` | bridge / composition / contrast operators | `done` | bridge, composition, contrast, and negative-space artifacts |
 | `S10` | review packet generation | `done` | region packets and dossiers |
 | `S11` | shortlist stage | `done` | shortlist rows + rationale |
-| `S12` | selective interpretation contract | `in_progress` | JSON interpretations only |
+| `S12` | selective interpretation contract | `done` | JSON interpretations only |
 | `S13` | holdout echo validation | `pending` | holdout echo metrics |
 | `S14` | Unrealized Ideas Index | `pending` | human-facing index |
 | `S15` | Stranded Result Ledger | `pending` | human-facing ledger |
@@ -530,8 +530,8 @@ Current status:
   - `TRANSLATION_CANDIDATE`: `1`
   - `COMPOSITIONAL_CANDIDATE`: `1`
   - `NO_TRANSLATION`: `1`
-- the stage implementation is now in place: selective interpretation is shortlist-gated, prompt- and schema-pinned, and canonically ingests only allowed JSON outputs while honoring the negative class
-- the next commit should close out `S12` explicitly and move execution to `S13` if no design defects surface during review
+- the stage is complete: selective interpretation is shortlist-gated, prompt- and schema-pinned, and canonically ingests only allowed JSON outputs while honoring the negative class
+- the next canonical step is `S13` holdout echo validation
 
 ### `S13` Holdout Echo
 
@@ -687,15 +687,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s12-interpretation-ingestion-and-validation`
-- Why this commit exists: canonicalize selective interpretation ingestion so only shortlist-linked, schema-valid JSON outputs with allowed classifications are accepted into the main store
-- Stages touched: `S12`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/ingest_selective_interpretations.py`, `tests/fixtures/selective_interpretation_responses.jsonl`, `tests/test_ingest_selective_interpretations.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:py -- scripts/ingest_selective_interpretations.py`, `python3 -m unittest -v tests.test_ingest_selective_interpretations`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:ingest-selective-interpretations -- --run-id selective-interpretation-ingestion-20260328 --responses-path tests/fixtures/selective_interpretation_responses.jsonl`, `npm run codecontext:diff -- scripts/ingest_selective_interpretations.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_ingest_selective_interpretations`
-- Artifacts produced: `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_ingestion_metrics.json`, `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_rejections.jsonl`
-- Acceptance result: `the ingestion path now enforces shortlist linkage and strict JSON validation, accepts allowed classes including NO_TRANSLATION, rejects out-of-contract rows into a rejection artifact, and materialized three valid interpretations plus one rejection in the live run`
-- Open risks after commit: `S12 appears to meet its acceptance bar now, but the plan still needs an explicit closeout decision before S13 holdout-echo work begins`
-- Next intended commit: `S12 closeout and move to S13`
+- Commit scope: `s12-closeout-and-move-to-s13`
+- Why this commit exists: record that `S12` meets its acceptance bar and make `S13` holdout echo validation the next explicit execution target
+- Stages touched: `S12`, `S13`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Acceptance result: `S12 is now closed out in the canonical plan: selective interpretation is shortlist-gated, contract-first, and canonically ingests only allowed JSON outputs while honoring the negative class, so holdout-echo validation can now build on stored interpretations rather than raw model text`
+- Open risks after commit: `S13 has not started yet, so holdout echo scoring and 2024+ discourse matching still need implementation`
+- Next intended commit: `S13 holdout echo foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
