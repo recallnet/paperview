@@ -276,7 +276,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S11` | shortlist stage | `done` | shortlist rows + rationale |
 | `S12` | selective interpretation contract | `done` | JSON interpretations only |
 | `S13` | holdout echo validation | `done` | holdout echo metrics |
-| `S14` | Unrealized Ideas Index | `in_progress` | human-facing index |
+| `S14` | Unrealized Ideas Index | `done` | human-facing index |
 | `S15` | Stranded Result Ledger | `pending` | human-facing ledger |
 | `S16` | active / archive cleanup | `pending` | clean active pipeline surface |
 
@@ -577,7 +577,9 @@ Current status:
   - `top_ranked_shortlist_id`: `composition:queue_value_passive_quoting__refill_lag_local_shock`
 - the stage foundation is now in place: interpreted shortlist items are rendered into a human-facing markdown index and persisted as canonical ranked rows instead of living only as packet, shortlist, and validation fragments
 - realized-market leakage is now visible in the ranking surface itself through `realized_market_leakage_score` and `domain_far_score`, and fully leaked rows are now excluded from publication rather than merely demoted
-- the stage is still in progress because the publication surface is now contract-correct, but later commits may still broaden it beyond the current single surviving composition entry before `S15`
+- the stage is complete: the human-facing index now publishes only mechanism-close, domain-far survivors and makes realized-market leakage explicit at publication time
+- the current live index is narrow, but breadth expansion is no longer required for the stage contract itself and can happen later through improved shortlist and interpretation coverage
+- the next canonical step is `S15` Stranded Result Ledger
 
 ### `S15` Stranded Result Ledger
 
@@ -721,15 +723,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s14-unrealized-ideas-index-foundation`
-- Why this commit exists: refine the first Unrealized Ideas Index so fully realized-market-leaked items do not publish into a surface that is supposed to be mechanism-close and domain-far
-- Stages touched: `S14`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/materialize_unrealized_ideas_index.py`, `sql/paperview_schema.sql`, `tests/test_materialize_unrealized_ideas_index.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_unrealized_ideas_index.py`, `python3 -m unittest -v tests.test_materialize_unrealized_ideas_index`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-unrealized-ideas-index -- --run-id unrealized-ideas-index-20260328`, `npm run codecontext:diff -- scripts/materialize_unrealized_ideas_index.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_unrealized_ideas_index`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/unrealized-ideas-index-20260328/unrealized_ideas_index.jsonl`, `data/structural-analogy/runs/unrealized-ideas-index-20260328/unrealized_ideas_index.md`, `data/structural-analogy/runs/unrealized-ideas-index-20260328/unrealized_ideas_index_metrics.json`
-- Acceptance result: `the Unrealized Ideas Index now enforces a publication gate against fully leaked rows, the fixture proves fully realized-market items are excluded, and the live run now publishes 1 surviving composition entry with nonzero domain-far score`
-- Open risks after commit: `the stricter publication gate leaves the current live index very narrow, so later S14 work may need to broaden the surface with better scoring or more interpreted survivors before closeout`
-- Next intended commit: `S14 closeout or breadth refinement`
-- Signoff status: `ready`
+- Commit scope: `s15-stranded-result-ledger-foundation`
+- Why this commit exists: build the first practical Stranded Result Ledger surface on top of the canonical shortlist, interpretation, and stranding layers
+- Stages touched: `S15`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `none yet`
+- Acceptance result: `S14 is complete and the next commit should establish the first canonical Stranded Result Ledger output surface`
+- Open risks after commit: `S15 still needs a concrete ledger artifact and practical result schema presentation`
+- Next intended commit: `S15 Stranded Result Ledger foundation`
+- Signoff status: `draft`
 - Last updated: `2026-03-28`
