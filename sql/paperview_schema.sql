@@ -314,6 +314,27 @@ CREATE TABLE IF NOT EXISTS selective_interpretations (
 CREATE INDEX IF NOT EXISTS idx_selective_interpretations_run_classification
 ON selective_interpretations (run_id, classification);
 
+-- @context decision -- Holdout echoes are canonical validation artifacts: they connect interpreted
+-- shortlist items to later 2024+ market-adjacent papers so downstream index and ledger stages can
+-- measure whether a pre-2024 idea later surfaced in market discourse.
+CREATE TABLE IF NOT EXISTS holdout_echoes (
+  run_id TEXT NOT NULL,
+  interpretation_run_id TEXT NOT NULL,
+  shortlist_id TEXT NOT NULL,
+  holdout_paper_id TEXT NOT NULL,
+  echo_score REAL NOT NULL,
+  echo_rank INTEGER NOT NULL,
+  source_paper_ids_json TEXT NOT NULL DEFAULT '[]',
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, shortlist_id, holdout_paper_id),
+  FOREIGN KEY (interpretation_run_id, shortlist_id) REFERENCES selective_interpretations(run_id, shortlist_id) ON DELETE CASCADE,
+  FOREIGN KEY (holdout_paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_holdout_echoes_run_shortlist_rank
+ON holdout_echoes (run_id, shortlist_id, echo_rank);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.

@@ -275,7 +275,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S10` | review packet generation | `done` | region packets and dossiers |
 | `S11` | shortlist stage | `done` | shortlist rows + rationale |
 | `S12` | selective interpretation contract | `done` | JSON interpretations only |
-| `S13` | holdout echo validation | `pending` | holdout echo metrics |
+| `S13` | holdout echo validation | `in_progress` | holdout echo metrics |
 | `S14` | Unrealized Ideas Index | `pending` | human-facing index |
 | `S15` | Stranded Result Ledger | `pending` | human-facing ledger |
 | `S16` | active / archive cleanup | `pending` | clean active pipeline surface |
@@ -543,6 +543,17 @@ Accept when:
 
 - pre-2024 candidates can be checked for later discourse echoes
 
+Current status:
+
+- canonical `holdout_echoes` foundation is implemented and live
+- current live echo counts:
+  - `interpreted_shortlist_count`: `3`
+  - `shortlists_with_echoes`: `3`
+  - `echo_count`: `9`
+  - `top_k`: `3`
+- the stage foundation is now in place: interpreted shortlist items can be checked against the canonical `holdout` corpus through the existing embedding space instead of being treated as timeless hypotheses
+- the current echo score is still embedding-only proximity over representative source papers; the next commit should either close out `S13` if that validation surface is sufficient, or refine the discourse-matching logic before `S14`
+
 ### `S14` Unrealized Ideas Index
 
 Build:
@@ -631,6 +642,7 @@ Accept when:
 - `npm run store:materialize-shortlist`
 - `npm run store:materialize-selective-interpretation-batch`
 - `npm run store:ingest-selective-interpretations`
+- `npm run store:materialize-holdout-echoes`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -679,6 +691,9 @@ Accept when:
 - selective interpretation ingestion:
   - `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_ingestion_metrics.json`
   - `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_rejections.jsonl`
+- holdout echoes:
+  - `data/structural-analogy/runs/holdout-echo-materialization-20260328/holdout_echo_metrics.json`
+  - `data/structural-analogy/runs/holdout-echo-materialization-20260328/holdout_echoes.jsonl`
 - corpus memberships:
   - `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
 - stranding scores:
@@ -687,15 +702,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s12-closeout-and-move-to-s13`
-- Why this commit exists: record that `S12` meets its acceptance bar and make `S13` holdout echo validation the next explicit execution target
-- Stages touched: `S12`, `S13`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Acceptance result: `S12 is now closed out in the canonical plan: selective interpretation is shortlist-gated, contract-first, and canonically ingests only allowed JSON outputs while honoring the negative class, so holdout-echo validation can now build on stored interpretations rather than raw model text`
-- Open risks after commit: `S13 has not started yet, so holdout echo scoring and 2024+ discourse matching still need implementation`
-- Next intended commit: `S13 holdout echo foundation`
+- Commit scope: `s13-holdout-echo-foundation`
+- Why this commit exists: establish the first canonical holdout-echo stage so interpreted shortlist items can be scored against 2024+ holdout papers rather than treated as timeless hypotheses
+- Stages touched: `S13`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/materialize_holdout_echoes.py`, `sql/paperview_schema.sql`, `tests/test_materialize_holdout_echoes.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_holdout_echoes.py`, `python3 -m unittest -v tests.test_materialize_holdout_echoes`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-holdout-echoes -- --run-id holdout-echo-materialization-20260328`, `npm run codecontext:diff -- scripts/materialize_holdout_echoes.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_holdout_echoes`
+- Artifacts produced: `data/structural-analogy/runs/holdout-echo-materialization-20260328/holdout_echo_metrics.json`, `data/structural-analogy/runs/holdout-echo-materialization-20260328/holdout_echoes.jsonl`
+- Acceptance result: `the holdout-echo stage now canonically links interpreted shortlist items to later holdout papers through the existing embedding space, the fixture proves nearest-holdout ranking from reviewed source papers, and the live run materialized 9 echo rows across 3 interpreted shortlist items`
+- Open risks after commit: `the current echo surface is embedding-only and may later need richer discourse matching or stronger time filtering, but the canonical validation contract now exists`
+- Next intended commit: `S13 closeout or holdout echo refinement`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
