@@ -28,6 +28,7 @@
     "store:materialize-bridges": "uv run --with numpy --with pyyaml --with sqlite-vec python3 scripts/materialize_bridges.py",
     "store:materialize-compositions": "uv run --with numpy --with pyyaml --with sqlite-vec python3 scripts/materialize_compositions.py",
     "store:materialize-contrasts": "python3 scripts/materialize_contrasts.py",
+    "store:materialize-negative-space": "uv run --with numpy --with pyyaml --with sqlite-vec python3 scripts/materialize_negative_space.py",
     "pilot:create": "python3 scripts/create_pilot_batch.py",
     "extract:prepare": "python3 scripts/create_extraction_run.py",
     "extract:ingest": "python3 scripts/ingest_extraction_responses.py",

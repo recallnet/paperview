@@ -271,7 +271,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S06` | canonical probe stage | `done` | `anchors`, `agitator_patterns`, `probe_hits` |
 | `S07` | realized-market firewall corpus | `in_progress` | canonical corpus memberships + realized-market anti-realization set |
 | `S08` | stranding sparse scoring layer | `done` | stranding features + scores |
-| `S09` | bridge / composition / contrast operators | `in_progress` | bridge and composition artifacts |
+| `S09` | bridge / composition / contrast operators | `in_progress` | bridge, composition, contrast, and negative-space artifacts |
 | `S10` | review packet generation | `pending` | region packets and dossiers |
 | `S11` | shortlist stage | `pending` | shortlist rows + rationale |
 | `S12` | selective interpretation contract | `pending` | JSON interpretations only |
@@ -423,7 +423,7 @@ Accept when:
 
 Current status:
 
-- canonical `bridge_candidates`, `composition_candidates`, and `contrast_candidates` foundations are implemented and live
+- canonical `bridge_candidates`, `composition_candidates`, `contrast_candidates`, and `negative_space_candidates` foundations are implemented and live
 - current live bridge counts:
   - `positive_anchor_count`: `6`
   - `anchor_pair_count`: `15`
@@ -441,7 +441,12 @@ Current status:
   - `patterns_with_candidates`: `4`
   - `contrast_candidate_count`: `80`
   - `top_score`: `3.889789`
-- the stage is in progress because bridge, composition, and contrast scoring now exist in the canonical store, but negative-space search is still missing
+- current live negative-space counts:
+  - `negative_anchor_count`: `1`
+  - `anchors_with_candidates`: `1`
+  - `negative_space_candidate_count`: `25`
+  - `top_score`: `2.930531`
+- the stage now has all four operator foundations in the canonical store; the next commit should close out S09 explicitly and move the plan to S10 if no design defects surface during review
 
 ### `S10` Review Packets
 
@@ -575,6 +580,7 @@ Accept when:
 - `npm run store:materialize-bridges`
 - `npm run store:materialize-compositions`
 - `npm run store:materialize-contrasts`
+- `npm run store:materialize-negative-space`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -608,6 +614,9 @@ Accept when:
 - contrasts:
   - `data/structural-analogy/runs/contrast-materialization-20260328/contrast_metrics.json`
   - `data/structural-analogy/runs/contrast-materialization-20260328/contrasts.jsonl`
+- negative space:
+  - `data/structural-analogy/runs/negative-space-materialization-20260328/negative_space_metrics.json`
+  - `data/structural-analogy/runs/negative-space-materialization-20260328/negative_space.jsonl`
 - corpus memberships:
   - `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
 - stranding scores:
@@ -616,15 +625,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s09-contrast-operator-foundation`
-- Why this commit exists: add the first canonical contrast operator so near-A / far-B probe patterns become queryable paper-level candidates in the main store instead of staying trapped in raw probe hits
+- Commit scope: `s09-negative-space-operator-foundation`
+- Why this commit exists: add the first canonical negative-space operator so papers near dead-end and theorem-only anchor regions become a queryable surface in the main store instead of only affecting scores implicitly
 - Stages touched: `S09`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `package.json`, `scripts/materialize_contrasts.py`, `tests/test_materialize_contrasts.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_contrasts.py`, `python3 -m unittest -v tests.test_materialize_contrasts`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-contrasts -- --run-id contrast-materialization-20260328`, `npm run codecontext:diff -- scripts/materialize_contrasts.py`, `npm run docs:lint`
-- Tests run: `tests.test_materialize_contrasts`
-- Artifacts produced: `data/structural-analogy/runs/contrast-materialization-20260328/contrast_metrics.json`, `data/structural-analogy/runs/contrast-materialization-20260328/contrasts.jsonl`
-- Acceptance result: `the contrast stage now writes canonical paper-level contrast candidates, the fixture ranks the top paper correctly for each contrast pattern, and the live run materialized 80 contrast candidates across all 4 contrast patterns`
-- Open risks after commit: `S09 still lacks a canonical negative-space search surface, so anti-realization and dead-region suppression still depends on penalties rather than its own retrieval artifact`
-- Next intended commit: `S09 negative-space operator foundation`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `package.json`, `scripts/materialize_negative_space.py`, `tests/test_materialize_negative_space.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_negative_space.py`, `uv run --with numpy --with pyyaml --with sqlite-vec python3 -m unittest -v tests.test_materialize_negative_space`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-negative-space -- --run-id negative-space-materialization-20260328`, `npm run codecontext:diff -- scripts/materialize_negative_space.py`, `npm run docs:lint`
+- Tests run: `tests.test_materialize_negative_space`
+- Artifacts produced: `data/structural-analogy/runs/negative-space-materialization-20260328/negative_space_metrics.json`, `data/structural-analogy/runs/negative-space-materialization-20260328/negative_space.jsonl`
+- Acceptance result: `the negative-space stage now writes canonical dead-region candidates, the fixture ranks the low-stranding dead-region paper above the stronger stranded variant, and the live run materialized 25 negative-space candidates for the negative anchor neighborhood`
+- Open risks after commit: `S09 now has all four operator foundations, but the stage still needs an explicit closeout decision in the plan before S10 review-packet work begins`
+- Next intended commit: `S09 stage closeout and move to S10`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

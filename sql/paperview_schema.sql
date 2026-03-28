@@ -227,6 +227,28 @@ CREATE TABLE IF NOT EXISTS contrast_candidates (
 CREATE INDEX IF NOT EXISTS idx_contrast_candidates_run_pattern_rank
 ON contrast_candidates (run_id, pattern_id, contrast_rank);
 
+-- @context decision -- Negative-space operators surface neighborhoods around dead-end anchors as a
+-- first-class retrieval artifact. Keeping them canonical makes review and shortlist stages inspect
+-- boring regions directly instead of inferring them only from penalties or hidden report logic.
+CREATE TABLE IF NOT EXISTS negative_space_candidates (
+  run_id TEXT NOT NULL,
+  anchor_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  representative_view_id INTEGER,
+  negative_space_score REAL NOT NULL,
+  negative_rank INTEGER NOT NULL,
+  space_support INTEGER NOT NULL DEFAULT 0,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, anchor_id, paper_id),
+  FOREIGN KEY (anchor_id) REFERENCES anchors(anchor_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (representative_view_id) REFERENCES text_views(view_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_negative_space_candidates_run_anchor_rank
+ON negative_space_candidates (run_id, anchor_id, negative_rank);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.
