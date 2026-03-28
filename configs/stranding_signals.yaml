@@ -73,7 +73,7 @@ signals:
     - phrase: optimal policy
       weight: 0.8
     - phrase: characterize
-      weight: 0.4
+      weight: 0.2
   resolution_mechanics:
     - phrase: settlement
       weight: 1.2
