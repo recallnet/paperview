@@ -145,6 +145,8 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
                   ('p9', 'arxiv', 'Exact incomplete-market note', 'we provide an exact characterization of pricing in an incomplete market', '["q-fin.PR"]', 'q-fin.PR', '2017-08-11'),
                   ('p10', 'arxiv', 'Unobservable calibration friction', 'closed-form pricing with calibration challenges because volatility is unobservable and data unavailable', '["q-fin.PR"]', 'q-fin.PR', '2018-01-10'),
                   ('p11', 'arxiv', 'Liquidation only stress', 'illiquid liquidation dynamics in stressed markets', '["q-fin.TR"]', 'q-fin.TR', '2018-02-01'),
+                  ('p12', 'arxiv', 'Closed-form maturity note', 'closed-form pricing at maturity', '["q-fin.PR"]', 'q-fin.PR', '2018-02-02'),
+                  ('p13', 'arxiv', 'Contingent maturity note', 'closed-form contingent claim pricing at maturity', '["q-fin.PR"]', 'q-fin.PR', '2018-02-03'),
                   ('p3', 'arxiv', 'Holdout market structure', 'prediction market settlement design', '["cs.GT"]', 'cs.GT', '2024-05-01');
 
                 INSERT INTO corpus_memberships (run_id, paper_id, corpus_id, membership_source, rationale_json) VALUES
@@ -163,6 +165,8 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
                   ('membership-run', 'p9', 'discovery', 'test', '{}'),
                   ('membership-run', 'p10', 'discovery', 'test', '{}'),
                   ('membership-run', 'p11', 'discovery', 'test', '{}'),
+                  ('membership-run', 'p12', 'discovery', 'test', '{}'),
+                  ('membership-run', 'p13', 'discovery', 'test', '{}'),
                   ('membership-run', 'p3', 'holdout', 'test', '{}');
                 """
             )
@@ -207,7 +211,7 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
             finally:
                 conn.close()
 
-            self.assertEqual([row["paper_id"] for row in rows], ["p1", "p10", "p11", "p2", "p4", "p5", "p6", "p7", "p8", "p9"])
+            self.assertEqual([row["paper_id"] for row in rows], ["p1", "p10", "p11", "p12", "p13", "p2", "p4", "p5", "p6", "p7", "p8", "p9"])
             by_id = {row["paper_id"]: row for row in rows}
             self.assertGreater(by_id["p1"]["stranding_score"], by_id["p2"]["stranding_score"])
             self.assertGreater(by_id["p1"]["stranding_score"], 0.0)
@@ -225,6 +229,8 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
             self.assertGreater(by_id["p10"]["implementation_barrier_score"], 0.0)
             self.assertGreater(by_id["p10"]["stranding_score"], 0.0)
             self.assertEqual(by_id["p11"]["stranding_score"], 0.0)
+            self.assertEqual(by_id["p12"]["stranding_score"], 0.0)
+            self.assertGreater(by_id["p13"]["stranding_score"], 0.0)
 
             conn = sqlite3.connect(str(canonical_db))
             conn.row_factory = sqlite3.Row
@@ -255,11 +261,13 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
             )
             self.assertEqual(feature_by_id["p11"]["thesis_family_count"], 0)
             self.assertEqual(feature_by_id["p11"]["missing_thesis_penalty_score"], 1.0)
+            self.assertEqual(feature_by_id["p12"]["result_resolution_only_penalty_score"], 1.0)
+            self.assertEqual(feature_by_id["p13"]["result_resolution_only_penalty_score"], 0.0)
             self.assertEqual(feature_by_id["p1"]["raw_weight_totals"]["result_specificity"], 1.3)
 
             metrics = json.loads((output_dir / "stranding_score_metrics.json").read_text(encoding="utf-8"))
-            self.assertEqual(metrics["scored_papers"], 10)
-            self.assertEqual(metrics["positive_score_papers"], 6)
+            self.assertEqual(metrics["scored_papers"], 12)
+            self.assertEqual(metrics["positive_score_papers"], 7)
             self.assertEqual(metrics["realized_market_positive_papers"], 1)
 
 

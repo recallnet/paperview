@@ -243,6 +243,15 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             )
             if signal_weight_totals[feature_name] > 0
         )
+        result_resolution_only_penalty_score = (
+            1.0
+            if signal_weight_totals["result_specificity"] > 0
+            and signal_weight_totals["resolution_mechanics"] > 0
+            and signal_weight_totals["instrument_gap"] == 0
+            and signal_weight_totals["access_barrier"] == 0
+            and signal_weight_totals["implementation_barrier"] == 0
+            else 0.0
+        )
         low_diversity_penalty_score = 1.0 if positive_family_count < 2 else 0.0
         missing_thesis_penalty_score = 1.0 if thesis_family_count == 0 and positive_family_count > 0 else 0.0
         survey_penalty_score = normalized_score(
@@ -265,6 +274,10 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
         # overpopulate the sparse prior unless at least one thesis-bearing family also fires.
         # Penalizing rows with no instrument, implementation, or result-specificity support keeps the
         # scorer focused on unrealized ideas rather than generic distressed-market language.
+        # @context requirement -- Result-plus-resolution rows like `closed-form` + `maturity`
+        # can also masquerade as stranded ideas even when they lack any actual market-friction or
+        # instrument-seam cue. Penalizing that pattern trims theorem-shaped lifecycle language while
+        # preserving rows that also mention contingent claims, illiquidity, or implementation limits.
         # @context requirement -- The time-firewalled unrealized-idea rank must also distinguish
         # stranded results from papers already framed in explicit market discourse. A mild
         # realized-market penalty keeps those papers in the surface when they are otherwise strong,
@@ -278,6 +291,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             + weights["stranded_alpha_bonus"] * stranded_alpha_bonus
             - weights["low_diversity_penalty"] * low_diversity_penalty_score
             - weights["missing_thesis_penalty"] * missing_thesis_penalty_score
+            - weights["result_resolution_only_penalty"] * result_resolution_only_penalty_score
             - weights["realized_market_penalty"] * realized_market_penalty_score
             - weights["survey_penalty"] * survey_penalty_score
             - weights["empirical_only_penalty"] * empirical_only_penalty_score
@@ -296,6 +310,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             "thesis_family_count": thesis_family_count,
             "low_diversity_penalty_score": low_diversity_penalty_score,
             "missing_thesis_penalty_score": missing_thesis_penalty_score,
+            "result_resolution_only_penalty_score": result_resolution_only_penalty_score,
             "realized_market_penalty_score": realized_market_penalty_score,
             "primary_category": row["primary_category"],
             "published_at": row["published_at"],
