@@ -272,7 +272,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S07` | realized-market firewall corpus | `in_progress` | canonical corpus memberships + realized-market anti-realization set |
 | `S08` | stranding sparse scoring layer | `done` | stranding features + scores |
 | `S09` | bridge / composition / contrast operators | `done` | bridge, composition, contrast, and negative-space artifacts |
-| `S10` | review packet generation | `in_progress` | region packets and dossiers |
+| `S10` | review packet generation | `done` | region packets and dossiers |
 | `S11` | shortlist stage | `pending` | shortlist rows + rationale |
 | `S12` | selective interpretation contract | `pending` | JSON interpretations only |
 | `S13` | holdout echo validation | `pending` | holdout echo metrics |
@@ -471,8 +471,8 @@ Current status:
   - `composition`: `6`
   - `stranded_qfin`: `6`
   - `total_packets`: `24`
-- the stage foundation is now in place: packet markdown is generated deterministically from canonical tables, written to disk, and persisted in the main store for later shortlist and interpretation stages
-- the next commit should either close out `S10` if this packet contract is accepted as sufficient, or refine packet coverage and fields before `S11`
+- the stage is complete: packet markdown is generated deterministically from canonical tables, written to disk, and persisted in the main store for later shortlist and interpretation stages
+- the next canonical step is `S11` shortlist foundation
 
 ### `S11` Shortlist
 
@@ -642,15 +642,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s10-review-packet-foundation`
-- Why this commit exists: establish the first canonical review-packet stage so downstream shortlist work can consume deterministic cluster, bridge, composition, and stranded-qfin packets from the main store instead of ad hoc markdown only
-- Stages touched: `S10`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/materialize_review_packets.py`, `sql/paperview_schema.sql`, `tests/test_materialize_review_packets.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_review_packets.py`, `python3 -m unittest -v tests.test_materialize_review_packets`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-review-packets -- --run-id review-packet-materialization-20260328`, `npm run codecontext:diff -- scripts/materialize_review_packets.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_review_packets`
-- Artifacts produced: `data/structural-analogy/runs/review-packet-materialization-20260328/review_packet_metrics.json`, `data/structural-analogy/runs/review-packet-materialization-20260328/review_packets/`
-- Acceptance result: `the canonical store now persists deterministic review packets across four packet kinds, the fixture proves stable materialization from canonical tables, and the live run wrote 24 packet rows plus disk-backed markdown packets for downstream review`
-- Open risks after commit: `S10 still needs an explicit closeout decision: the packet contract exists, but shortlist work may still want richer packet fields or contrast/negative-space packet coverage before S11 starts`
-- Next intended commit: `S10 closeout or packet coverage refinement`
+- Commit scope: `s10-closeout-and-move-to-s11`
+- Why this commit exists: record that `S10` meets its acceptance bar and make `S11` shortlist foundation the next explicit execution target
+- Stages touched: `S10`, `S11`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Acceptance result: `S10 is now closed out in the canonical plan: deterministic review packets are live in the main store and on disk across the four current packet kinds, so shortlist work can start from canonical packet records rather than ad hoc markdown helpers`
+- Open risks after commit: `S11 has not started yet, so shortlist schema, rationale persistence, and acceptance or rejection workflows still need implementation`
+- Next intended commit: `S11 shortlist foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
