@@ -30,6 +30,7 @@
     "store:materialize-contrasts": "python3 scripts/materialize_contrasts.py",
     "store:materialize-negative-space": "uv run --with numpy --with pyyaml --with sqlite-vec python3 scripts/materialize_negative_space.py",
     "store:materialize-review-packets": "python3 scripts/materialize_review_packets.py",
+    "store:materialize-shortlist": "python3 scripts/materialize_shortlist.py",
     "pilot:create": "python3 scripts/create_pilot_batch.py",
     "extract:prepare": "python3 scripts/create_extraction_run.py",
     "extract:ingest": "python3 scripts/ingest_extraction_responses.py",

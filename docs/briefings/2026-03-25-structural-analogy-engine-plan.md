@@ -273,7 +273,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S08` | stranding sparse scoring layer | `done` | stranding features + scores |
 | `S09` | bridge / composition / contrast operators | `done` | bridge, composition, contrast, and negative-space artifacts |
 | `S10` | review packet generation | `done` | region packets and dossiers |
-| `S11` | shortlist stage | `pending` | shortlist rows + rationale |
+| `S11` | shortlist stage | `in_progress` | shortlist rows + rationale |
 | `S12` | selective interpretation contract | `pending` | JSON interpretations only |
 | `S13` | holdout echo validation | `pending` | holdout echo metrics |
 | `S14` | Unrealized Ideas Index | `pending` | human-facing index |
@@ -487,6 +487,19 @@ Accept when:
 - shortlist can mix papers, regions, bridges, and compositions
 - rationale is persisted, not only rendered
 
+Current status:
+
+- canonical `shortlist_items` foundation is implemented and live
+- current live shortlist counts:
+  - `shortlist_count`: `24`
+  - `bridge_or_composition_count`: `12`
+  - `bridge`: `6`
+  - `composition`: `6`
+  - `cluster`: `6`
+  - `paper`: `6`
+- the stage foundation is now in place: shortlist rows, ranks, statuses, and rationale are persisted in the main store and emitted as machine-readable artifacts
+- the current run exhausts the packet pool because the configured shortlist size exceeds the number of review packets; the next commit should either close out `S11` if this contract is sufficient, or refine shortlist coverage and acceptance or rejection workflow fields before `S12`
+
 ### `S12` Selective Interpretation
 
 Build:
@@ -595,6 +608,7 @@ Accept when:
 - `npm run store:materialize-contrasts`
 - `npm run store:materialize-negative-space`
 - `npm run store:materialize-review-packets`
+- `npm run store:materialize-shortlist`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -634,6 +648,9 @@ Accept when:
 - review packets:
   - `data/structural-analogy/runs/review-packet-materialization-20260328/review_packet_metrics.json`
   - `data/structural-analogy/runs/review-packet-materialization-20260328/review_packets/`
+- shortlist:
+  - `data/structural-analogy/runs/shortlist-materialization-20260328/shortlist_metrics.json`
+  - `data/structural-analogy/runs/shortlist-materialization-20260328/shortlist.jsonl`
 - corpus memberships:
   - `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
 - stranding scores:
@@ -642,15 +659,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s10-closeout-and-move-to-s11`
-- Why this commit exists: record that `S10` meets its acceptance bar and make `S11` shortlist foundation the next explicit execution target
-- Stages touched: `S10`, `S11`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Acceptance result: `S10 is now closed out in the canonical plan: deterministic review packets are live in the main store and on disk across the four current packet kinds, so shortlist work can start from canonical packet records rather than ad hoc markdown helpers`
-- Open risks after commit: `S11 has not started yet, so shortlist schema, rationale persistence, and acceptance or rejection workflows still need implementation`
-- Next intended commit: `S11 shortlist foundation`
+- Commit scope: `s11-shortlist-foundation`
+- Why this commit exists: establish the first canonical shortlist stage so downstream interpretation can consume persisted shortlist rows with deterministic scoring, rationale, and status instead of relying on packet directories alone
+- Stages touched: `S11`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/materialize_shortlist.py`, `sql/paperview_schema.sql`, `tests/test_materialize_shortlist.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_shortlist.py`, `python3 -m unittest -v tests.test_materialize_shortlist`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-shortlist -- --run-id shortlist-materialization-20260328`, `npm run codecontext:diff -- scripts/materialize_shortlist.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_shortlist`
+- Artifacts produced: `data/structural-analogy/runs/shortlist-materialization-20260328/shortlist_metrics.json`, `data/structural-analogy/runs/shortlist-materialization-20260328/shortlist.jsonl`
+- Acceptance result: `the canonical store now persists shortlist rows with deterministic ranks, proposed statuses, and rationale payloads, the fixture proves bridge/composition quota behavior, and the live run wrote a 24-item shortlist with mixed bridge, composition, cluster, and paper entries`
+- Open risks after commit: `the current shortlist simply consumes all available packet rows because packet coverage is still small; S11 may still want acceptance or rejection workflow fields or packet-pool refinement before stage closeout`
+- Next intended commit: `S11 closeout or shortlist coverage refinement`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

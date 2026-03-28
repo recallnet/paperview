@@ -268,6 +268,28 @@ CREATE TABLE IF NOT EXISTS review_packets (
 CREATE INDEX IF NOT EXISTS idx_review_packets_run_kind
 ON review_packets (run_id, packet_kind);
 
+-- @context decision -- Shortlist rows must be canonical because later interpretation, validation,
+-- and publication stages need stable item ids, statuses, and rationale without reconstructing them
+-- from packet directories or legacy markdown surfaces.
+CREATE TABLE IF NOT EXISTS shortlist_items (
+  run_id TEXT NOT NULL,
+  shortlist_id TEXT NOT NULL,
+  item_type TEXT NOT NULL,
+  item_ref TEXT NOT NULL,
+  packet_run_id TEXT NOT NULL,
+  packet_kind TEXT NOT NULL,
+  packet_item_ref TEXT NOT NULL,
+  score REAL NOT NULL,
+  shortlist_rank INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'proposed',
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, shortlist_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_shortlist_items_run_rank
+ON shortlist_items (run_id, shortlist_rank);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.
