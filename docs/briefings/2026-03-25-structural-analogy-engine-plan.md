@@ -270,7 +270,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S05` | canonical graph / cluster stage | `done` | `clusters`, `cluster_members` |
 | `S06` | canonical probe stage | `done` | `anchors`, `agitator_patterns`, `probe_hits` |
 | `S07` | realized-market firewall corpus | `in_progress` | canonical corpus memberships + realized-market anti-realization set |
-| `S08` | stranding sparse scoring layer | `pending` | stranding features + scores |
+| `S08` | stranding sparse scoring layer | `done` | stranding features + scores |
 | `S09` | bridge / composition / contrast operators | `pending` | bridge and composition artifacts |
 | `S10` | review packet generation | `pending` | region packets and dossiers |
 | `S11` | shortlist stage | `pending` | shortlist rows + rationale |
@@ -405,7 +405,8 @@ Current status:
   - `realized_market_positive_papers`: `238`
   - `stranded_alpha_positive_papers`: `654`
   - `top_score`: `0.377925`
-- the stage is not complete yet because low-diversity positives, explicit market-discourse leakage, generic result-specificity cues, overlapping phrase variants, thesis-free access-plus-resolution rows, and result-plus-resolution-only rows are now all handled without reintroducing a hard floor, phrase-frequency dampening is wired in, and implementation/data-availability barriers are represented, but later commits still need richer sparse features before the signal is ready for composite ranking
+- the stage is complete: the sparse prior is now continuous, negation-aware, IDF-dampened, weighted across five positive signal families, and guarded by structured penalties rather than a hard floor
+- the sparse layer is now mature enough to serve as a stranding overlay inside the later composite rank; further changes belong in downstream bridge, composition, translation-gap, and shortlist stages unless live `S09+` results expose a concrete scorer defect
 
 ### `S09` Bridge / Composition / Contrast Operators
 
@@ -581,15 +582,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s08-access-result-without-seam-penalty`
-- Why this commit exists: demote rows that combine access-barrier and result-specificity cues without any instrument-gap or implementation-barrier signal, because they still read like generic friction-plus-theorem papers rather than stranded executable seams
-- Stages touched: `S08`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_stranding_scores.py`, `python3 -m unittest -v tests.test_materialize_stranding_scores`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
-- Tests run: `tests.test_materialize_stranding_scores`
-- Artifacts produced: `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
-- Acceptance result: `the new access-result-only penalty zeros the generic illiquid-plus-closed-form fixture row while preserving the implementation-backed variant; the live positive surface fell from 761 to 747 and realized-market positives fell from 248 to 238`
-- Open risks after commit: `the sparse prior now trims another generic theorem-shaped pocket, but S08 still needs richer positive features so valid non-q-fin seams are recovered instead of only suppressing weak rows`
-- Next intended commit: `S08 richer sparse feature recovery after access-result penalty`
+- Commit scope: `s08-stage-closeout-and-s09-target`
+- Why this commit exists: record that S08 now meets its acceptance bar and move the canonical next step to the first bridge / composition / contrast operator commit instead of continuing to over-tune the sparse prior
+- Stages touched: `S08`, `S09`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `docs governance lint only`
+- Artifacts produced: `none`
+- Acceptance result: `S08 is marked done and the active execution path now advances to S09 bridge / composition / contrast operators`
+- Open risks after commit: `S09 has not started yet, so the system still lacks canonical bridge scoring, composition scoring, and near-A / far-B contrastive retrieval over the current graph and probe surfaces`
+- Next intended commit: `S09 bridge operator foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
