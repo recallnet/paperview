@@ -88,7 +88,7 @@ def normalize_phrase_entries(raw_entries: list[object]) -> list[dict]:
     return normalized
 
 
-def fetch_membership_sets(connection: sqlite3.Connection, membership_run_id: str) -> tuple[set[str], set[str]]:
+def fetch_membership_sets(connection: sqlite3.Connection, membership_run_id: str) -> tuple[set[str], set[str], set[str]]:
     rows = connection.execute(
         """
         SELECT paper_id, corpus_id
@@ -101,11 +101,12 @@ def fetch_membership_sets(connection: sqlite3.Connection, membership_run_id: str
         raise SystemExit(f"no corpus memberships found for run_id={membership_run_id}")
     discovery = {row["paper_id"] for row in rows if row["corpus_id"] == "discovery"}
     stranded_alpha = {row["paper_id"] for row in rows if row["corpus_id"] == "stranded_alpha"}
-    return discovery, stranded_alpha
+    realized_market = {row["paper_id"] for row in rows if row["corpus_id"] == "realized_market"}
+    return discovery, stranded_alpha, realized_market
 
 
 def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, signal_config: dict) -> list[dict]:
-    discovery_ids, stranded_alpha_ids = fetch_membership_sets(connection, membership_run_id)
+    discovery_ids, stranded_alpha_ids, realized_market_ids = fetch_membership_sets(connection, membership_run_id)
     rows = connection.execute(
         """
         SELECT paper_id, title, abstract, primary_category, published_at
@@ -166,6 +167,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             signal_weight_totals["empirical_only_penalty"], signal_caps["empirical_only_penalty"], saturation_mode
         )
         stranded_alpha_bonus = 1.0 if paper_id in stranded_alpha_ids else 0.0
+        realized_market_penalty_score = 1.0 if paper_id in realized_market_ids else 0.0
 
         # @context decision -- The first S08 surface is intentionally sparse and auditable: it uses
         # weighted phrase families plus a stranded-alpha bonus, not an opaque learned model. Strong
@@ -174,6 +176,10 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
         # @context requirement -- The stranding score must stay continuous for the final composite
         # ranking, but weak one-family matches cannot dominate the surface. Penalizing low-diversity
         # positives preserves gradient behavior while demoting rows that only echo a single sparse cue.
+        # @context requirement -- The time-firewalled unrealized-idea rank must also distinguish
+        # stranded results from papers already framed in explicit market discourse. A mild
+        # realized-market penalty keeps those papers in the surface when they are otherwise strong,
+        # but demotes them relative to domain-far candidates.
         stranding_score = (
             weights["instrument_gap"] * instrument_gap_score
             + weights["access_barrier"] * access_barrier_score
@@ -181,6 +187,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             + weights["resolution_mechanics"] * resolution_mechanics_score
             + weights["stranded_alpha_bonus"] * stranded_alpha_bonus
             - weights["low_diversity_penalty"] * low_diversity_penalty_score
+            - weights["realized_market_penalty"] * realized_market_penalty_score
             - weights["survey_penalty"] * survey_penalty_score
             - weights["empirical_only_penalty"] * empirical_only_penalty_score
         )
@@ -194,9 +201,11 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             "saturation_mode": saturation_mode,
             "positive_family_count": positive_family_count,
             "low_diversity_penalty_score": low_diversity_penalty_score,
+            "realized_market_penalty_score": realized_market_penalty_score,
             "primary_category": row["primary_category"],
             "published_at": row["published_at"],
             "is_stranded_alpha": paper_id in stranded_alpha_ids,
+            "is_realized_market": paper_id in realized_market_ids,
         }
         scored_rows.append(
             {
@@ -210,6 +219,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
                 "survey_penalty_score": survey_penalty_score,
                 "empirical_only_penalty_score": empirical_only_penalty_score,
                 "stranded_alpha_bonus": stranded_alpha_bonus,
+                "realized_market_penalty_score": realized_market_penalty_score,
                 "feature_json": json.dumps(feature_payload, sort_keys=True),
             }
         )
@@ -282,6 +292,9 @@ def main():
             "membership_run_id": args.membership_run_id,
             "scored_papers": len(rows),
             "positive_score_papers": sum(1 for row in rows if row["stranding_score"] > 0),
+            "realized_market_positive_papers": sum(
+                1 for row in rows if row["stranding_score"] > 0 and row["realized_market_penalty_score"] > 0
+            ),
             "stranded_alpha_positive_papers": sum(
                 1 for row in rows if row["stranding_score"] > 0 and row["stranded_alpha_bonus"] > 0
             ),

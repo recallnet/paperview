@@ -31,6 +31,7 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
                   ('p4', 'arxiv', 'Denied frictions', 'the market is not illiquid and executes without settlement delay or contingent claim frictions', '["q-fin.TR"]', 'q-fin.TR', '2020-08-12'),
                   ('p5', 'arxiv', 'Weak characterization', 'we characterize maturity effects in a thin market', '["q-fin.PR"]', 'q-fin.PR', '2017-06-14'),
                   ('p6', 'arxiv', 'Generic characterization', 'we characterize asset dynamics with no contingent structure or explicit friction', '["q-fin.PR"]', 'q-fin.PR', '2017-07-01'),
+                  ('p7', 'arxiv', 'Market contingent claim pricing', 'closed-form contingent claim pricing for a traded option market with settlement delay', '["q-fin.PR"]', 'q-fin.PR', '2018-02-03'),
                   ('p3', 'arxiv', 'Holdout market structure', 'prediction market settlement design', '["cs.GT"]', 'cs.GT', '2024-05-01');
 
                 INSERT INTO corpus_memberships (run_id, paper_id, corpus_id, membership_source, rationale_json) VALUES
@@ -42,6 +43,9 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
                   ('membership-run', 'p5', 'discovery', 'test', '{}'),
                   ('membership-run', 'p5', 'stranded_alpha', 'test', '{}'),
                   ('membership-run', 'p6', 'discovery', 'test', '{}'),
+                  ('membership-run', 'p7', 'discovery', 'test', '{}'),
+                  ('membership-run', 'p7', 'stranded_alpha', 'test', '{}'),
+                  ('membership-run', 'p7', 'realized_market', 'test', '{}'),
                   ('membership-run', 'p3', 'holdout', 'test', '{}');
                 """
             )
@@ -86,7 +90,7 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
             finally:
                 conn.close()
 
-            self.assertEqual([row["paper_id"] for row in rows], ["p1", "p2", "p4", "p5", "p6"])
+            self.assertEqual([row["paper_id"] for row in rows], ["p1", "p2", "p4", "p5", "p6", "p7"])
             by_id = {row["paper_id"]: row for row in rows}
             self.assertGreater(by_id["p1"]["stranding_score"], by_id["p2"]["stranding_score"])
             self.assertGreater(by_id["p1"]["stranding_score"], 0.0)
@@ -97,10 +101,13 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
             self.assertGreater(by_id["p5"]["stranding_score"], 0.0)
             self.assertLess(by_id["p5"]["stranding_score"], by_id["p1"]["stranding_score"])
             self.assertEqual(by_id["p6"]["stranding_score"], 0.0)
+            self.assertGreater(by_id["p7"]["stranding_score"], 0.0)
+            self.assertLess(by_id["p7"]["stranding_score"], by_id["p1"]["stranding_score"])
 
             metrics = json.loads((output_dir / "stranding_score_metrics.json").read_text(encoding="utf-8"))
-            self.assertEqual(metrics["scored_papers"], 5)
-            self.assertEqual(metrics["positive_score_papers"], 2)
+            self.assertEqual(metrics["scored_papers"], 6)
+            self.assertEqual(metrics["positive_score_papers"], 3)
+            self.assertEqual(metrics["realized_market_positive_papers"], 1)
 
 
 if __name__ == "__main__":

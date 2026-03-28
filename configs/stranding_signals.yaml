@@ -18,6 +18,7 @@ weights:
   resolution_mechanics: 0.18
   stranded_alpha_bonus: 0.08
   low_diversity_penalty: 0.12
+  realized_market_penalty: 0.08
   survey_penalty: 0.22
   empirical_only_penalty: 0.18
 signal_caps:

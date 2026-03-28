@@ -401,10 +401,11 @@ Current status:
 - canonical `stranding_scores` foundation is implemented and live
 - current live score counts:
   - `scored_papers`: `17,323`
-  - `positive_score_papers`: `1,526`
-  - `stranded_alpha_positive_papers`: `1,321`
-  - `top_score`: `0.457925`
-- the stage is not complete yet because low-diversity positives are now penalized without reintroducing a hard floor, but later commits still need richer sparse features and anti-realization scoring before the signal is ready for composite ranking
+  - `positive_score_papers`: `1,082`
+  - `realized_market_positive_papers`: `282`
+  - `stranded_alpha_positive_papers`: `962`
+  - `top_score`: `0.412661`
+- the stage is not complete yet because low-diversity positives and explicit market-discourse leakage are now both penalized without reintroducing a hard floor, but later commits still need richer sparse features before the signal is ready for composite ranking
 
 ### `S09` Bridge / Composition / Contrast Operators
 
@@ -580,15 +581,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s08-structured-penalty-refinement`
-- Why this commit exists: reduce weak over-inclusion by penalizing low-diversity and weak-only positive cue mixes without reintroducing a hard floor
+- Commit scope: `s08-anti-realization-weighting`
+- Why this commit exists: add a mild realized-market leakage penalty so explicit pre-2024 market discourse is demoted relative to stranded results without zeroing useful q-fin candidates
 - Stages touched: `S08`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`
 - Commands run: `python3 -m unittest -v tests.test_materialize_stranding_scores`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
 - Tests run: `tests.test_materialize_stranding_scores`
 - Artifacts produced: `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
-- Acceptance result: `a low-diversity penalty now suppresses one-family weak matches; the fixture rejects a generic single-cue paper and live positive-score papers dropped from 12,394 to 1,526 without reintroducing a hard floor`
-- Open risks after commit: `the score is less noisy, but S08 still needs richer sparse features and anti-realization-aware weighting before it is ready to drive shortlist ranking`
+- Acceptance result: `realized-market leakage is now penalized through canonical memberships; the fixture keeps an explicit market paper positive but below its stranded analog, and live realized-market positives fell to 282 while stranded-alpha positives remain 962`
+- Open risks after commit: `the score now separates stranded and realized discourse better, but S08 still needs richer sparse features before it is ready to drive shortlist ranking`
 - Next intended commit: `S08 recall recovery via structured penalty refinement`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
