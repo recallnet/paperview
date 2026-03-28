@@ -274,7 +274,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S09` | bridge / composition / contrast operators | `done` | bridge, composition, contrast, and negative-space artifacts |
 | `S10` | review packet generation | `done` | region packets and dossiers |
 | `S11` | shortlist stage | `done` | shortlist rows + rationale |
-| `S12` | selective interpretation contract | `pending` | JSON interpretations only |
+| `S12` | selective interpretation contract | `in_progress` | JSON interpretations only |
 | `S13` | holdout echo validation | `pending` | holdout echo metrics |
 | `S14` | Unrealized Ideas Index | `pending` | human-facing index |
 | `S15` | Stranded Result Ledger | `pending` | human-facing ledger |
@@ -514,6 +514,19 @@ Accept when:
 - only allowed outputs are emitted
 - negative class is honored
 
+Current status:
+
+- canonical `selective_interpretations` storage contract is implemented in the main store
+- strict JSON interpretation prompt and schema are checked in and live
+- current live batch-preparation counts:
+  - `prepared_count`: `24`
+  - `bridge`: `6`
+  - `composition`: `6`
+  - `cluster`: `6`
+  - `paper`: `6`
+- the stage foundation is now in place: selective interpretation is shortlist-gated, prompt- and schema-pinned, and emitted as a machine-readable batch instead of running against the full corpus
+- the next commit should implement interpretation ingestion and validation so only allowed classifications are accepted and the negative class is enforced canonically
+
 ### `S13` Holdout Echo
 
 Build:
@@ -610,6 +623,7 @@ Accept when:
 - `npm run store:materialize-negative-space`
 - `npm run store:materialize-review-packets`
 - `npm run store:materialize-shortlist`
+- `npm run store:materialize-selective-interpretation-batch`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -652,6 +666,9 @@ Accept when:
 - shortlist:
   - `data/structural-analogy/runs/shortlist-materialization-20260328/shortlist_metrics.json`
   - `data/structural-analogy/runs/shortlist-materialization-20260328/shortlist.jsonl`
+- selective interpretation batch:
+  - `data/structural-analogy/runs/selective-interpretation-batch-20260328/interpretation_batch_metrics.json`
+  - `data/structural-analogy/runs/selective-interpretation-batch-20260328/interpretation_batch.jsonl`
 - corpus memberships:
   - `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
 - stranding scores:
@@ -660,15 +677,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s11-closeout-and-move-to-s12`
-- Why this commit exists: record that `S11` meets its acceptance bar and make `S12` selective interpretation contract the next explicit execution target
-- Stages touched: `S11`, `S12`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Acceptance result: `S11 is now closed out in the canonical plan: shortlist rows, mixed item types, statuses, and rationale are live in the main store and machine-readable artifacts, so selective interpretation can start from canonical shortlist state rather than packet directories alone`
-- Open risks after commit: `S12 has not started yet, so the strict JSON interpretation contract, allowed-output enforcement, and negative-class handling still need implementation`
-- Next intended commit: `S12 selective interpretation contract`
+- Commit scope: `s12-selective-interpretation-contract-foundation`
+- Why this commit exists: establish the strict JSON interpretation contract and canonical shortlist-gated batch-preparation stage so later model execution can only operate on persisted shortlist items
+- Stages touched: `S12`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `prompts/selective-interpretation-v1.md`, `schemas/selective_interpretation.schema.json`, `scripts/materialize_selective_interpretation_batch.py`, `sql/paperview_schema.sql`, `tests/test_materialize_selective_interpretation_batch.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_selective_interpretation_batch.py`, `python3 -m unittest -v tests.test_materialize_selective_interpretation_batch`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-selective-interpretation-batch -- --run-id selective-interpretation-batch-20260328`, `npm run codecontext:diff -- scripts/materialize_selective_interpretation_batch.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_selective_interpretation_batch`
+- Artifacts produced: `data/structural-analogy/runs/selective-interpretation-batch-20260328/interpretation_batch.jsonl`, `data/structural-analogy/runs/selective-interpretation-batch-20260328/interpretation_batch_metrics.json`
+- Acceptance result: `the selective interpretation stage is now shortlist-gated and contract-first: the strict JSON prompt and schema are live, the fixture proves batch preparation only uses canonical shortlist rows, and the live run prepared 24 interpretation items with prompt and schema references pinned into each batch row`
+- Open risks after commit: `S12 still lacks interpretation ingestion and validation, so allowed-output enforcement and negative-class acceptance are not yet canonicalized in the store`
+- Next intended commit: `S12 interpretation ingestion and validation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

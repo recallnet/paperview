@@ -290,6 +290,30 @@ CREATE TABLE IF NOT EXISTS shortlist_items (
 CREATE INDEX IF NOT EXISTS idx_shortlist_items_run_rank
 ON shortlist_items (run_id, shortlist_rank);
 
+-- @context decision -- Selective interpretations must be tied to shortlist ids so model execution
+-- cannot drift back into full-corpus extraction. The canonical table stores only shortlist-gated,
+-- schema-shaped outputs and preserves the raw JSON for later audit.
+CREATE TABLE IF NOT EXISTS selective_interpretations (
+  run_id TEXT NOT NULL,
+  shortlist_run_id TEXT NOT NULL,
+  shortlist_id TEXT NOT NULL,
+  classification TEXT NOT NULL,
+  result_summary TEXT NOT NULL,
+  first_step TEXT NOT NULL,
+  instrument_assumed TEXT NOT NULL,
+  modern_equivalent TEXT NOT NULL,
+  why_stranded_or_unrealized TEXT NOT NULL,
+  gap_to_close TEXT NOT NULL,
+  confidence TEXT NOT NULL,
+  raw_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, shortlist_id),
+  FOREIGN KEY (shortlist_run_id, shortlist_id) REFERENCES shortlist_items(run_id, shortlist_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_selective_interpretations_run_classification
+ON selective_interpretations (run_id, classification);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.
