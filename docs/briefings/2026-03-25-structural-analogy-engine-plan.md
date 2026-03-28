@@ -271,7 +271,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S06` | canonical probe stage | `done` | `anchors`, `agitator_patterns`, `probe_hits` |
 | `S07` | realized-market firewall corpus | `in_progress` | canonical corpus memberships + realized-market anti-realization set |
 | `S08` | stranding sparse scoring layer | `done` | stranding features + scores |
-| `S09` | bridge / composition / contrast operators | `pending` | bridge and composition artifacts |
+| `S09` | bridge / composition / contrast operators | `in_progress` | bridge and composition artifacts |
 | `S10` | review packet generation | `pending` | region packets and dossiers |
 | `S11` | shortlist stage | `pending` | shortlist rows + rationale |
 | `S12` | selective interpretation contract | `pending` | JSON interpretations only |
@@ -421,6 +421,17 @@ Accept when:
 
 - at least some surfaced regions come from bridge or composition logic, not only local similarity
 
+Current status:
+
+- canonical `bridge_candidates` foundation is implemented and live
+- current live bridge counts:
+  - `positive_anchor_count`: `6`
+  - `anchor_pair_count`: `15`
+  - `pairs_with_candidates`: `15`
+  - `bridge_candidate_count`: `300`
+  - `top_score`: `2.441005`
+- the stage is in progress because bridge scoring now exists in the canonical store, but composition operators, near-A / far-B contrastive retrieval, and negative-space search are still missing
+
 ### `S10` Review Packets
 
 Build:
@@ -550,6 +561,7 @@ Accept when:
 - `npm run store:materialize-knn`
 - `npm run store:materialize-clusters`
 - `npm run store:materialize-probes`
+- `npm run store:materialize-bridges`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -574,6 +586,9 @@ Accept when:
   - `data/structural-analogy/runs/cluster-materialization-20260328/cluster_metrics.json`
 - probes:
   - `data/structural-analogy/runs/probe-materialization-20260328/probe_metrics.json`
+- bridges:
+  - `data/structural-analogy/runs/bridge-materialization-20260328/bridge_metrics.json`
+  - `data/structural-analogy/runs/bridge-materialization-20260328/bridges.jsonl`
 - corpus memberships:
   - `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
 - stranding scores:
@@ -582,15 +597,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s08-stage-closeout-and-s09-target`
-- Why this commit exists: record that S08 now meets its acceptance bar and move the canonical next step to the first bridge / composition / contrast operator commit instead of continuing to over-tune the sparse prior
-- Stages touched: `S08`, `S09`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
-- Tests run: `docs governance lint only`
-- Artifacts produced: `none`
-- Acceptance result: `S08 is marked done and the active execution path now advances to S09 bridge / composition / contrast operators`
-- Open risks after commit: `S09 has not started yet, so the system still lacks canonical bridge scoring, composition scoring, and near-A / far-B contrastive retrieval over the current graph and probe surfaces`
-- Next intended commit: `S09 bridge operator foundation`
+- Commit scope: `s09-bridge-operator-foundation`
+- Why this commit exists: add the first canonical bridge operator so the discovery system can surface papers that sit between positive anchor families instead of relying on the old monolithic map runner for bridge logic
+- Stages touched: `S09`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `package.json`, `scripts/materialize_bridges.py`, `tests/test_materialize_bridges.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_bridges.py`, `uv run --with numpy --with pyyaml --with sqlite-vec python3 -m unittest -v tests.test_materialize_bridges`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-bridges -- --run-id bridge-materialization-20260328`, `npm run codecontext:diff -- scripts/materialize_bridges.py`, `npm run docs:lint`
+- Tests run: `tests.test_materialize_bridges`
+- Artifacts produced: `data/structural-analogy/runs/bridge-materialization-20260328/bridge_metrics.json`, `data/structural-analogy/runs/bridge-materialization-20260328/bridges.jsonl`
+- Acceptance result: `the bridge stage now writes canonical bridge candidates, the fixture ranks the non-seed bridge paper first for the parity-auction pair, and the live run produced 300 bridge candidates across all 15 positive-anchor pairs`
+- Open risks after commit: `S09 still lacks canonical composition operators, near-A / far-B contrastive retrieval, and negative-space search, so bridges alone cannot yet drive the full shortlist logic`
+- Next intended commit: `S09 composition operator foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

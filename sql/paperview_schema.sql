@@ -19,6 +19,168 @@ CREATE TABLE IF NOT EXISTS papers (
   updated_at_record TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- @context decision: the embedding-first reset keeps `papers` as the canonical metadata spine in the
+-- main store rather than in a vec sidecar DB. Discovery-stage tables live beside it so harvest,
+-- text-view materialization, and run provenance remain queryable without depending on `sqlite-vec`.
+CREATE TABLE IF NOT EXISTS text_views (
+  view_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  paper_id TEXT NOT NULL,
+  view_type TEXT NOT NULL,
+  text TEXT NOT NULL,
+  token_estimate INTEGER NOT NULL,
+  text_sha256 TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  UNIQUE (paper_id, view_type)
+);
+
+CREATE TABLE IF NOT EXISTS embedding_spaces (
+  space_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL,
+  model_name TEXT NOT NULL,
+  dims INTEGER NOT NULL,
+  normalized INTEGER NOT NULL DEFAULT 1,
+  prompt_style TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS view_embedding_meta (
+  view_id INTEGER NOT NULL,
+  space_id INTEGER NOT NULL,
+  embed_status TEXT NOT NULL,
+  embed_ms INTEGER,
+  batch_id TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (view_id, space_id),
+  FOREIGN KEY (view_id) REFERENCES text_views(view_id) ON DELETE CASCADE,
+  FOREIGN KEY (space_id) REFERENCES embedding_spaces(space_id) ON DELETE CASCADE
+);
+
+-- @context requirement: run-level provenance has to survive changes in discovery strategy. Keeping
+-- `run_events` in the canonical store makes latent-map, probe, shortlist, and later interpretation
+-- stages traceable even when vector tables or run-local artifacts are regenerated.
+CREATE TABLE IF NOT EXISTS run_events (
+  event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id TEXT NOT NULL,
+  stage TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_text_views_paper ON text_views(paper_id);
+CREATE INDEX IF NOT EXISTS idx_text_views_type ON text_views(view_type);
+CREATE INDEX IF NOT EXISTS idx_view_embedding_meta_status ON view_embedding_meta(embed_status);
+CREATE INDEX IF NOT EXISTS idx_run_events_run_stage ON run_events(run_id, stage);
+
+CREATE TABLE IF NOT EXISTS knn_edges (
+  run_id TEXT NOT NULL,
+  source_view_id INTEGER NOT NULL,
+  target_view_id INTEGER NOT NULL,
+  space_id INTEGER NOT NULL,
+  rank INTEGER NOT NULL,
+  distance REAL NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, source_view_id, target_view_id, space_id),
+  FOREIGN KEY (source_view_id) REFERENCES text_views(view_id) ON DELETE CASCADE,
+  FOREIGN KEY (target_view_id) REFERENCES text_views(view_id) ON DELETE CASCADE,
+  FOREIGN KEY (space_id) REFERENCES embedding_spaces(space_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_knn_edges_run_space_source_rank
+ON knn_edges (run_id, space_id, source_view_id, rank);
+
+-- @context decision: clustering fuses multiple text views into a single paper-level graph. The
+-- canonical member surface is therefore `paper_id`, not `view_id`, so cluster logic can aggregate
+-- agreement across spaces instead of pretending one view is the whole paper.
+CREATE TABLE IF NOT EXISTS clusters (
+  run_id TEXT NOT NULL,
+  cluster_id TEXT NOT NULL,
+  level TEXT NOT NULL,
+  algorithm TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  label TEXT,
+  summary TEXT,
+  cluster_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, cluster_id)
+);
+
+CREATE TABLE IF NOT EXISTS cluster_members (
+  run_id TEXT NOT NULL,
+  cluster_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  representative_view_id INTEGER,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, cluster_id, paper_id),
+  FOREIGN KEY (run_id, cluster_id) REFERENCES clusters(run_id, cluster_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (representative_view_id) REFERENCES text_views(view_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_clusters_run_level ON clusters(run_id, level);
+CREATE INDEX IF NOT EXISTS idx_cluster_members_run_paper ON cluster_members(run_id, paper_id);
+
+CREATE TABLE IF NOT EXISTS anchors (
+  anchor_id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  anchor_type TEXT NOT NULL,
+  paper_id TEXT,
+  notes TEXT,
+  tags_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS agitator_patterns (
+  pattern_id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  text TEXT NOT NULL,
+  positive_tags_json TEXT NOT NULL,
+  negative_tags_json TEXT NOT NULL,
+  active INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS probe_hits (
+  run_id TEXT NOT NULL,
+  pattern_id TEXT NOT NULL,
+  view_id INTEGER NOT NULL,
+  score REAL NOT NULL,
+  rank INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, pattern_id, view_id),
+  FOREIGN KEY (pattern_id) REFERENCES agitator_patterns(pattern_id) ON DELETE CASCADE,
+  FOREIGN KEY (view_id) REFERENCES text_views(view_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_probe_hits_run_pattern_rank ON probe_hits(run_id, pattern_id, rank);
+
+-- @context decision -- Bridge operators are canonical paper-level retrieval artifacts, not just
+-- markdown output from the old map runner. Keeping them in the main store lets later composition,
+-- shortlist, and review stages query the same bridge surface with run-scoped provenance.
+CREATE TABLE IF NOT EXISTS bridge_candidates (
+  run_id TEXT NOT NULL,
+  source_anchor_id TEXT NOT NULL,
+  target_anchor_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  representative_view_id INTEGER,
+  bridge_score REAL NOT NULL,
+  bridge_rank INTEGER NOT NULL,
+  space_support INTEGER NOT NULL DEFAULT 0,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, source_anchor_id, target_anchor_id, paper_id),
+  FOREIGN KEY (source_anchor_id) REFERENCES anchors(anchor_id) ON DELETE CASCADE,
+  FOREIGN KEY (target_anchor_id) REFERENCES anchors(anchor_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (representative_view_id) REFERENCES text_views(view_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_bridge_candidates_run_pair_rank
+ON bridge_candidates (run_id, source_anchor_id, target_anchor_id, bridge_rank);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.
