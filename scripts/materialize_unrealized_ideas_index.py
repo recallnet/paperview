@@ -25,6 +25,7 @@ def parse_args():
     parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--holdout-run-id", default="holdout-echo-materialization-20260328")
     parser.add_argument("--membership-run-id", default="corpus-membership-materialization-20260328")
+    parser.add_argument("--max-realized-market-leakage", type=float, default=0.999999)
     parser.add_argument("--output-dir", default=None)
     return parser.parse_args()
 
@@ -161,6 +162,7 @@ def main():
                 "interpretation_run_id": args.interpretation_run_id,
                 "holdout_run_id": args.holdout_run_id,
                 "membership_run_id": args.membership_run_id,
+                "max_realized_market_leakage": args.max_realized_market_leakage,
             },
         )
 
@@ -225,6 +227,11 @@ def main():
             source_paper_ids = resolve_source_paper_ids(row["summary_json"], echoes, row["item_type"], row["item_ref"])
             leakage_score = realized_market_leakage(connection, args.membership_run_id, source_paper_ids)
             domain_far_score = round(max(0.0, 1.0 - leakage_score), 6)
+            # @context risk -- Fully leaked rows are still useful upstream as canonical shortlist and
+            # interpretation evidence, but publishing them into the Unrealized Ideas Index would
+            # break the product contract: this surface is supposed to be mechanism-close and domain-far.
+            if leakage_score >= float(args.max_realized_market_leakage):
+                continue
             top_holdout_echoes = [
                 {
                     "paper_id": echo["holdout_paper_id"],
@@ -344,6 +351,7 @@ def main():
             "shortlist_run_id": args.shortlist_run_id,
             "interpretation_run_id": args.interpretation_run_id,
             "holdout_run_id": args.holdout_run_id,
+            "max_realized_market_leakage": float(args.max_realized_market_leakage),
             "entry_count": len(jsonl_rows),
             "counts_by_classification": {
                 classification: sum(1 for row in jsonl_rows if row["classification"] == classification)

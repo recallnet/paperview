@@ -122,7 +122,7 @@ def seed_unrealized_index_fixture(connection: sqlite3.Connection) -> None:
 
 
 class MaterializeUnrealizedIdeasIndexTest(unittest.TestCase):
-    def test_materializes_positive_index_and_demotes_leakage(self):
+    def test_materializes_positive_index_and_excludes_fully_leaked_rows(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
             db_path = tmp_path / "fixture.sqlite3"
@@ -156,18 +156,17 @@ class MaterializeUnrealizedIdeasIndexTest(unittest.TestCase):
             )
 
             metrics = json.loads((output_dir / "unrealized_ideas_index_metrics.json").read_text(encoding="utf-8"))
-            self.assertEqual(metrics["entry_count"], 2)
+            self.assertEqual(metrics["entry_count"], 1)
             self.assertEqual(metrics["top_ranked_shortlist_id"], "bridge:bridge-a")
 
             rows = [
                 json.loads(line)
                 for line in (output_dir / "unrealized_ideas_index.jsonl").read_text(encoding="utf-8").strip().splitlines()
             ]
-            self.assertEqual([row["shortlist_id"] for row in rows], ["bridge:bridge-a", "paper:source-paper"])
+            self.assertEqual([row["shortlist_id"] for row in rows], ["bridge:bridge-a"])
             self.assertEqual(rows[0]["realized_market_leakage_score"], 0.0)
-            self.assertEqual(rows[1]["realized_market_leakage_score"], 1.0)
             self.assertEqual(rows[0]["classification"], "TRANSLATION_CANDIDATE")
-            self.assertEqual(rows[1]["classification"], "STRANDED_QFIN_RESULT")
+            self.assertNotIn("paper:source-paper", [row["shortlist_id"] for row in rows])
             self.assertNotIn("composition:composition-a", [row["shortlist_id"] for row in rows])
 
             markdown = (output_dir / "unrealized_ideas_index.md").read_text(encoding="utf-8")
