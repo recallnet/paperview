@@ -249,6 +249,25 @@ CREATE TABLE IF NOT EXISTS negative_space_candidates (
 CREATE INDEX IF NOT EXISTS idx_negative_space_candidates_run_anchor_rank
 ON negative_space_candidates (run_id, anchor_id, negative_rank);
 
+-- @context decision -- Review packets are canonical stage artifacts, not just markdown side effects.
+-- Keeping packet records in the main store makes shortlist and interpretation stages consume the
+-- same deterministic packet contract that humans read from disk.
+CREATE TABLE IF NOT EXISTS review_packets (
+  run_id TEXT NOT NULL,
+  packet_kind TEXT NOT NULL,
+  item_ref TEXT NOT NULL,
+  title TEXT NOT NULL,
+  packet_path TEXT NOT NULL,
+  summary_json TEXT NOT NULL DEFAULT '{}',
+  packet_markdown TEXT NOT NULL,
+  source_run_ids_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, packet_kind, item_ref)
+);
+
+CREATE INDEX IF NOT EXISTS idx_review_packets_run_kind
+ON review_packets (run_id, packet_kind);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.
