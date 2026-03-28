@@ -6,6 +6,10 @@ but are no longer part of the canonical staged pipeline described in
 
 Current archive groups:
 
+- `noncanonical-benchmarks/`
+  Benchmark utilities that were useful for one-off retrieval evaluation but
+  are not part of the canonical staged command surface.
+
 - `noncanonical-pilots/`
   Pilot and benchmark materializers that were useful during earlier discovery
   exploration but are not part of the active `S01` to `S16` staged command set.
