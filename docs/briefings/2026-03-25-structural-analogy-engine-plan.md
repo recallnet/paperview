@@ -591,6 +591,19 @@ Accept when:
 
 - each item has result, stranding rationale, modern equivalent, first test, and gap to close
 
+Current status:
+
+- canonical `stranded_result_ledger` foundation is implemented and live
+- current live ledger counts:
+  - `entry_count`: `0`
+  - `p1`: `0`
+  - `p2`: `0`
+  - `p3`: `0`
+  - `top_ranked_paper_id`: `null`
+- the stage foundation is now in place: interpreted stranded q-fin paper rows can publish into a practical ledger surface with date, home domain, priority, relation type, and execution-oriented fields
+- the current live run is empty because the checked-in interpretation ingestion has no surviving `STRANDED_QFIN_RESULT` rows, which is a data state rather than a ledger contract failure
+- the next commit should either close out `S15` if an empty-but-correct ledger surface is sufficient, or broaden the interpretation/fixture coverage if a non-empty live ledger is required before `S16`
+
 ### `S16` Active / Archive Cleanup
 
 Build:
@@ -660,6 +673,7 @@ Accept when:
 - `npm run store:ingest-selective-interpretations`
 - `npm run store:materialize-holdout-echoes`
 - `npm run store:materialize-unrealized-ideas-index`
+- `npm run store:materialize-stranded-result-ledger`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -715,6 +729,10 @@ Accept when:
   - `data/structural-analogy/runs/unrealized-ideas-index-20260328/unrealized_ideas_index_metrics.json`
   - `data/structural-analogy/runs/unrealized-ideas-index-20260328/unrealized_ideas_index.jsonl`
   - `data/structural-analogy/runs/unrealized-ideas-index-20260328/unrealized_ideas_index.md`
+- stranded result ledger:
+  - `data/structural-analogy/runs/stranded-result-ledger-20260328/stranded_result_ledger_metrics.json`
+  - `data/structural-analogy/runs/stranded-result-ledger-20260328/stranded_result_ledger.jsonl`
+  - `data/structural-analogy/runs/stranded-result-ledger-20260328/stranded_result_ledger.md`
 - corpus memberships:
   - `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
 - stranding scores:
@@ -726,12 +744,12 @@ Accept when:
 - Commit scope: `s15-stranded-result-ledger-foundation`
 - Why this commit exists: build the first practical Stranded Result Ledger surface on top of the canonical shortlist, interpretation, and stranding layers
 - Stages touched: `S15`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `none yet`
-- Acceptance result: `S14 is complete and the next commit should establish the first canonical Stranded Result Ledger output surface`
-- Open risks after commit: `S15 still needs a concrete ledger artifact and practical result schema presentation`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/materialize_stranded_result_ledger.py`, `sql/paperview_schema.sql`, `tests/test_materialize_stranded_result_ledger.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_stranded_result_ledger.py`, `python3 -m unittest -v tests.test_materialize_stranded_result_ledger`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-stranded-result-ledger -- --run-id stranded-result-ledger-20260328`, `npm run codecontext:diff -- scripts/materialize_stranded_result_ledger.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_stranded_result_ledger`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/stranded-result-ledger-20260328/stranded_result_ledger.jsonl`, `data/structural-analogy/runs/stranded-result-ledger-20260328/stranded_result_ledger.md`, `data/structural-analogy/runs/stranded-result-ledger-20260328/stranded_result_ledger_metrics.json`
+- Acceptance result: `the first canonical Stranded Result Ledger is now live as both ranked store rows and a human-facing markdown artifact, the fixture proves only interpreted stranded q-fin paper rows publish, and the live run is correctly empty because no STRANDED_QFIN_RESULT rows currently survive ingestion`
+- Open risks after commit: `the live ledger remains empty until downstream shortlist and interpretation stages surface surviving stranded q-fin results, so S15 may need a closeout decision about whether an empty-but-correct ledger is sufficient`
 - Next intended commit: `S15 Stranded Result Ledger foundation`
-- Signoff status: `draft`
+- Signoff status: `ready`
 - Last updated: `2026-03-28`

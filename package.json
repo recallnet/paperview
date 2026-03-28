@@ -35,6 +35,7 @@
     "store:ingest-selective-interpretations": "python3 scripts/ingest_selective_interpretations.py",
     "store:materialize-holdout-echoes": "uv run --with sqlite-vec python3 scripts/materialize_holdout_echoes.py",
     "store:materialize-unrealized-ideas-index": "python3 scripts/materialize_unrealized_ideas_index.py",
+    "store:materialize-stranded-result-ledger": "python3 scripts/materialize_stranded_result_ledger.py",
     "pilot:create": "python3 scripts/create_pilot_batch.py",
     "extract:prepare": "python3 scripts/create_extraction_run.py",
     "extract:ingest": "python3 scripts/ingest_extraction_responses.py",

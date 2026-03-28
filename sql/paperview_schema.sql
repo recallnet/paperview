@@ -363,6 +363,39 @@ CREATE TABLE IF NOT EXISTS unrealized_idea_index (
 CREATE INDEX IF NOT EXISTS idx_unrealized_idea_index_run_rank
 ON unrealized_idea_index (run_id, index_rank);
 
+-- @context decision -- The Stranded Result Ledger is the practical q-fin view over the broader
+-- discovery system. Persisting ledger rows canonically keeps analyst-facing execution fields tied
+-- to shortlist, interpretation, and stranding evidence instead of letting them drift into ad hoc markdown.
+CREATE TABLE IF NOT EXISTS stranded_result_ledger (
+  run_id TEXT NOT NULL,
+  shortlist_run_id TEXT NOT NULL,
+  interpretation_run_id TEXT NOT NULL,
+  shortlist_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  published_at TEXT NOT NULL,
+  home_domain TEXT NOT NULL,
+  result_summary TEXT NOT NULL,
+  why_stranded_or_unrealized TEXT NOT NULL,
+  instrument_assumed TEXT NOT NULL,
+  modern_equivalent TEXT NOT NULL,
+  first_test TEXT NOT NULL,
+  gap_to_close TEXT NOT NULL,
+  priority_tier TEXT NOT NULL,
+  relation_type TEXT NOT NULL,
+  ledger_rank INTEGER NOT NULL,
+  stranding_score REAL NOT NULL,
+  confidence TEXT NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, shortlist_id),
+  FOREIGN KEY (shortlist_run_id, shortlist_id) REFERENCES shortlist_items(run_id, shortlist_id) ON DELETE CASCADE,
+  FOREIGN KEY (interpretation_run_id, shortlist_id) REFERENCES selective_interpretations(run_id, shortlist_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_stranded_result_ledger_run_rank
+ON stranded_result_ledger (run_id, ledger_rank);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.
