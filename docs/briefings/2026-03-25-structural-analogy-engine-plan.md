@@ -396,6 +396,16 @@ Accept when:
 - scores exist in canonical outputs
 - q-fin stranded results can be surfaced without LLM interpretation
 
+Current status:
+
+- canonical `stranding_scores` foundation is implemented and live
+- current live score counts:
+  - `scored_papers`: `17,323`
+  - `positive_score_papers`: `11,957`
+  - `stranded_alpha_positive_papers`: `11,363`
+  - `top_score`: `0.34`
+- the stage is not complete yet because the first sparse layer is still regex-weighted and needs later negation-aware / BM25-style refinement
+
 ### `S09` Bridge / Composition / Contrast Operators
 
 Build:
@@ -538,6 +548,7 @@ Accept when:
 - `npm run store:materialize-knn`
 - `npm run store:materialize-clusters`
 - `npm run store:materialize-probes`
+- `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
 
@@ -547,6 +558,7 @@ Accept when:
 - [probes.yaml](../../configs/probes.yaml)
 - [cluster.yaml](../../configs/cluster.yaml)
 - [shortlist_rules.yaml](../../configs/shortlist_rules.yaml)
+- [stranding_signals.yaml](../../configs/stranding_signals.yaml)
 
 ## Current Live Artifacts
 
@@ -562,18 +574,21 @@ Accept when:
   - `data/structural-analogy/runs/probe-materialization-20260328/probe_metrics.json`
 - corpus memberships:
   - `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
+- stranding scores:
+  - `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
+  - `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_top.jsonl`
 
 ## Active Signoff Block
 
-- Commit scope: `s07-realized-market-lexical-refinement`
-- Why this commit exists: tighten realized-market membership so the anti-realization slice stops absorbing substring false positives and is exposed through the canonical npm surface
-- Stages touched: `S07`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/materialize_corpus_memberships.py`, `tests/test_materialize_corpus_memberships.py`
-- Commands run: `python3 -m unittest -v tests.test_materialize_corpus_memberships`, `npm run store:materialize-corpus-memberships -- --run-id corpus-membership-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_corpus_memberships.py`, `npm run codecontext:diff -- scripts/materialize_corpus_memberships.py`, `npm run docs:lint`
-- Tests run: `tests.test_materialize_corpus_memberships`
-- Artifacts produced: `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
-- Acceptance result: `live realized_market count corrected to 4,579 and false-positive regression covered; stage still in progress`
-- Open risks after commit: `the anti-realization surface is now discourse-driven, but later commits still need stronger negative anchors and sparse stranding cues so the firewall does not rely on keyword families alone`
-- Next intended commit: `S08 stranding sparse feature foundation`
+- Commit scope: `s08-stranding-score-foundation`
+- Why this commit exists: create the first canonical sparse stranding score surface so stranded-result resurfacing no longer depends on ad hoc notes or later model interpretation
+- Stages touched: `S08`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `configs/stranding_signals.yaml`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`, `package.json`
+- Commands run: `python3 -m unittest -v tests.test_materialize_stranding_scores`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
+- Tests run: `tests.test_materialize_stranding_scores`
+- Artifacts produced: `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
+- Acceptance result: `canonical stranding scores are live with 17,323 scored papers and 11,363 positive stranded-alpha papers; stage still in progress`
+- Open risks after commit: `the first sparse layer is still phrase-weighted and over-inclusive, so later S08 commits must add negation-aware sparse scoring, stronger penalties, and better document-text coverage`
+- Next intended commit: `S08 negation-aware sparse refinement`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

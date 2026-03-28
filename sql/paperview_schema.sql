@@ -36,6 +36,31 @@ CREATE TABLE IF NOT EXISTS corpus_memberships (
 CREATE INDEX IF NOT EXISTS idx_corpus_memberships_run_corpus ON corpus_memberships(run_id, corpus_id);
 CREATE INDEX IF NOT EXISTS idx_corpus_memberships_run_paper ON corpus_memberships(run_id, paper_id);
 
+-- @context decision -- Stranding scores live in the canonical store because later shortlist,
+-- bridge, and ledger stages need a queryable sparse prior that is independent of whichever vector
+-- DB or interpretation surface is active. This keeps the stranding overlay reusable and auditable.
+CREATE TABLE IF NOT EXISTS stranding_scores (
+  run_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  membership_run_id TEXT NOT NULL,
+  score_version TEXT NOT NULL,
+  stranding_score REAL NOT NULL,
+  instrument_gap_score REAL NOT NULL,
+  access_barrier_score REAL NOT NULL,
+  result_specificity_score REAL NOT NULL,
+  resolution_mechanics_score REAL NOT NULL,
+  survey_penalty_score REAL NOT NULL,
+  empirical_only_penalty_score REAL NOT NULL,
+  stranded_alpha_bonus REAL NOT NULL,
+  feature_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, paper_id),
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_stranding_scores_run_score ON stranding_scores(run_id, stranding_score DESC);
+CREATE INDEX IF NOT EXISTS idx_stranding_scores_run_paper ON stranding_scores(run_id, paper_id);
+
 
 CREATE TABLE IF NOT EXISTS extraction_runs (
   run_id TEXT PRIMARY KEY,

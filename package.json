@@ -26,6 +26,7 @@
     "extract:run-mlx": "uv run --with mlx-lm python3 scripts/run_local_mlx_extraction.py",
     "extract:review-quality": "python3 scripts/review_extraction_quality.py",
     "extract:gate-and-ingest": "python3 scripts/review_and_ingest_extractions.py",
+    "score:materialize-stranding": "uv run --with pyyaml python3 scripts/materialize_stranding_scores.py",
     "score:exposure": "python3 scripts/score_mechanism_exposure.py",
     "retrieve:build": "python3 scripts/build_retrieval_stack.py",
     "retrieve:benchmark": "python3 scripts/benchmark_retrieval_stack.py",
