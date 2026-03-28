@@ -110,6 +110,30 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
             self.assertGreater(by_id["p8"]["stranding_score"], 0.0)
             self.assertGreater(by_id["p9"]["stranding_score"], by_id["p8"]["stranding_score"])
 
+            conn = sqlite3.connect(str(canonical_db))
+            conn.row_factory = sqlite3.Row
+            try:
+                feature_rows = conn.execute(
+                    """
+                    SELECT paper_id, feature_json
+                    FROM stranding_scores
+                    WHERE run_id = 'stranding-run'
+                    ORDER BY paper_id
+                    """
+                ).fetchall()
+            finally:
+                conn.close()
+
+            feature_by_id = {row["paper_id"]: json.loads(row["feature_json"]) for row in feature_rows}
+            self.assertLess(
+                feature_by_id["p5"]["adjusted_weight_totals"]["result_specificity"],
+                feature_by_id["p5"]["raw_weight_totals"]["result_specificity"],
+            )
+            self.assertLess(
+                feature_by_id["p8"]["adjusted_weight_totals"]["result_specificity"],
+                feature_by_id["p8"]["raw_weight_totals"]["result_specificity"],
+            )
+
             metrics = json.loads((output_dir / "stranding_score_metrics.json").read_text(encoding="utf-8"))
             self.assertEqual(metrics["scored_papers"], 8)
             self.assertEqual(metrics["positive_score_papers"], 5)

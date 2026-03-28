@@ -1,6 +1,7 @@
 score_version: s08-v1
 negation_window_chars: 48
 saturation_mode: exponential
+idf_cap: 2.0
 negation_terms:
   - "no"
   - not

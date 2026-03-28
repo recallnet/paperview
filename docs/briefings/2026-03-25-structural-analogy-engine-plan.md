@@ -405,7 +405,7 @@ Current status:
   - `realized_market_positive_papers`: `279`
   - `stranded_alpha_positive_papers`: `750`
   - `top_score`: `0.412661`
-- the stage is not complete yet because low-diversity positives, explicit market-discourse leakage, and generic result-specificity cues are now all penalized without reintroducing a hard floor, but later commits still need richer sparse features before the signal is ready for composite ranking
+- the stage is not complete yet because low-diversity positives, explicit market-discourse leakage, and generic result-specificity cues are now all penalized without reintroducing a hard floor, and phrase-frequency dampening is now wired in, but later commits still need richer sparse features before the signal is ready for composite ranking
 
 ### `S09` Bridge / Composition / Contrast Operators
 
@@ -581,15 +581,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s08-result-specificity-refinement`
-- Why this commit exists: reduce generic result-specificity inflation by demoting the weak `characterize` cue while keeping stronger analytic cues intact
+- Commit scope: `s08-idf-scaling-foundation`
+- Why this commit exists: add phrase-frequency dampening so ubiquitous sparse phrases are automatically downweighted instead of relying only on manual weights
 - Stages touched: `S08`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `tests/test_materialize_stranding_scores.py`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`
 - Commands run: `python3 -m unittest -v tests.test_materialize_stranding_scores`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
 - Tests run: `tests.test_materialize_stranding_scores`
 - Artifacts produced: `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
-- Acceptance result: `the generic characterize cue is now weaker; the fixture preserves stronger analytic phrasing above generic wording, and live positive-score papers fell from 1,082 to 867 while keeping the same top score`
-- Open risks after commit: `generic result wording is less inflated, but S08 still needs richer sparse features before it is ready to drive shortlist ranking`
+- Acceptance result: `phrase-frequency dampening is now active and exposed in provenance as raw vs adjusted sparse totals; the fixture verifies common phrases are damped, while the live top-line counts remain unchanged at this corpus scale`
+- Open risks after commit: `idf dampening improves weighting discipline, but S08 still needs richer sparse features before the signal is ready to drive shortlist ranking`
 - Next intended commit: `S08 recall recovery via structured penalty refinement`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

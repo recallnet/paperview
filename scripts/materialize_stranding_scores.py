@@ -88,6 +88,25 @@ def normalize_phrase_entries(raw_entries: list[object]) -> list[dict]:
     return normalized
 
 
+def build_phrase_doc_frequency(
+    texts: dict[str, str],
+    signal_sets: dict[str, list[dict]],
+    negation_terms: list[str],
+    negation_window_chars: int,
+) -> dict[str, dict[str, int]]:
+    doc_frequency = {feature_name: {} for feature_name in signal_sets}
+    for feature_name, phrases in signal_sets.items():
+        for entry in phrases:
+            phrase = entry["phrase"]
+            doc_frequency[feature_name][phrase] = 0
+        for text in texts.values():
+            hits = keyword_hits(text, phrases, negation_terms, negation_window_chars)
+            seen = {hit["phrase"] for hit in hits}
+            for phrase in seen:
+                doc_frequency[feature_name][phrase] += 1
+    return doc_frequency
+
+
 def fetch_membership_sets(connection: sqlite3.Connection, membership_run_id: str) -> tuple[set[str], set[str], set[str]]:
     rows = connection.execute(
         """
@@ -121,22 +140,48 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
     }
     signal_caps = {feature_name: float(cap) for feature_name, cap in signal_config["signal_caps"].items()}
     saturation_mode = str(signal_config.get("saturation_mode", "linear"))
+    idf_cap = float(signal_config.get("idf_cap", 2.0))
     negation_terms = signal_config.get("negation_terms", [])
     negation_window_chars = int(signal_config.get("negation_window_chars", 48))
+    discovery_texts = {
+        row["paper_id"]: f"{row['title'] or ''}\n{row['abstract'] or ''}"
+        for row in rows
+        if row["paper_id"] in discovery_ids
+    }
+    phrase_doc_frequency = build_phrase_doc_frequency(
+        discovery_texts,
+        signal_sets,
+        negation_terms,
+        negation_window_chars,
+    )
+    corpus_size = max(1, len(discovery_texts))
     scored_rows = []
     for row in rows:
         paper_id = row["paper_id"]
         if paper_id not in discovery_ids:
             continue
-        text = f"{row['title'] or ''}\n{row['abstract'] or ''}"
+        text = discovery_texts[paper_id]
         feature_hits = {
             feature_name: keyword_hits(text, phrases, negation_terms, negation_window_chars)
             for feature_name, phrases in signal_sets.items()
         }
-        signal_weight_totals = {
+        # @context requirement -- S08 is supposed to grow into a BM25/TF-IDF-like sparse layer, not
+        # a pile of hand-tuned phrase matches. IDF dampening keeps ubiquitous cues such as
+        # `settlement` or `characterize` from dominating the prior while preserving auditable phrase
+        # families and continuous scoring behavior.
+        signal_raw_weight_totals = {
             feature_name: sum(hit["weight"] for hit in hits)
             for feature_name, hits in feature_hits.items()
         }
+        signal_weight_totals = {}
+        for feature_name, hits in feature_hits.items():
+            adjusted_total = 0.0
+            for hit in hits:
+                df = phrase_doc_frequency[feature_name][hit["phrase"]]
+                idf = min(idf_cap, math.log((corpus_size + 1) / (df + 1)) + 1.0)
+                idf_scale = min(1.0, idf / idf_cap)
+                adjusted_total += hit["weight"] * idf_scale
+            signal_weight_totals[feature_name] = adjusted_total
         instrument_gap_score = normalized_score(
             signal_weight_totals["instrument_gap"], signal_caps["instrument_gap"], saturation_mode
         )
@@ -197,7 +242,9 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             "hits": {
                 feature_name: [hit["phrase"] for hit in hits] for feature_name, hits in feature_hits.items()
             },
-            "weight_totals": signal_weight_totals,
+            "raw_weight_totals": signal_raw_weight_totals,
+            "adjusted_weight_totals": signal_weight_totals,
+            "idf_cap": idf_cap,
             "saturation_mode": saturation_mode,
             "positive_family_count": positive_family_count,
             "low_diversity_penalty_score": low_diversity_penalty_score,
