@@ -40,13 +40,30 @@ def log_run_event(connection: sqlite3.Connection, run_id: str, stage: str, event
     )
 
 
-def keyword_hits(text: str, phrases: list[str]) -> list[str]:
+def is_negated(prefix: str, negation_terms: list[str]) -> bool:
+    lowered = prefix.lower()
+    return any(re.search(r"\b" + re.escape(str(term).lower()) + r"\b", lowered) for term in negation_terms)
+
+
+def keyword_hits(
+    text: str,
+    phrases: list[str],
+    negation_terms: list[str],
+    negation_window_chars: int,
+) -> list[str]:
     lowered = (text or "").lower()
     hits = []
     for phrase in phrases:
         pattern = r"\b" + re.escape(phrase.lower()) + r"\b"
-        if re.search(pattern, lowered):
+        for match in re.finditer(pattern, lowered):
+            # @context risk -- Sparse stranding cues are meant to capture asserted constraints, not
+            # phrases denied by the paper. Without a local negation guard, strings like "not
+            # illiquid" or "without settlement delay" inflate the stranded-result prior.
+            prefix = lowered[max(0, match.start() - negation_window_chars) : match.start()]
+            if is_negated(prefix, negation_terms):
+                continue
             hits.append(phrase)
+            break
     return hits
 
 
@@ -83,6 +100,8 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
     ).fetchall()
     weights = signal_config["weights"]
     signal_sets = signal_config["signals"]
+    negation_terms = signal_config.get("negation_terms", [])
+    negation_window_chars = int(signal_config.get("negation_window_chars", 48))
     scored_rows = []
     for row in rows:
         paper_id = row["paper_id"]
@@ -90,7 +109,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             continue
         text = f"{row['title'] or ''}\n{row['abstract'] or ''}"
         feature_hits = {
-            feature_name: keyword_hits(text, phrases)
+            feature_name: keyword_hits(text, phrases, negation_terms, negation_window_chars)
             for feature_name, phrases in signal_sets.items()
         }
         instrument_gap_score = normalized_score(len(feature_hits["instrument_gap"]))

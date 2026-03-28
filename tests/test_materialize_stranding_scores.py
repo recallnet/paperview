@@ -28,6 +28,7 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
                 ) VALUES
                   ('p1', 'arxiv', 'Closed-form contingent claim pricing', 'closed-form pricing in an illiquid market with contingent claim settlement delay', '["q-fin.PR"]', 'q-fin.PR', '2018-01-05'),
                   ('p2', 'arxiv', 'Survey of stylized facts', 'a review and survey of stylized facts in empirical finance', '["q-fin.ST"]', 'q-fin.ST', '2019-03-01'),
+                  ('p4', 'arxiv', 'Denied frictions', 'the market is not illiquid and executes without settlement delay or contingent claim frictions', '["q-fin.TR"]', 'q-fin.TR', '2020-08-12'),
                   ('p3', 'arxiv', 'Holdout market structure', 'prediction market settlement design', '["cs.GT"]', 'cs.GT', '2024-05-01');
 
                 INSERT INTO corpus_memberships (run_id, paper_id, corpus_id, membership_source, rationale_json) VALUES
@@ -35,6 +36,7 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
                   ('membership-run', 'p1', 'stranded_alpha', 'test', '{}'),
                   ('membership-run', 'p2', 'discovery', 'test', '{}'),
                   ('membership-run', 'p2', 'stranded_alpha', 'test', '{}'),
+                  ('membership-run', 'p4', 'discovery', 'test', '{}'),
                   ('membership-run', 'p3', 'holdout', 'test', '{}');
                 """
             )
@@ -79,15 +81,16 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
             finally:
                 conn.close()
 
-            self.assertEqual([row["paper_id"] for row in rows], ["p1", "p2"])
+            self.assertEqual([row["paper_id"] for row in rows], ["p1", "p2", "p4"])
             by_id = {row["paper_id"]: row for row in rows}
             self.assertGreater(by_id["p1"]["stranding_score"], by_id["p2"]["stranding_score"])
             self.assertGreater(by_id["p1"]["stranding_score"], 0.0)
             self.assertGreater(by_id["p2"]["survey_penalty_score"], 0.0)
             self.assertEqual(by_id["p1"]["stranded_alpha_bonus"], 1.0)
+            self.assertEqual(by_id["p4"]["stranding_score"], 0.0)
 
             metrics = json.loads((output_dir / "stranding_score_metrics.json").read_text(encoding="utf-8"))
-            self.assertEqual(metrics["scored_papers"], 2)
+            self.assertEqual(metrics["scored_papers"], 3)
             self.assertEqual(metrics["positive_score_papers"], 1)
 
 

@@ -1,4 +1,15 @@
 score_version: s08-v1
+negation_window_chars: 48
+negation_terms:
+  - "no"
+  - not
+  - without
+  - never
+  - absent
+  - absence of
+  - lack of
+  - lacks
+  - lacking
 weights:
   instrument_gap: 0.28
   access_barrier: 0.24
