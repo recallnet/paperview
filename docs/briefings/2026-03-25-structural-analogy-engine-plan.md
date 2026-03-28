@@ -271,7 +271,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S06` | canonical probe stage | `done` | `anchors`, `agitator_patterns`, `probe_hits` |
 | `S07` | realized-market firewall corpus | `in_progress` | canonical corpus memberships + realized-market anti-realization set |
 | `S08` | stranding sparse scoring layer | `done` | stranding features + scores |
-| `S09` | bridge / composition / contrast operators | `in_progress` | bridge, composition, contrast, and negative-space artifacts |
+| `S09` | bridge / composition / contrast operators | `done` | bridge, composition, contrast, and negative-space artifacts |
 | `S10` | review packet generation | `pending` | region packets and dossiers |
 | `S11` | shortlist stage | `pending` | shortlist rows + rationale |
 | `S12` | selective interpretation contract | `pending` | JSON interpretations only |
@@ -446,7 +446,8 @@ Current status:
   - `anchors_with_candidates`: `1`
   - `negative_space_candidate_count`: `25`
   - `top_score`: `2.930531`
-- the stage now has all four operator foundations in the canonical store; the next commit should close out S09 explicitly and move the plan to S10 if no design defects surface during review
+- the stage is complete: the canonical store now has live bridge, composition, contrast, and negative-space operators, so downstream review and shortlist work can use first-class region surfaces rather than local-similarity-only retrieval
+- the next canonical step is `S10` review packet generation
 
 ### `S10` Review Packets
 
@@ -625,15 +626,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s09-negative-space-operator-foundation`
-- Why this commit exists: add the first canonical negative-space operator so papers near dead-end and theorem-only anchor regions become a queryable surface in the main store instead of only affecting scores implicitly
-- Stages touched: `S09`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `package.json`, `scripts/materialize_negative_space.py`, `tests/test_materialize_negative_space.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_negative_space.py`, `uv run --with numpy --with pyyaml --with sqlite-vec python3 -m unittest -v tests.test_materialize_negative_space`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-negative-space -- --run-id negative-space-materialization-20260328`, `npm run codecontext:diff -- scripts/materialize_negative_space.py`, `npm run docs:lint`
-- Tests run: `tests.test_materialize_negative_space`
-- Artifacts produced: `data/structural-analogy/runs/negative-space-materialization-20260328/negative_space_metrics.json`, `data/structural-analogy/runs/negative-space-materialization-20260328/negative_space.jsonl`
-- Acceptance result: `the negative-space stage now writes canonical dead-region candidates, the fixture ranks the low-stranding dead-region paper above the stronger stranded variant, and the live run materialized 25 negative-space candidates for the negative anchor neighborhood`
-- Open risks after commit: `S09 now has all four operator foundations, but the stage still needs an explicit closeout decision in the plan before S10 review-packet work begins`
-- Next intended commit: `S09 stage closeout and move to S10`
+- Commit scope: `s09-stage-closeout-and-move-to-s10`
+- Why this commit exists: record that `S09` meets its acceptance bar and make `S10` review packet generation the next explicit execution target
+- Stages touched: `S09`, `S10`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Acceptance result: `S09 is now closed out in the canonical plan: bridge, composition, contrast, and negative-space operators are all live in the main store, and the next commit can start S10 review packet generation without additional S09 foundation work`
+- Open risks after commit: `S10 has not started yet, so review packet contracts, deterministic templates, and packet provenance surfaces still need implementation`
+- Next intended commit: `S10 review packet foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
