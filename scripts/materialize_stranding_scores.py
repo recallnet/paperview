@@ -148,6 +148,17 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
         resolution_mechanics_score = normalized_score(
             signal_weight_totals["resolution_mechanics"], signal_caps["resolution_mechanics"], saturation_mode
         )
+        positive_family_count = sum(
+            1
+            for feature_name in (
+                "instrument_gap",
+                "access_barrier",
+                "result_specificity",
+                "resolution_mechanics",
+            )
+            if signal_weight_totals[feature_name] > 0
+        )
+        low_diversity_penalty_score = 1.0 if positive_family_count < 2 else 0.0
         survey_penalty_score = normalized_score(
             signal_weight_totals["survey_penalty"], signal_caps["survey_penalty"], saturation_mode
         )
@@ -160,12 +171,16 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
         # weighted phrase families plus a stranded-alpha bonus, not an opaque learned model. Strong
         # cues like `contingent claim` or `closed-form` should outrank weak generic wording such as
         # `characterize`, and later S08 commits can still refine this without breaking the contract.
+        # @context requirement -- The stranding score must stay continuous for the final composite
+        # ranking, but weak one-family matches cannot dominate the surface. Penalizing low-diversity
+        # positives preserves gradient behavior while demoting rows that only echo a single sparse cue.
         stranding_score = (
             weights["instrument_gap"] * instrument_gap_score
             + weights["access_barrier"] * access_barrier_score
             + weights["result_specificity"] * result_specificity_score
             + weights["resolution_mechanics"] * resolution_mechanics_score
             + weights["stranded_alpha_bonus"] * stranded_alpha_bonus
+            - weights["low_diversity_penalty"] * low_diversity_penalty_score
             - weights["survey_penalty"] * survey_penalty_score
             - weights["empirical_only_penalty"] * empirical_only_penalty_score
         )
@@ -177,6 +192,8 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             },
             "weight_totals": signal_weight_totals,
             "saturation_mode": saturation_mode,
+            "positive_family_count": positive_family_count,
+            "low_diversity_penalty_score": low_diversity_penalty_score,
             "primary_category": row["primary_category"],
             "published_at": row["published_at"],
             "is_stranded_alpha": paper_id in stranded_alpha_ids,
