@@ -278,7 +278,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S13` | holdout echo validation | `done` | holdout echo metrics |
 | `S14` | Unrealized Ideas Index | `done` | human-facing index |
 | `S15` | Stranded Result Ledger | `done` | human-facing ledger |
-| `S16` | active / archive cleanup | `pending` | clean active pipeline surface |
+| `S16` | active / archive cleanup | `in_progress` | clean active pipeline surface |
 
 ## Completed Stages
 
@@ -618,6 +618,17 @@ Accept when:
 - `scripts/` reads like the current pipeline rather than the full archeology of prior attempts
 - superseded surfaces are preserved, but they no longer compete with canonical stages
 
+Current status:
+
+- `scripts/archive/` is now established as the canonical home for preserved-but-inactive script surfaces
+- first archived slice moved to `scripts/archive/noncanonical-pilots/`:
+  - `materialize_adjacent_seeding_plan.py`
+  - `materialize_discovery_benchmark.py`
+  - `materialize_mixed_family_pilot.py`
+- this first slice is intentionally narrow: it archives tracked pilot utilities that are not part of the canonical staged command set and do not have active package-script entrypoints
+- historical docs still reference `materialize_mixed_family_pilot.py`, which is acceptable for `S16` because the archive preserves the file while removing it from the active script surface
+- the stage remains in progress because extraction-era package commands and other superseded utilities still need later cleanup passes
+
 ---
 
 ## Development Policy
@@ -745,12 +756,12 @@ Accept when:
 - Commit scope: `s16-active-archive-cleanup-foundation`
 - Why this commit exists: reduce active-surface clutter so the repo reflects the canonical staged pipeline instead of the full archeology of prior attempts
 - Stages touched: `S16`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/archive/README.md`, `scripts/archive/noncanonical-pilots/materialize_adjacent_seeding_plan.py`, `scripts/archive/noncanonical-pilots/materialize_discovery_benchmark.py`, `scripts/archive/noncanonical-pilots/materialize_mixed_family_pilot.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n \"materialize_adjacent_seeding_plan.py\\|materialize_discovery_benchmark.py\\|materialize_mixed_family_pilot.py\" -- package.json docs scripts tests`, `find scripts/archive -maxdepth 2 -type f | sort`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `none yet`
-- Acceptance result: `S15 is complete and the next commit should begin the active/archive cleanup pass`
-- Open risks after commit: `S16 still needs an explicit archive move plan and the first concrete cleanup slice`
+- Artifacts produced: `scripts/archive/noncanonical-pilots/`
+- Acceptance result: `the first S16 cleanup slice is live: scripts/archive now exists, three tracked pilot utilities have been moved out of the active root, and the active staged command surface is unchanged`
+- Open risks after commit: `this first slice only archives clearly noncanonical pilot utilities; package-wired extraction-era and edge-reset surfaces still need later cleanup`
 - Next intended commit: `S16 active/archive cleanup foundation`
-- Signoff status: `draft`
+- Signoff status: `ready`
 - Last updated: `2026-03-28`
