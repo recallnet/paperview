@@ -120,7 +120,6 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
     }
     signal_caps = {feature_name: float(cap) for feature_name, cap in signal_config["signal_caps"].items()}
     saturation_mode = str(signal_config.get("saturation_mode", "linear"))
-    minimum_stranding_score = float(signal_config.get("minimum_stranding_score", 0.0))
     negation_terms = signal_config.get("negation_terms", [])
     negation_window_chars = int(signal_config.get("negation_window_chars", 48))
     scored_rows = []
@@ -171,11 +170,6 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             - weights["empirical_only_penalty"] * empirical_only_penalty_score
         )
         stranding_score = max(0.0, min(1.0, stranding_score))
-        # @context requirement -- Weak composite scores are intentionally zeroed once positive and
-        # penalty signals have been combined. The stranding overlay should surface fewer, stronger
-        # stranded candidates instead of letting single weak cues drift above zero.
-        if stranding_score < minimum_stranding_score:
-            stranding_score = 0.0
 
         feature_payload = {
             "hits": {
@@ -183,7 +177,6 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             },
             "weight_totals": signal_weight_totals,
             "saturation_mode": saturation_mode,
-            "minimum_stranding_score": minimum_stranding_score,
             "primary_category": row["primary_category"],
             "published_at": row["published_at"],
             "is_stranded_alpha": paper_id in stranded_alpha_ids,

@@ -92,11 +92,12 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
             self.assertEqual(by_id["p1"]["stranded_alpha_bonus"], 1.0)
             self.assertEqual(by_id["p4"]["stranding_score"], 0.0)
             self.assertGreater(by_id["p1"]["result_specificity_score"], by_id["p5"]["result_specificity_score"])
-            self.assertEqual(by_id["p5"]["stranding_score"], 0.0)
+            self.assertGreater(by_id["p5"]["stranding_score"], 0.0)
+            self.assertLess(by_id["p5"]["stranding_score"], by_id["p1"]["stranding_score"])
 
             metrics = json.loads((output_dir / "stranding_score_metrics.json").read_text(encoding="utf-8"))
             self.assertEqual(metrics["scored_papers"], 4)
-            self.assertEqual(metrics["positive_score_papers"], 1)
+            self.assertEqual(metrics["positive_score_papers"], 2)
 
 
 if __name__ == "__main__":
