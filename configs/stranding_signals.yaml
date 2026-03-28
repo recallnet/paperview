@@ -22,6 +22,7 @@ weights:
   low_diversity_penalty: 0.12
   missing_thesis_penalty: 0.22
   result_resolution_only_penalty: 0.18
+  access_result_only_penalty: 0.24
   realized_market_penalty: 0.08
   survey_penalty: 0.22
   empirical_only_penalty: 0.18

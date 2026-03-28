@@ -401,10 +401,10 @@ Current status:
 - canonical `stranding_scores` foundation is implemented and live
 - current live score counts:
   - `scored_papers`: `17,323`
-  - `positive_score_papers`: `761`
-  - `realized_market_positive_papers`: `248`
-  - `stranded_alpha_positive_papers`: `661`
-  - `top_score`: `0.412661`
+  - `positive_score_papers`: `747`
+  - `realized_market_positive_papers`: `238`
+  - `stranded_alpha_positive_papers`: `654`
+  - `top_score`: `0.377925`
 - the stage is not complete yet because low-diversity positives, explicit market-discourse leakage, generic result-specificity cues, overlapping phrase variants, thesis-free access-plus-resolution rows, and result-plus-resolution-only rows are now all handled without reintroducing a hard floor, phrase-frequency dampening is wired in, and implementation/data-availability barriers are represented, but later commits still need richer sparse features before the signal is ready for composite ranking
 
 ### `S09` Bridge / Composition / Contrast Operators
@@ -581,15 +581,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s08-result-resolution-only-penalty`
-- Why this commit exists: demote rows that only combine generic result-specificity and lifecycle/resolution cues without any instrument, access, or implementation barrier signal
+- Commit scope: `s08-access-result-without-seam-penalty`
+- Why this commit exists: demote rows that combine access-barrier and result-specificity cues without any instrument-gap or implementation-barrier signal, because they still read like generic friction-plus-theorem papers rather than stranded executable seams
 - Stages touched: `S08`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`
-- Commands run: `python3 -m unittest -v tests.test_materialize_stranding_scores`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_stranding_scores.py`, `python3 -m unittest -v tests.test_materialize_stranding_scores`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
 - Tests run: `tests.test_materialize_stranding_scores`
 - Artifacts produced: `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
-- Acceptance result: `the new result-resolution-only penalty zeros generic closed-form-plus-maturity rows while preserving contingent-claim variants; the fixture proves that distinction and the live positive surface fell from 810 to 761`
-- Open risks after commit: `the theorem-shaped lifecycle rows are reduced, but later S08 commits still need richer sparse features so valid lifecycle seams are not underrepresented`
-- Next intended commit: `S08 recall recovery via structured penalty refinement`
+- Acceptance result: `the new access-result-only penalty zeros the generic illiquid-plus-closed-form fixture row while preserving the implementation-backed variant; the live positive surface fell from 761 to 747 and realized-market positives fell from 248 to 238`
+- Open risks after commit: `the sparse prior now trims another generic theorem-shaped pocket, but S08 still needs richer positive features so valid non-q-fin seams are recovered instead of only suppressing weak rows`
+- Next intended commit: `S08 richer sparse feature recovery after access-result penalty`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
