@@ -335,6 +335,34 @@ CREATE TABLE IF NOT EXISTS holdout_echoes (
 CREATE INDEX IF NOT EXISTS idx_holdout_echoes_run_shortlist_rank
 ON holdout_echoes (run_id, shortlist_id, echo_rank);
 
+-- @context decision -- The Unrealized Ideas Index is a publication-stage surface over canonical
+-- shortlist, interpretation, and validation evidence. Keeping ranked entries in the main store
+-- makes the human-facing index reproducible and auditable instead of a markdown-only side effect.
+CREATE TABLE IF NOT EXISTS unrealized_idea_index (
+  run_id TEXT NOT NULL,
+  shortlist_run_id TEXT NOT NULL,
+  interpretation_run_id TEXT NOT NULL,
+  holdout_run_id TEXT NOT NULL,
+  shortlist_id TEXT NOT NULL,
+  item_type TEXT NOT NULL,
+  item_ref TEXT NOT NULL,
+  title TEXT NOT NULL,
+  classification TEXT NOT NULL,
+  index_rank INTEGER NOT NULL,
+  index_score REAL NOT NULL,
+  domain_far_score REAL NOT NULL,
+  holdout_echo_score REAL NOT NULL,
+  realized_market_leakage_score REAL NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, shortlist_id),
+  FOREIGN KEY (shortlist_run_id, shortlist_id) REFERENCES shortlist_items(run_id, shortlist_id) ON DELETE CASCADE,
+  FOREIGN KEY (interpretation_run_id, shortlist_id) REFERENCES selective_interpretations(run_id, shortlist_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_unrealized_idea_index_run_rank
+ON unrealized_idea_index (run_id, index_rank);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.

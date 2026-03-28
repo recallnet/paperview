@@ -1,0 +1,364 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import sqlite3
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
+DEFAULT_OUTPUT_ROOT = ROOT / "data" / "structural-analogy" / "runs"
+
+POSITIVE_CLASSIFICATIONS = {
+    "TRANSLATION_CANDIDATE": 0.35,
+    "COMPOSITIONAL_CANDIDATE": 0.3,
+    "STRANDED_QFIN_RESULT": 0.25,
+}
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Materialize the canonical Unrealized Ideas Index.")
+    parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH))
+    parser.add_argument("--run-id", default="unrealized-ideas-index-20260328")
+    parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
+    parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
+    parser.add_argument("--holdout-run-id", default="holdout-echo-materialization-20260328")
+    parser.add_argument("--membership-run-id", default="corpus-membership-materialization-20260328")
+    parser.add_argument("--output-dir", default=None)
+    return parser.parse_args()
+
+
+def log_run_event(connection: sqlite3.Connection, run_id: str, stage: str, event_type: str, payload: dict) -> None:
+    connection.execute(
+        """
+        INSERT INTO run_events (run_id, stage, event_type, payload_json)
+        VALUES (?, ?, ?, ?)
+        """,
+        (run_id, stage, event_type, json.dumps(payload, sort_keys=True)),
+    )
+
+
+def resolve_source_paper_ids(summary_json: str, echoes: list[sqlite3.Row], item_type: str, item_ref: str) -> list[str]:
+    summary = json.loads(summary_json or "{}")
+    source_ids = []
+    if echoes:
+        try:
+            source_ids = json.loads(echoes[0]["source_paper_ids_json"] or "[]")
+        except json.JSONDecodeError:
+            source_ids = []
+    if not source_ids:
+        source_ids = summary.get("representative_papers", [])
+    if not source_ids and item_type == "paper":
+        source_ids = [item_ref]
+    # @context requirement -- Source-paper resolution must follow the same representative-paper
+    # contract used by packets and holdout echoes. If this drifts, the publication-stage index will
+    # silently rank a different evidence base than the validated shortlist and holdout stages.
+    deduped = []
+    seen = set()
+    for paper_id in source_ids:
+        if paper_id in seen:
+            continue
+        deduped.append(paper_id)
+        seen.add(paper_id)
+    return deduped
+
+
+def realized_market_leakage(connection: sqlite3.Connection, membership_run_id: str, source_paper_ids: list[str]) -> float:
+    if not source_paper_ids:
+        return 0.0
+    placeholders = ",".join("?" for _ in source_paper_ids)
+    rows = connection.execute(
+        f"""
+        SELECT COUNT(*) AS realized_count
+        FROM corpus_memberships
+        WHERE run_id = ?
+          AND corpus_id = 'realized_market'
+          AND paper_id IN ({placeholders})
+        """,
+        (membership_run_id, *source_paper_ids),
+    ).fetchone()
+    realized_count = int(rows["realized_count"] or 0)
+    return round(realized_count / len(source_paper_ids), 6)
+
+
+def shortlist_rank_score(shortlist_rank: int) -> float:
+    if shortlist_rank <= 0:
+        return 0.0
+    return round(1.0 / shortlist_rank, 6)
+
+
+def index_score(shortlist_rank: int, classification: str, holdout_echo_score: float, leakage_score: float) -> float:
+    domain_far_score = max(0.0, 1.0 - leakage_score)
+    classification_bonus = POSITIVE_CLASSIFICATIONS.get(classification, 0.0)
+    # @context decision -- The first index layer ranks only over canonical shortlist, interpretation,
+    # and validation evidence. Using shortlist rank plus holdout echo and domain-far reward keeps the
+    # publication surface aligned with map-first discovery instead of inventing a parallel score.
+    return round(
+        shortlist_rank_score(shortlist_rank) * 0.25
+        + classification_bonus
+        + holdout_echo_score * 0.5
+        + domain_far_score * 0.75,
+        6,
+    )
+
+
+def render_markdown(rows: list[dict]) -> str:
+    lines = [
+        "# Unrealized Ideas Index",
+        "",
+        f"- entry count: `{len(rows)}`",
+        "",
+    ]
+    for row in rows:
+        echoes = row["rationale"]["top_holdout_echoes"]
+        lines.extend(
+            [
+                f"## {row['index_rank']}. {row['title']}",
+                "",
+                f"- shortlist id: `{row['shortlist_id']}`",
+                f"- classification: `{row['classification']}`",
+                f"- item type: `{row['item_type']}`",
+                f"- index score: `{row['index_score']}`",
+                f"- domain-far score: `{row['domain_far_score']}`",
+                f"- holdout echo score: `{row['holdout_echo_score']}`",
+                f"- realized-market leakage: `{row['realized_market_leakage_score']}`",
+                f"- confidence: `{row['confidence']}`",
+                "",
+                f"Result: {row['result_summary']}",
+                "",
+                f"Why unrealized: {row['why_stranded_or_unrealized']}",
+                "",
+                f"Modern equivalent: {row['modern_equivalent']}",
+                "",
+                f"First step: {row['first_step']}",
+                "",
+                "Top holdout echoes:",
+            ]
+        )
+        for echo in echoes:
+            lines.append(f"- `{echo['paper_id']}` | {echo['title']} | echo `{echo['echo_score']}`")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def main():
+    args = parse_args()
+    db_path = Path(args.db_path).resolve()
+    output_dir = Path(args.output_dir).resolve() if args.output_dir else DEFAULT_OUTPUT_ROOT / args.run_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    connection = sqlite3.connect(str(db_path))
+    connection.row_factory = sqlite3.Row
+    try:
+        log_run_event(
+            connection,
+            args.run_id,
+            "unrealized_ideas_index",
+            "started",
+            {
+                "shortlist_run_id": args.shortlist_run_id,
+                "interpretation_run_id": args.interpretation_run_id,
+                "holdout_run_id": args.holdout_run_id,
+                "membership_run_id": args.membership_run_id,
+            },
+        )
+
+        source_rows = connection.execute(
+            """
+            SELECT
+              si.shortlist_id,
+              si.item_type,
+              si.item_ref,
+              si.shortlist_rank,
+              si.score AS shortlist_score,
+              rp.title,
+              rp.summary_json,
+              interp.classification,
+              interp.result_summary,
+              interp.first_step,
+              interp.instrument_assumed,
+              interp.modern_equivalent,
+              interp.why_stranded_or_unrealized,
+              interp.gap_to_close,
+              interp.confidence
+            FROM selective_interpretations interp
+            JOIN shortlist_items si
+              ON si.run_id = interp.shortlist_run_id
+             AND si.shortlist_id = interp.shortlist_id
+            JOIN review_packets rp
+              ON rp.run_id = si.packet_run_id
+             AND rp.packet_kind = si.packet_kind
+             AND rp.item_ref = si.packet_item_ref
+            WHERE interp.run_id = ?
+              AND si.run_id = ?
+            ORDER BY si.shortlist_rank ASC, si.shortlist_id ASC
+            """,
+            (args.interpretation_run_id, args.shortlist_run_id),
+        ).fetchall()
+
+        ranked_rows = []
+        for row in source_rows:
+            classification = row["classification"]
+            if classification not in POSITIVE_CLASSIFICATIONS:
+                continue
+            echoes = connection.execute(
+                """
+                SELECT
+                  he.holdout_paper_id,
+                  he.echo_score,
+                  he.echo_rank,
+                  he.source_paper_ids_json,
+                  COALESCE(p.title, he.holdout_paper_id) AS holdout_title
+                FROM holdout_echoes he
+                JOIN papers p
+                  ON p.paper_id = he.holdout_paper_id
+                WHERE he.run_id = ?
+                  AND he.shortlist_id = ?
+                ORDER BY he.echo_rank ASC, he.holdout_paper_id ASC
+                """,
+                (args.holdout_run_id, row["shortlist_id"]),
+            ).fetchall()
+            if not echoes:
+                continue
+
+            source_paper_ids = resolve_source_paper_ids(row["summary_json"], echoes, row["item_type"], row["item_ref"])
+            leakage_score = realized_market_leakage(connection, args.membership_run_id, source_paper_ids)
+            domain_far_score = round(max(0.0, 1.0 - leakage_score), 6)
+            top_holdout_echoes = [
+                {
+                    "paper_id": echo["holdout_paper_id"],
+                    "title": echo["holdout_title"],
+                    "echo_score": round(float(echo["echo_score"] or 0.0), 6),
+                }
+                for echo in echoes[:3]
+            ]
+            holdout_echo_score = round(
+                sum(float(item["echo_score"]) for item in top_holdout_echoes) / len(top_holdout_echoes),
+                6,
+            )
+            ranked_rows.append(
+                {
+                    "shortlist_id": row["shortlist_id"],
+                    "item_type": row["item_type"],
+                    "item_ref": row["item_ref"],
+                    "title": row["title"],
+                    "classification": classification,
+                    "shortlist_rank": int(row["shortlist_rank"]),
+                    "shortlist_score": round(float(row["shortlist_score"] or 0.0), 6),
+                    "holdout_echo_score": holdout_echo_score,
+                    "realized_market_leakage_score": leakage_score,
+                    "domain_far_score": domain_far_score,
+                    "result_summary": row["result_summary"],
+                    "first_step": row["first_step"],
+                    "instrument_assumed": row["instrument_assumed"],
+                    "modern_equivalent": row["modern_equivalent"],
+                    "why_stranded_or_unrealized": row["why_stranded_or_unrealized"],
+                    "gap_to_close": row["gap_to_close"],
+                    "confidence": row["confidence"],
+                    "rationale": {
+                        "shortlist_rank_score": shortlist_rank_score(int(row["shortlist_rank"])),
+                        "classification_bonus": POSITIVE_CLASSIFICATIONS[classification],
+                        "source_paper_ids": source_paper_ids,
+                        "top_holdout_echoes": top_holdout_echoes,
+                    },
+                }
+            )
+
+        ranked_rows.sort(
+            key=lambda item: (
+                -index_score(
+                    item["shortlist_rank"],
+                    item["classification"],
+                    item["holdout_echo_score"],
+                    item["realized_market_leakage_score"],
+                ),
+                -item["domain_far_score"],
+                -item["holdout_echo_score"],
+                item["shortlist_id"],
+            )
+        )
+
+        connection.execute("DELETE FROM unrealized_idea_index WHERE run_id = ?", (args.run_id,))
+
+        jsonl_rows = []
+        for rank, item in enumerate(ranked_rows, start=1):
+            item["index_rank"] = rank
+            item["index_score"] = index_score(
+                item["shortlist_rank"],
+                item["classification"],
+                item["holdout_echo_score"],
+                item["realized_market_leakage_score"],
+            )
+            connection.execute(
+                """
+                INSERT INTO unrealized_idea_index (
+                  run_id,
+                  shortlist_run_id,
+                  interpretation_run_id,
+                  holdout_run_id,
+                  shortlist_id,
+                  item_type,
+                  item_ref,
+                  title,
+                  classification,
+                  index_rank,
+                  index_score,
+                  domain_far_score,
+                  holdout_echo_score,
+                  realized_market_leakage_score,
+                  rationale_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    args.run_id,
+                    args.shortlist_run_id,
+                    args.interpretation_run_id,
+                    args.holdout_run_id,
+                    item["shortlist_id"],
+                    item["item_type"],
+                    item["item_ref"],
+                    item["title"],
+                    item["classification"],
+                    rank,
+                    item["index_score"],
+                    item["domain_far_score"],
+                    item["holdout_echo_score"],
+                    item["realized_market_leakage_score"],
+                    json.dumps(item["rationale"], sort_keys=True),
+                ),
+            )
+            jsonl_rows.append(item)
+
+        jsonl_path = output_dir / "unrealized_ideas_index.jsonl"
+        with jsonl_path.open("w", encoding="utf-8") as handle:
+            for item in jsonl_rows:
+                handle.write(json.dumps(item, sort_keys=True) + "\n")
+
+        markdown_path = output_dir / "unrealized_ideas_index.md"
+        markdown_path.write_text(render_markdown(jsonl_rows), encoding="utf-8")
+
+        metrics = {
+            "run_id": args.run_id,
+            "shortlist_run_id": args.shortlist_run_id,
+            "interpretation_run_id": args.interpretation_run_id,
+            "holdout_run_id": args.holdout_run_id,
+            "entry_count": len(jsonl_rows),
+            "counts_by_classification": {
+                classification: sum(1 for row in jsonl_rows if row["classification"] == classification)
+                for classification in sorted(POSITIVE_CLASSIFICATIONS)
+            },
+            "top_ranked_shortlist_id": jsonl_rows[0]["shortlist_id"] if jsonl_rows else None,
+        }
+        metrics_path = output_dir / "unrealized_ideas_index_metrics.json"
+        metrics_path.write_text(json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+        log_run_event(connection, args.run_id, "unrealized_ideas_index", "completed", metrics)
+        connection.commit()
+    finally:
+        connection.close()
+
+
+if __name__ == "__main__":
+    main()

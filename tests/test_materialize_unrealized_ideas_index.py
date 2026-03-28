@@ -1,0 +1,180 @@
+import json
+import sqlite3
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent.parent
+SCHEMA_PATH = ROOT / "sql" / "paperview_schema.sql"
+SCRIPT_PATH = ROOT / "scripts" / "materialize_unrealized_ideas_index.py"
+
+
+def seed_unrealized_index_fixture(connection: sqlite3.Connection) -> None:
+    connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+
+    connection.executemany(
+        """
+        INSERT INTO papers (paper_id, source_corpus, title, primary_category, published_at)
+        VALUES (?, 'arxiv', ?, 'q-fin.TR', ?)
+        """,
+        [
+            ("source-bridge", "Source Bridge", "2023-01-01"),
+            ("source-paper", "Source Paper", "2023-01-02"),
+            ("holdout-a", "Holdout A", "2024-01-15"),
+            ("holdout-b", "Holdout B", "2024-01-16"),
+            ("holdout-c", "Holdout C", "2024-01-17"),
+        ],
+    )
+
+    connection.executemany(
+        """
+        INSERT INTO review_packets (
+          run_id, packet_kind, item_ref, title, packet_path, summary_json, packet_markdown, source_run_ids_json
+        )
+        VALUES (?, ?, ?, ?, ?, ?, '# packet', '{}')
+        """,
+        [
+            (
+                "packet-run",
+                "bridge",
+                "bridge-a",
+                "Bridge Packet",
+                "/tmp/bridge-a.md",
+                '{"representative_papers":["source-bridge"]}',
+            ),
+            (
+                "packet-run",
+                "stranded_qfin",
+                "source-paper",
+                "Stranded Packet",
+                "/tmp/source-paper.md",
+                '{"paper_id":"source-paper"}',
+            ),
+            (
+                "packet-run",
+                "composition",
+                "composition-a",
+                "Composition Packet",
+                "/tmp/composition-a.md",
+                '{"representative_papers":["source-bridge"]}',
+            ),
+        ],
+    )
+
+    connection.executemany(
+        """
+        INSERT INTO shortlist_items (
+          run_id, shortlist_id, item_type, item_ref, packet_run_id, packet_kind, packet_item_ref,
+          score, shortlist_rank, status, rationale_json
+        )
+        VALUES (?, ?, ?, ?, 'packet-run', ?, ?, ?, ?, 'proposed', '{}')
+        """,
+        [
+            ("shortlist-run", "bridge:bridge-a", "bridge", "bridge-a", "bridge", "bridge-a", 2.0, 1),
+            ("shortlist-run", "paper:source-paper", "paper", "source-paper", "stranded_qfin", "source-paper", 1.0, 2),
+            ("shortlist-run", "composition:composition-a", "composition", "composition-a", "composition", "composition-a", 1.5, 3),
+        ],
+    )
+
+    connection.executemany(
+        """
+        INSERT INTO selective_interpretations (
+          run_id, shortlist_run_id, shortlist_id, classification, result_summary, first_step,
+          instrument_assumed, modern_equivalent, why_stranded_or_unrealized, gap_to_close,
+          confidence, raw_json
+        )
+        VALUES (?, 'shortlist-run', ?, ?, 'result', 'step', 'instrument', 'modern', 'why', 'gap', 'high', '{}')
+        """,
+        [
+            ("interpret-run", "bridge:bridge-a", "TRANSLATION_CANDIDATE"),
+            ("interpret-run", "paper:source-paper", "STRANDED_QFIN_RESULT"),
+            ("interpret-run", "composition:composition-a", "NO_TRANSLATION"),
+        ],
+    )
+
+    connection.executemany(
+        """
+        INSERT INTO holdout_echoes (
+          run_id, interpretation_run_id, shortlist_id, holdout_paper_id, echo_score, echo_rank,
+          source_paper_ids_json, rationale_json
+        )
+        VALUES (?, 'interpret-run', ?, ?, ?, ?, ?, '{}')
+        """,
+        [
+            ("echo-run", "bridge:bridge-a", "holdout-a", 0.9, 1, '["source-bridge"]'),
+            ("echo-run", "bridge:bridge-a", "holdout-b", 0.8, 2, '["source-bridge"]'),
+            ("echo-run", "paper:source-paper", "holdout-c", 0.85, 1, '["source-paper"]'),
+            ("echo-run", "composition:composition-a", "holdout-b", 0.95, 1, '["source-bridge"]'),
+        ],
+    )
+
+    connection.execute(
+        """
+        INSERT INTO corpus_memberships (run_id, paper_id, corpus_id, membership_source, rationale_json)
+        VALUES ('membership-run', 'source-paper', 'realized_market', 'fixture', '{}')
+        """
+    )
+
+    connection.commit()
+
+
+class MaterializeUnrealizedIdeasIndexTest(unittest.TestCase):
+    def test_materializes_positive_index_and_demotes_leakage(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            db_path = tmp_path / "fixture.sqlite3"
+            output_dir = tmp_path / "run"
+
+            connection = sqlite3.connect(db_path)
+            seed_unrealized_index_fixture(connection)
+            connection.close()
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT_PATH),
+                    "--db-path",
+                    str(db_path),
+                    "--run-id",
+                    "index-run",
+                    "--shortlist-run-id",
+                    "shortlist-run",
+                    "--interpretation-run-id",
+                    "interpret-run",
+                    "--holdout-run-id",
+                    "echo-run",
+                    "--membership-run-id",
+                    "membership-run",
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            metrics = json.loads((output_dir / "unrealized_ideas_index_metrics.json").read_text(encoding="utf-8"))
+            self.assertEqual(metrics["entry_count"], 2)
+            self.assertEqual(metrics["top_ranked_shortlist_id"], "bridge:bridge-a")
+
+            rows = [
+                json.loads(line)
+                for line in (output_dir / "unrealized_ideas_index.jsonl").read_text(encoding="utf-8").strip().splitlines()
+            ]
+            self.assertEqual([row["shortlist_id"] for row in rows], ["bridge:bridge-a", "paper:source-paper"])
+            self.assertEqual(rows[0]["realized_market_leakage_score"], 0.0)
+            self.assertEqual(rows[1]["realized_market_leakage_score"], 1.0)
+            self.assertEqual(rows[0]["classification"], "TRANSLATION_CANDIDATE")
+            self.assertEqual(rows[1]["classification"], "STRANDED_QFIN_RESULT")
+            self.assertNotIn("composition:composition-a", [row["shortlist_id"] for row in rows])
+
+            markdown = (output_dir / "unrealized_ideas_index.md").read_text(encoding="utf-8")
+            self.assertIn("# Unrealized Ideas Index", markdown)
+            self.assertIn("Bridge Packet", markdown)
+            self.assertIn("realized-market leakage: `0.0`", markdown)
+
+
+if __name__ == "__main__":
+    unittest.main()
