@@ -378,10 +378,10 @@ Current status:
 - canonical `corpus_memberships` foundation is implemented and live
 - current live membership counts:
   - `discovery`: `17,323`
-  - `realized_market`: `17,323`
+  - `realized_market`: `4,579`
   - `stranded_alpha`: `12,255`
   - `holdout`: `6,880`
-- the stage is not complete yet because the realized-market lexical definition is still broad and needs refinement before it becomes the final anti-realization surface
+- the stage is not complete yet because the realized-market slice now reflects explicit market discourse, but later commits still need stronger anti-realization negatives and sparse stranding features before ranking can use it well
 
 ### `S08` Stranding Sparse Scoring
 
@@ -531,6 +531,7 @@ Accept when:
 
 ## Current Canonical Commands
 
+- `npm run store:materialize-corpus-memberships`
 - `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`
 - `npm run store:materialize-text-views`
 - `npm run store:materialize-view-embeddings`
@@ -564,15 +565,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s07-corpus-membership-foundation`
-- Why this commit exists: create the canonical corpus-membership layer that the realized-market firewall, stranded-alpha slice, and holdout logic will all share
+- Commit scope: `s07-realized-market-lexical-refinement`
+- Why this commit exists: tighten realized-market membership so the anti-realization slice stops absorbing substring false positives and is exposed through the canonical npm surface
 - Stages touched: `S07`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `configs/corpus.yaml`, `scripts/materialize_corpus_memberships.py`, `tests/test_materialize_corpus_memberships.py`
-- Commands run: `python3 -m unittest -v tests.test_materialize_corpus_memberships`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `uv run --with pyyaml python3 scripts/materialize_corpus_memberships.py --run-id corpus-membership-materialization-20260328`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/materialize_corpus_memberships.py`, `tests/test_materialize_corpus_memberships.py`
+- Commands run: `python3 -m unittest -v tests.test_materialize_corpus_memberships`, `npm run store:materialize-corpus-memberships -- --run-id corpus-membership-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_corpus_memberships.py`, `npm run codecontext:diff -- scripts/materialize_corpus_memberships.py`, `npm run docs:lint`
 - Tests run: `tests.test_materialize_corpus_memberships`
 - Artifacts produced: `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
-- Acceptance result: `foundation complete; stage still in progress`
-- Open risks after commit: `the current realized_market slice is too broad because the repo currently holds mostly q-fin papers, so later commits must sharpen anti-realization definition instead of treating this first slice as final`
-- Next intended commit: `S07 realized-market lexical refinement`
-- Signoff status: `committed`
+- Acceptance result: `live realized_market count corrected to 4,579 and false-positive regression covered; stage still in progress`
+- Open risks after commit: `the anti-realization surface is now discourse-driven, but later commits still need stronger negative anchors and sparse stranding cues so the firewall does not rely on keyword families alone`
+- Next intended commit: `S08 stranding sparse feature foundation`
+- Signoff status: `ready`
 - Last updated: `2026-03-28`

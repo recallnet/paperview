@@ -29,7 +29,8 @@ class MaterializeCorpusMembershipsTests(unittest.TestCase):
                   ('p1', 'arxiv', 'Cross-market trading parity', 'arbitrage and trading across venues', '["q-fin.TR"]', 'q-fin.TR', '2020-02-01'),
                   ('p2', 'arxiv', 'General optimization', 'queueing and control only', '["math.OC"]', 'math.OC', '2022-05-01'),
                   ('p3', 'arxiv', 'Prediction market design', 'prediction market and hedging mechanics', '["cs.GT"]', 'cs.GT', '2024-04-02'),
-                  ('p4', 'arxiv', 'Old q-fin idea', 'pricing under affine models', '["q-fin.PR"]', 'q-fin.PR', '2016-07-03');
+                  ('p4', 'arxiv', 'Old q-fin idea', 'pricing under affine models', '["q-fin.PR"]', 'q-fin.PR', '2016-07-03'),
+                  ('p5', 'arxiv', 'Optional convergence bounds', 'we study optional stopping and optimization options for convergence bounds', '["math.OC"]', 'math.OC', '2021-03-09');
                 """
             )
             conn.commit()
@@ -71,8 +72,8 @@ class MaterializeCorpusMembershipsTests(unittest.TestCase):
                 )
             finally:
                 conn.close()
-            self.assertEqual(counts["discovery"], 3)
-            self.assertEqual(counts["realized_market"], 2)
+            self.assertEqual(counts["discovery"], 4)
+            self.assertEqual(counts["realized_market"], 1)
             self.assertEqual(counts["stranded_alpha"], 2)
             self.assertEqual(counts["holdout"], 1)
 

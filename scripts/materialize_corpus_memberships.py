@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -13,6 +14,24 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_OUTPUT_ROOT = ROOT / "data" / "structural-analogy" / "runs"
 DEFAULT_CORPUS_CONFIG_PATH = ROOT / "configs" / "corpus.yaml"
+AMBIGUOUS_MARKET_KEYWORDS = {"option", "options"}
+MARKET_DISAMBIGUATION_TERMS = {
+    "arbitrage",
+    "derivative",
+    "derivatives",
+    "hedge",
+    "hedging",
+    "liquidity",
+    "market",
+    "market maker",
+    "option pricing",
+    "portfolio",
+    "price",
+    "pricing",
+    "trade",
+    "trading",
+    "venue",
+}
 
 
 def parse_args():
@@ -50,7 +69,22 @@ def category_prefix_match(categories: list[str], prefixes: list[str]) -> bool:
 
 def keyword_hits(text: str, keywords: list[str]) -> list[str]:
     lowered = (text or "").lower()
-    return [keyword for keyword in keywords if keyword.lower() in lowered]
+    # @context risk -- realized-market membership is an anti-realization boundary, so naive substring
+    # matching leaks generic optimization/control papers via words like "optional" or "optimization".
+    # Boundary-aware regex matching keeps sparse market cues usable without turning the firewall into
+    # an everything-before-2024 bucket.
+    hits = []
+    for keyword in keywords:
+        pattern = r"\b" + re.escape(keyword.lower()) + r"\b"
+        if not re.search(pattern, lowered):
+            continue
+        if keyword.lower() in AMBIGUOUS_MARKET_KEYWORDS and not any(
+            term in lowered for term in MARKET_DISAMBIGUATION_TERMS
+        ):
+            continue
+        if re.search(pattern, lowered):
+            hits.append(keyword)
+    return hits
 
 
 def log_run_event(connection: sqlite3.Connection, run_id: str, stage: str, event_type: str, payload: dict) -> None:
@@ -114,20 +148,21 @@ def build_memberships(connection: sqlite3.Connection, config: dict) -> list[tupl
         realized_cfg = config["corpus_memberships"]["realized_market"]
         realized_keyword_hits = keyword_hits(text, realized_cfg.get("keywords", []))
         realized_category_match = category_prefix_match(categories, realized_cfg.get("category_prefixes", []))
-        # @context decision -- realized-market membership is intentionally conservative: pre-2024 plus
-        # explicit q-fin category presence or direct market/trading discourse. This creates the
-        # anti-realization surface without leaking the whole adjacent corpus into the firewall.
+        # @context decision -- realized-market membership must represent explicit market discourse,
+        # not the entire pre-2024 q-fin archive. Category membership alone is too broad for the
+        # anti-realization firewall, so the slice now requires concrete realized-market language and
+        # only carries category matches as supporting rationale.
         if (
             discovery_end
             and paper_date
             and paper_date <= discovery_end
-            and (realized_category_match or bool(realized_keyword_hits))
+            and bool(realized_keyword_hits)
         ):
             membership_rows.append(
                 (
                     row["paper_id"],
                     "realized_market",
-                    "category_or_keyword",
+                    "keyword_discourse",
                     json.dumps(
                         {
                             "published_at": row["published_at"],
