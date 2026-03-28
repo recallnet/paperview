@@ -181,6 +181,31 @@ CREATE TABLE IF NOT EXISTS bridge_candidates (
 CREATE INDEX IF NOT EXISTS idx_bridge_candidates_run_pair_rank
 ON bridge_candidates (run_id, source_anchor_id, target_anchor_id, bridge_rank);
 
+-- @context decision -- Composition operators are distinct from bridges: they capture papers that
+-- are jointly close to multiple anchor families, not only papers that sit between them. Persisting
+-- them canonically lets shortlist and review stages favor multi-anchor regions without recomputing
+-- latent combinations from scratch.
+CREATE TABLE IF NOT EXISTS composition_candidates (
+  run_id TEXT NOT NULL,
+  source_anchor_id TEXT NOT NULL,
+  target_anchor_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  representative_view_id INTEGER,
+  composition_score REAL NOT NULL,
+  composition_rank INTEGER NOT NULL,
+  space_support INTEGER NOT NULL DEFAULT 0,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, source_anchor_id, target_anchor_id, paper_id),
+  FOREIGN KEY (source_anchor_id) REFERENCES anchors(anchor_id) ON DELETE CASCADE,
+  FOREIGN KEY (target_anchor_id) REFERENCES anchors(anchor_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (representative_view_id) REFERENCES text_views(view_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_composition_candidates_run_pair_rank
+ON composition_candidates (run_id, source_anchor_id, target_anchor_id, composition_rank);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.
