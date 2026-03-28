@@ -1,0 +1,72 @@
+core_prefixes:
+  - q-fin
+  - econ.EM
+  - math.OC
+  - cs.GT
+  - stat.ML
+  - cs.AI
+  - cs.LG
+  - cs.CR
+adjacent_prefixes:
+  - econ
+  - math
+  - stat
+  - physics
+  - cond-mat
+  - nlin
+  - cs
+background_mode: arxiv_rest
+metadata_first: true
+selective_full_text_only: true
+time_firewall:
+  discovery_end: "2023-12-31"
+  holdout_start: "2024-01-01"
+corpus_memberships:
+  discovery:
+    description: All discovery-eligible arXiv papers up to the cutoff date.
+  realized_market:
+    description: Pre-2024 papers that already sit inside explicit market discourse.
+    category_prefixes:
+      - q-fin
+    keywords:
+      - trading
+      - trader
+      - arbitrage
+      - hedge
+      - hedging
+      - option
+      - options
+      - market maker
+      - liquidity provider
+      - prediction market
+      - pari-mutuel
+      - contingent claim
+      - auction
+      - settlement
+      - automated market maker
+      - amm
+  stranded_alpha:
+    description: Pre-2024 q-fin papers from 2015 onward, useful for stranded-result resurfacing.
+    start_date: "2015-01-01"
+    category_prefixes:
+      - q-fin
+  holdout:
+    description: 2024+ market-adjacent papers reserved for ex post echo validation.
+    category_prefixes:
+      - q-fin
+      - econ.EM
+      - math.OC
+      - cs.GT
+      - stat.ML
+      - cs.AI
+      - cs.LG
+      - cs.CR
+    keywords:
+      - trading
+      - arbitrage
+      - hedge
+      - option
+      - prediction market
+      - liquidity
+      - market maker
+      - settlement

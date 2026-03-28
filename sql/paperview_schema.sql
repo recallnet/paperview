@@ -19,6 +19,24 @@ CREATE TABLE IF NOT EXISTS papers (
   updated_at_record TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
+-- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
+-- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.
+CREATE TABLE IF NOT EXISTS corpus_memberships (
+  run_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  corpus_id TEXT NOT NULL,
+  membership_source TEXT NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, paper_id, corpus_id),
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_corpus_memberships_run_corpus ON corpus_memberships(run_id, corpus_id);
+CREATE INDEX IF NOT EXISTS idx_corpus_memberships_run_paper ON corpus_memberships(run_id, paper_id);
+
+
 CREATE TABLE IF NOT EXISTS extraction_runs (
   run_id TEXT PRIMARY KEY,
   run_kind TEXT NOT NULL,
