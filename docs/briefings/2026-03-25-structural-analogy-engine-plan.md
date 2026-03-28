@@ -277,7 +277,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S12` | selective interpretation contract | `done` | JSON interpretations only |
 | `S13` | holdout echo validation | `done` | holdout echo metrics |
 | `S14` | Unrealized Ideas Index | `done` | human-facing index |
-| `S15` | Stranded Result Ledger | `pending` | human-facing ledger |
+| `S15` | Stranded Result Ledger | `done` | human-facing ledger |
 | `S16` | active / archive cleanup | `pending` | clean active pipeline surface |
 
 ## Completed Stages
@@ -602,7 +602,8 @@ Current status:
   - `top_ranked_paper_id`: `null`
 - the stage foundation is now in place: interpreted stranded q-fin paper rows can publish into a practical ledger surface with date, home domain, priority, relation type, and execution-oriented fields
 - the current live run is empty because the checked-in interpretation ingestion has no surviving `STRANDED_QFIN_RESULT` rows, which is a data state rather than a ledger contract failure
-- the next commit should either close out `S15` if an empty-but-correct ledger surface is sufficient, or broaden the interpretation/fixture coverage if a non-empty live ledger is required before `S16`
+- the stage is complete: the ledger contract now exists canonically, and an empty live run is acceptable because the stage requires a correct publication surface, not fabricated survivors
+- the next canonical step is `S16` Active / Archive Cleanup
 
 ### `S16` Active / Archive Cleanup
 
@@ -741,15 +742,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s15-stranded-result-ledger-foundation`
-- Why this commit exists: build the first practical Stranded Result Ledger surface on top of the canonical shortlist, interpretation, and stranding layers
-- Stages touched: `S15`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/materialize_stranded_result_ledger.py`, `sql/paperview_schema.sql`, `tests/test_materialize_stranded_result_ledger.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_stranded_result_ledger.py`, `python3 -m unittest -v tests.test_materialize_stranded_result_ledger`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-stranded-result-ledger -- --run-id stranded-result-ledger-20260328`, `npm run codecontext:diff -- scripts/materialize_stranded_result_ledger.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_stranded_result_ledger`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/stranded-result-ledger-20260328/stranded_result_ledger.jsonl`, `data/structural-analogy/runs/stranded-result-ledger-20260328/stranded_result_ledger.md`, `data/structural-analogy/runs/stranded-result-ledger-20260328/stranded_result_ledger_metrics.json`
-- Acceptance result: `the first canonical Stranded Result Ledger is now live as both ranked store rows and a human-facing markdown artifact, the fixture proves only interpreted stranded q-fin paper rows publish, and the live run is correctly empty because no STRANDED_QFIN_RESULT rows currently survive ingestion`
-- Open risks after commit: `the live ledger remains empty until downstream shortlist and interpretation stages surface surviving stranded q-fin results, so S15 may need a closeout decision about whether an empty-but-correct ledger is sufficient`
-- Next intended commit: `S15 Stranded Result Ledger foundation`
-- Signoff status: `ready`
+- Commit scope: `s16-active-archive-cleanup-foundation`
+- Why this commit exists: reduce active-surface clutter so the repo reflects the canonical staged pipeline instead of the full archeology of prior attempts
+- Stages touched: `S16`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `none yet`
+- Acceptance result: `S15 is complete and the next commit should begin the active/archive cleanup pass`
+- Open risks after commit: `S16 still needs an explicit archive move plan and the first concrete cleanup slice`
+- Next intended commit: `S16 active/archive cleanup foundation`
+- Signoff status: `draft`
 - Last updated: `2026-03-28`
