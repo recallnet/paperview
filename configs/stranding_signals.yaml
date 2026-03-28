@@ -80,8 +80,10 @@ signals:
       weight: 0.8
   result_specificity:
     - phrase: closed-form
+      canonical: closed_form
       weight: 1.3
     - phrase: closed form
+      canonical: closed_form
       weight: 1.3
     - phrase: exact solution
       weight: 1.2

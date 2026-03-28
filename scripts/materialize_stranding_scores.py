@@ -91,9 +91,17 @@ def normalize_phrase_entries(raw_entries: list[object]) -> list[dict]:
     normalized = []
     for raw in raw_entries:
         if isinstance(raw, dict):
-            normalized.append({"phrase": str(raw["phrase"]), "weight": float(raw.get("weight", 1.0))})
+            phrase = str(raw["phrase"])
+            normalized.append(
+                {
+                    "phrase": phrase,
+                    "weight": float(raw.get("weight", 1.0)),
+                    "canonical": str(raw.get("canonical", phrase)),
+                }
+            )
         else:
-            normalized.append({"phrase": str(raw), "weight": 1.0})
+            phrase = str(raw)
+            normalized.append({"phrase": phrase, "weight": 1.0, "canonical": phrase})
     return normalized
 
 
@@ -106,13 +114,13 @@ def build_phrase_doc_frequency(
     doc_frequency = {feature_name: {} for feature_name in signal_sets}
     for feature_name, phrases in signal_sets.items():
         for entry in phrases:
-            phrase = entry["phrase"]
-            doc_frequency[feature_name][phrase] = 0
+            canonical = entry["canonical"]
+            doc_frequency[feature_name].setdefault(canonical, 0)
         for text in texts.values():
             hits = keyword_hits(text, phrases, negation_terms, negation_window_chars)
-            seen = {hit["phrase"] for hit in hits}
-            for phrase in seen:
-                doc_frequency[feature_name][phrase] += 1
+            seen = {hit["canonical"] for hit in hits}
+            for canonical in seen:
+                doc_frequency[feature_name][canonical] += 1
     return doc_frequency
 
 
@@ -174,19 +182,28 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             feature_name: keyword_hits(text, phrases, negation_terms, negation_window_chars)
             for feature_name, phrases in signal_sets.items()
         }
+        deduped_feature_hits = {}
+        for feature_name, hits in feature_hits.items():
+            by_canonical = {}
+            for hit in hits:
+                canonical = hit["canonical"]
+                current = by_canonical.get(canonical)
+                if current is None or hit["weight"] > current["weight"]:
+                    by_canonical[canonical] = hit
+            deduped_feature_hits[feature_name] = list(by_canonical.values())
         # @context requirement -- S08 is supposed to grow into a BM25/TF-IDF-like sparse layer, not
         # a pile of hand-tuned phrase matches. IDF dampening keeps ubiquitous cues such as
         # `settlement` or `characterize` from dominating the prior while preserving auditable phrase
         # families and continuous scoring behavior.
         signal_raw_weight_totals = {
             feature_name: sum(hit["weight"] for hit in hits)
-            for feature_name, hits in feature_hits.items()
+            for feature_name, hits in deduped_feature_hits.items()
         }
         signal_weight_totals = {}
-        for feature_name, hits in feature_hits.items():
+        for feature_name, hits in deduped_feature_hits.items():
             adjusted_total = 0.0
             for hit in hits:
-                df = phrase_doc_frequency[feature_name][hit["phrase"]]
+                df = phrase_doc_frequency[feature_name][hit["canonical"]]
                 idf = min(idf_cap, math.log((corpus_size + 1) / (df + 1)) + 1.0)
                 idf_scale = min(1.0, idf / idf_cap)
                 adjusted_total += hit["weight"] * idf_scale
@@ -269,7 +286,7 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
 
         feature_payload = {
             "hits": {
-                feature_name: [hit["phrase"] for hit in hits] for feature_name, hits in feature_hits.items()
+                feature_name: [hit["phrase"] for hit in hits] for feature_name, hits in deduped_feature_hits.items()
             },
             "raw_weight_totals": signal_raw_weight_totals,
             "adjusted_weight_totals": signal_weight_totals,

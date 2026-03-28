@@ -255,6 +255,7 @@ class MaterializeStrandingScoresTests(unittest.TestCase):
             )
             self.assertEqual(feature_by_id["p11"]["thesis_family_count"], 0)
             self.assertEqual(feature_by_id["p11"]["missing_thesis_penalty_score"], 1.0)
+            self.assertEqual(feature_by_id["p1"]["raw_weight_totals"]["result_specificity"], 1.3)
 
             metrics = json.loads((output_dir / "stranding_score_metrics.json").read_text(encoding="utf-8"))
             self.assertEqual(metrics["scored_papers"], 10)
