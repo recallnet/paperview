@@ -206,6 +206,27 @@ CREATE TABLE IF NOT EXISTS composition_candidates (
 CREATE INDEX IF NOT EXISTS idx_composition_candidates_run_pair_rank
 ON composition_candidates (run_id, source_anchor_id, target_anchor_id, composition_rank);
 
+-- @context decision -- Contrast operators turn contrast-kind probes into canonical paper-level
+-- candidates so later review and shortlist stages can reuse near-A / far-B regions without
+-- depending on ad hoc markdown packets or rerunning probe aggregation logic.
+CREATE TABLE IF NOT EXISTS contrast_candidates (
+  run_id TEXT NOT NULL,
+  pattern_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  representative_view_id INTEGER,
+  contrast_score REAL NOT NULL,
+  contrast_rank INTEGER NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, pattern_id, paper_id),
+  FOREIGN KEY (pattern_id) REFERENCES agitator_patterns(pattern_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (representative_view_id) REFERENCES text_views(view_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_contrast_candidates_run_pattern_rank
+ON contrast_candidates (run_id, pattern_id, contrast_rank);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.

@@ -423,7 +423,7 @@ Accept when:
 
 Current status:
 
-- canonical `bridge_candidates` and `composition_candidates` foundations are implemented and live
+- canonical `bridge_candidates`, `composition_candidates`, and `contrast_candidates` foundations are implemented and live
 - current live bridge counts:
   - `positive_anchor_count`: `6`
   - `anchor_pair_count`: `15`
@@ -436,7 +436,12 @@ Current status:
   - `pairs_with_candidates`: `15`
   - `composition_candidate_count`: `300`
   - `top_score`: `3.202651`
-- the stage is in progress because bridge and composition scoring now exist in the canonical store, but near-A / far-B contrastive retrieval and negative-space search are still missing
+- current live contrast counts:
+  - `contrast_pattern_count`: `4`
+  - `patterns_with_candidates`: `4`
+  - `contrast_candidate_count`: `80`
+  - `top_score`: `3.889789`
+- the stage is in progress because bridge, composition, and contrast scoring now exist in the canonical store, but negative-space search is still missing
 
 ### `S10` Review Packets
 
@@ -569,6 +574,7 @@ Accept when:
 - `npm run store:materialize-probes`
 - `npm run store:materialize-bridges`
 - `npm run store:materialize-compositions`
+- `npm run store:materialize-contrasts`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -599,6 +605,9 @@ Accept when:
 - compositions:
   - `data/structural-analogy/runs/composition-materialization-20260328/composition_metrics.json`
   - `data/structural-analogy/runs/composition-materialization-20260328/compositions.jsonl`
+- contrasts:
+  - `data/structural-analogy/runs/contrast-materialization-20260328/contrast_metrics.json`
+  - `data/structural-analogy/runs/contrast-materialization-20260328/contrasts.jsonl`
 - corpus memberships:
   - `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
 - stranding scores:
@@ -607,15 +616,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s09-composition-operator-foundation`
-- Why this commit exists: add the first canonical composition operator so the discovery system can surface papers that are jointly close to multiple positive anchor families rather than only ranking bridge-like midpoints
+- Commit scope: `s09-contrast-operator-foundation`
+- Why this commit exists: add the first canonical contrast operator so near-A / far-B probe patterns become queryable paper-level candidates in the main store instead of staying trapped in raw probe hits
 - Stages touched: `S09`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `package.json`, `scripts/materialize_compositions.py`, `tests/test_materialize_compositions.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_compositions.py`, `uv run --with numpy --with pyyaml --with sqlite-vec python3 -m unittest -v tests.test_materialize_compositions`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-compositions -- --run-id composition-materialization-20260328`, `npm run codecontext:diff -- scripts/materialize_compositions.py`, `npm run docs:lint`
-- Tests run: `tests.test_materialize_compositions`
-- Artifacts produced: `data/structural-analogy/runs/composition-materialization-20260328/composition_metrics.json`, `data/structural-analogy/runs/composition-materialization-20260328/compositions.jsonl`
-- Acceptance result: `the composition stage now writes canonical composition candidates, the fixture ranks the non-seed multi-anchor paper first for the parity-auction pair, and the live run produced 300 composition candidates across all 15 positive-anchor pairs`
-- Open risks after commit: `S09 still lacks near-A / far-B contrastive retrieval and negative-space search, so the stage cannot yet surface lexically far or anti-realization regions systematically`
-- Next intended commit: `S09 contrast operator foundation`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `package.json`, `scripts/materialize_contrasts.py`, `tests/test_materialize_contrasts.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_contrasts.py`, `python3 -m unittest -v tests.test_materialize_contrasts`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-contrasts -- --run-id contrast-materialization-20260328`, `npm run codecontext:diff -- scripts/materialize_contrasts.py`, `npm run docs:lint`
+- Tests run: `tests.test_materialize_contrasts`
+- Artifacts produced: `data/structural-analogy/runs/contrast-materialization-20260328/contrast_metrics.json`, `data/structural-analogy/runs/contrast-materialization-20260328/contrasts.jsonl`
+- Acceptance result: `the contrast stage now writes canonical paper-level contrast candidates, the fixture ranks the top paper correctly for each contrast pattern, and the live run materialized 80 contrast candidates across all 4 contrast patterns`
+- Open risks after commit: `S09 still lacks a canonical negative-space search surface, so anti-realization and dead-region suppression still depends on penalties rather than its own retrieval artifact`
+- Next intended commit: `S09 negative-space operator foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
