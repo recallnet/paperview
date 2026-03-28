@@ -581,15 +581,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s08-implementation-barrier-signals`
-- Why this commit exists: add a missing sparse feature family for implementation and data-availability barriers so the stranding prior is not limited to instrument, access, result, and resolution cues
+- Commit scope: `s08-scorer-owned-implementation-migration`
+- Why this commit exists: localize the additive `implementation_barrier_score` migration inside the scorer stage so live DBs can materialize the new feature family without broader schema/init churn in the active commit surface
 - Stages touched: `S08`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/stranding_signals.yaml`, `sql/paperview_schema.sql`, `scripts/init_local_store.py`, `scripts/materialize_stranding_scores.py`, `tests/test_init_local_store.py`, `tests/test_materialize_stranding_scores.py`
-- Commands run: `python3 -m unittest -v tests.test_init_local_store tests.test_materialize_stranding_scores`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/init_local_store.py`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/init_local_store.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
-- Tests run: `tests.test_init_local_store`, `tests.test_materialize_stranding_scores`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_stranding_scores.py`, `tests/test_materialize_stranding_scores.py`
+- Commands run: `python3 -m unittest -v tests.test_materialize_stranding_scores`, `npm run score:materialize-stranding -- --run-id stranding-score-materialization-20260328`, `npm run codecontext:py -- scripts/materialize_stranding_scores.py`, `npm run codecontext:diff -- scripts/materialize_stranding_scores.py`, `npm run docs:lint`
+- Tests run: `tests.test_materialize_stranding_scores`
 - Artifacts produced: `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
-- Acceptance result: `implementation and data-availability barriers are now first-class sparse signals; the fixture proves the new family scores and the live positive surface widened from 867 to 1,076 with stranded-alpha positives rising to 943`
-- Open risks after commit: `the new feature family must add useful implementation-friction coverage without reintroducing broad generic over-inclusion`
+- Acceptance result: `the scorer now retrofits the missing implementation-barrier column on legacy stranding tables; the legacy fixture passes and the live rerun reproduces the 1,076-positive surface without relying on broader schema/init changes`
+- Open risks after commit: `the localized migration is now correct, but the canonical schema/init surfaces still need their own later cleanup commit if they are meant to become active`
 - Next intended commit: `S08 recall recovery via structured penalty refinement`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

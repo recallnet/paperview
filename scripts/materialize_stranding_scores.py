@@ -41,6 +41,15 @@ def log_run_event(connection: sqlite3.Connection, run_id: str, stage: str, event
     )
 
 
+def ensure_column(connection: sqlite3.Connection, table: str, column: str, ddl: str) -> None:
+    existing = {
+        row[1]
+        for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
+    }
+    if column not in existing:
+        connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+
+
 def is_negated(prefix: str, negation_terms: list[str]) -> bool:
     lowered = prefix.lower()
     return any(re.search(r"\b" + re.escape(str(term).lower()) + r"\b", lowered) for term in negation_terms)
@@ -289,6 +298,7 @@ def main():
     connection = sqlite3.connect(str(db_path))
     connection.row_factory = sqlite3.Row
     try:
+        ensure_column(connection, "stranding_scores", "implementation_barrier_score", "REAL NOT NULL DEFAULT 0")
         log_run_event(
             connection,
             args.run_id,

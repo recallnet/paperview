@@ -11,6 +11,115 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MaterializeStrandingScoresTests(unittest.TestCase):
+    def test_materializer_adds_implementation_barrier_column_to_legacy_stranding_table(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            canonical_db = tmp / "paperview.sqlite3"
+            conn = sqlite3.connect(str(canonical_db))
+            conn.executescript(
+                """
+                CREATE TABLE papers (
+                  paper_id TEXT PRIMARY KEY,
+                  source_corpus TEXT NOT NULL,
+                  title TEXT NOT NULL,
+                  abstract TEXT NOT NULL,
+                  categories_json TEXT NOT NULL,
+                  primary_category TEXT NOT NULL,
+                  published_at TEXT NOT NULL
+                );
+
+                CREATE TABLE corpus_memberships (
+                  run_id TEXT NOT NULL,
+                  paper_id TEXT NOT NULL,
+                  corpus_id TEXT NOT NULL,
+                  membership_source TEXT NOT NULL,
+                  rationale_json TEXT NOT NULL DEFAULT '{}',
+                  PRIMARY KEY (run_id, paper_id, corpus_id)
+                );
+
+                CREATE TABLE run_events (
+                  event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  run_id TEXT NOT NULL,
+                  stage TEXT NOT NULL,
+                  event_type TEXT NOT NULL,
+                  payload_json TEXT NOT NULL,
+                  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE TABLE stranding_scores (
+                  run_id TEXT NOT NULL,
+                  paper_id TEXT NOT NULL,
+                  membership_run_id TEXT NOT NULL,
+                  score_version TEXT NOT NULL,
+                  stranding_score REAL NOT NULL,
+                  instrument_gap_score REAL NOT NULL,
+                  access_barrier_score REAL NOT NULL,
+                  result_specificity_score REAL NOT NULL,
+                  resolution_mechanics_score REAL NOT NULL,
+                  survey_penalty_score REAL NOT NULL,
+                  empirical_only_penalty_score REAL NOT NULL,
+                  stranded_alpha_bonus REAL NOT NULL,
+                  feature_json TEXT NOT NULL DEFAULT '{}',
+                  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (run_id, paper_id)
+                );
+
+                INSERT INTO papers (
+                  paper_id, source_corpus, title, abstract, categories_json, primary_category, published_at
+                ) VALUES
+                  ('p1', 'arxiv', 'Calibration note', 'pricing is hard because volatility is unobservable and data unavailable', '["q-fin.PR"]', 'q-fin.PR', '2018-01-05');
+
+                INSERT INTO corpus_memberships (run_id, paper_id, corpus_id, membership_source, rationale_json) VALUES
+                  ('membership-run', 'p1', 'discovery', 'test', '{}');
+                """
+            )
+            conn.commit()
+            conn.close()
+
+            output_dir = tmp / "legacy-run"
+            subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "--with",
+                    "pyyaml",
+                    "python3",
+                    str(ROOT / "scripts" / "materialize_stranding_scores.py"),
+                    "--db-path",
+                    str(canonical_db),
+                    "--run-id",
+                    "legacy-run",
+                    "--membership-run-id",
+                    "membership-run",
+                    "--signal-config-path",
+                    str(ROOT / "configs" / "stranding_signals.yaml"),
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            conn = sqlite3.connect(str(canonical_db))
+            try:
+                columns = {
+                    row[1]
+                    for row in conn.execute("PRAGMA table_info(stranding_scores)").fetchall()
+                }
+                row = conn.execute(
+                    """
+                    SELECT implementation_barrier_score
+                    FROM stranding_scores
+                    WHERE run_id = 'legacy-run' AND paper_id = 'p1'
+                    """
+                ).fetchone()
+            finally:
+                conn.close()
+
+            self.assertIn("implementation_barrier_score", columns)
+            self.assertIsNotNone(row)
+            self.assertGreater(row[0], 0.0)
+
     def test_materializes_sparse_stranding_scores_for_discovery_members(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
