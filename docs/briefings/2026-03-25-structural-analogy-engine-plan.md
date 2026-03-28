@@ -524,8 +524,14 @@ Current status:
   - `composition`: `6`
   - `cluster`: `6`
   - `paper`: `6`
-- the stage foundation is now in place: selective interpretation is shortlist-gated, prompt- and schema-pinned, and emitted as a machine-readable batch instead of running against the full corpus
-- the next commit should implement interpretation ingestion and validation so only allowed classifications are accepted and the negative class is enforced canonically
+- current live ingestion counts:
+  - `accepted_count`: `3`
+  - `rejected_count`: `1`
+  - `TRANSLATION_CANDIDATE`: `1`
+  - `COMPOSITIONAL_CANDIDATE`: `1`
+  - `NO_TRANSLATION`: `1`
+- the stage implementation is now in place: selective interpretation is shortlist-gated, prompt- and schema-pinned, and canonically ingests only allowed JSON outputs while honoring the negative class
+- the next commit should close out `S12` explicitly and move execution to `S13` if no design defects surface during review
 
 ### `S13` Holdout Echo
 
@@ -624,6 +630,7 @@ Accept when:
 - `npm run store:materialize-review-packets`
 - `npm run store:materialize-shortlist`
 - `npm run store:materialize-selective-interpretation-batch`
+- `npm run store:ingest-selective-interpretations`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -669,6 +676,9 @@ Accept when:
 - selective interpretation batch:
   - `data/structural-analogy/runs/selective-interpretation-batch-20260328/interpretation_batch_metrics.json`
   - `data/structural-analogy/runs/selective-interpretation-batch-20260328/interpretation_batch.jsonl`
+- selective interpretation ingestion:
+  - `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_ingestion_metrics.json`
+  - `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_rejections.jsonl`
 - corpus memberships:
   - `data/structural-analogy/runs/corpus-membership-materialization-20260328/corpus_membership_metrics.json`
 - stranding scores:
@@ -677,15 +687,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s12-selective-interpretation-contract-foundation`
-- Why this commit exists: establish the strict JSON interpretation contract and canonical shortlist-gated batch-preparation stage so later model execution can only operate on persisted shortlist items
+- Commit scope: `s12-interpretation-ingestion-and-validation`
+- Why this commit exists: canonicalize selective interpretation ingestion so only shortlist-linked, schema-valid JSON outputs with allowed classifications are accepted into the main store
 - Stages touched: `S12`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `prompts/selective-interpretation-v1.md`, `schemas/selective_interpretation.schema.json`, `scripts/materialize_selective_interpretation_batch.py`, `sql/paperview_schema.sql`, `tests/test_materialize_selective_interpretation_batch.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_selective_interpretation_batch.py`, `python3 -m unittest -v tests.test_materialize_selective_interpretation_batch`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:materialize-selective-interpretation-batch -- --run-id selective-interpretation-batch-20260328`, `npm run codecontext:diff -- scripts/materialize_selective_interpretation_batch.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_selective_interpretation_batch`
-- Artifacts produced: `data/structural-analogy/runs/selective-interpretation-batch-20260328/interpretation_batch.jsonl`, `data/structural-analogy/runs/selective-interpretation-batch-20260328/interpretation_batch_metrics.json`
-- Acceptance result: `the selective interpretation stage is now shortlist-gated and contract-first: the strict JSON prompt and schema are live, the fixture proves batch preparation only uses canonical shortlist rows, and the live run prepared 24 interpretation items with prompt and schema references pinned into each batch row`
-- Open risks after commit: `S12 still lacks interpretation ingestion and validation, so allowed-output enforcement and negative-class acceptance are not yet canonicalized in the store`
-- Next intended commit: `S12 interpretation ingestion and validation`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/ingest_selective_interpretations.py`, `tests/fixtures/selective_interpretation_responses.jsonl`, `tests/test_ingest_selective_interpretations.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:py -- scripts/ingest_selective_interpretations.py`, `python3 -m unittest -v tests.test_ingest_selective_interpretations`, `python3 scripts/init_local_store.py --db-path data/structural-analogy/paperview.sqlite3`, `npm run store:ingest-selective-interpretations -- --run-id selective-interpretation-ingestion-20260328 --responses-path tests/fixtures/selective_interpretation_responses.jsonl`, `npm run codecontext:diff -- scripts/ingest_selective_interpretations.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_ingest_selective_interpretations`
+- Artifacts produced: `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_ingestion_metrics.json`, `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_rejections.jsonl`
+- Acceptance result: `the ingestion path now enforces shortlist linkage and strict JSON validation, accepts allowed classes including NO_TRANSLATION, rejects out-of-contract rows into a rejection artifact, and materialized three valid interpretations plus one rejection in the live run`
+- Open risks after commit: `S12 appears to meet its acceptance bar now, but the plan still needs an explicit closeout decision before S13 holdout-echo work begins`
+- Next intended commit: `S12 closeout and move to S13`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

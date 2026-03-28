@@ -32,6 +32,7 @@
     "store:materialize-review-packets": "python3 scripts/materialize_review_packets.py",
     "store:materialize-shortlist": "python3 scripts/materialize_shortlist.py",
     "store:materialize-selective-interpretation-batch": "python3 scripts/materialize_selective_interpretation_batch.py",
+    "store:ingest-selective-interpretations": "python3 scripts/ingest_selective_interpretations.py",
     "pilot:create": "python3 scripts/create_pilot_batch.py",
     "extract:prepare": "python3 scripts/create_extraction_run.py",
     "extract:ingest": "python3 scripts/ingest_extraction_responses.py",
