@@ -47,13 +47,14 @@ def is_negated(prefix: str, negation_terms: list[str]) -> bool:
 
 def keyword_hits(
     text: str,
-    phrases: list[str],
+    phrase_entries: list[dict],
     negation_terms: list[str],
     negation_window_chars: int,
-) -> list[str]:
+) -> list[dict]:
     lowered = (text or "").lower()
     hits = []
-    for phrase in phrases:
+    for entry in phrase_entries:
+        phrase = entry["phrase"]
         pattern = r"\b" + re.escape(phrase.lower()) + r"\b"
         for match in re.finditer(pattern, lowered):
             # @context risk -- Sparse stranding cues are meant to capture asserted constraints, not
@@ -62,15 +63,25 @@ def keyword_hits(
             prefix = lowered[max(0, match.start() - negation_window_chars) : match.start()]
             if is_negated(prefix, negation_terms):
                 continue
-            hits.append(phrase)
+            hits.append(entry)
             break
     return hits
 
 
-def normalized_score(hit_count: int, cap: int = 3) -> float:
-    if hit_count <= 0:
+def normalized_score(weight_total: float, cap: float) -> float:
+    if weight_total <= 0:
         return 0.0
-    return min(1.0, hit_count / cap)
+    return min(1.0, weight_total / cap)
+
+
+def normalize_phrase_entries(raw_entries: list[object]) -> list[dict]:
+    normalized = []
+    for raw in raw_entries:
+        if isinstance(raw, dict):
+            normalized.append({"phrase": str(raw["phrase"]), "weight": float(raw.get("weight", 1.0))})
+        else:
+            normalized.append({"phrase": str(raw), "weight": 1.0})
+    return normalized
 
 
 def fetch_membership_sets(connection: sqlite3.Connection, membership_run_id: str) -> tuple[set[str], set[str]]:
@@ -99,7 +110,11 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
         """
     ).fetchall()
     weights = signal_config["weights"]
-    signal_sets = signal_config["signals"]
+    signal_sets = {
+        feature_name: normalize_phrase_entries(raw_entries)
+        for feature_name, raw_entries in signal_config["signals"].items()
+    }
+    signal_caps = {feature_name: float(cap) for feature_name, cap in signal_config["signal_caps"].items()}
     negation_terms = signal_config.get("negation_terms", [])
     negation_window_chars = int(signal_config.get("negation_window_chars", 48))
     scored_rows = []
@@ -112,18 +127,30 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
             feature_name: keyword_hits(text, phrases, negation_terms, negation_window_chars)
             for feature_name, phrases in signal_sets.items()
         }
-        instrument_gap_score = normalized_score(len(feature_hits["instrument_gap"]))
-        access_barrier_score = normalized_score(len(feature_hits["access_barrier"]))
-        result_specificity_score = normalized_score(len(feature_hits["result_specificity"]))
-        resolution_mechanics_score = normalized_score(len(feature_hits["resolution_mechanics"]))
-        survey_penalty_score = normalized_score(len(feature_hits["survey_penalty"]), cap=2)
-        empirical_only_penalty_score = normalized_score(len(feature_hits["empirical_only_penalty"]), cap=2)
+        signal_weight_totals = {
+            feature_name: sum(hit["weight"] for hit in hits)
+            for feature_name, hits in feature_hits.items()
+        }
+        instrument_gap_score = normalized_score(signal_weight_totals["instrument_gap"], signal_caps["instrument_gap"])
+        access_barrier_score = normalized_score(signal_weight_totals["access_barrier"], signal_caps["access_barrier"])
+        result_specificity_score = normalized_score(
+            signal_weight_totals["result_specificity"], signal_caps["result_specificity"]
+        )
+        resolution_mechanics_score = normalized_score(
+            signal_weight_totals["resolution_mechanics"], signal_caps["resolution_mechanics"]
+        )
+        survey_penalty_score = normalized_score(
+            signal_weight_totals["survey_penalty"], signal_caps["survey_penalty"]
+        )
+        empirical_only_penalty_score = normalized_score(
+            signal_weight_totals["empirical_only_penalty"], signal_caps["empirical_only_penalty"]
+        )
         stranded_alpha_bonus = 1.0 if paper_id in stranded_alpha_ids else 0.0
 
         # @context decision -- The first S08 surface is intentionally sparse and auditable: it uses
-        # weighted phrase families plus a stranded-alpha bonus, not an opaque learned model. Later
-        # S08 commits can refine negation handling or BM25 scoring without breaking the canonical
-        # query contract for stranding priors.
+        # weighted phrase families plus a stranded-alpha bonus, not an opaque learned model. Strong
+        # cues like `contingent claim` or `closed-form` should outrank weak generic wording such as
+        # `characterize`, and later S08 commits can still refine this without breaking the contract.
         stranding_score = (
             weights["instrument_gap"] * instrument_gap_score
             + weights["access_barrier"] * access_barrier_score
@@ -136,7 +163,10 @@ def build_score_rows(connection: sqlite3.Connection, membership_run_id: str, sig
         stranding_score = max(0.0, min(1.0, stranding_score))
 
         feature_payload = {
-            "hits": feature_hits,
+            "hits": {
+                feature_name: [hit["phrase"] for hit in hits] for feature_name, hits in feature_hits.items()
+            },
+            "weight_totals": signal_weight_totals,
             "primary_category": row["primary_category"],
             "published_at": row["published_at"],
             "is_stranded_alpha": paper_id in stranded_alpha_ids,

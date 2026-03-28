@@ -18,46 +18,89 @@ weights:
   stranded_alpha_bonus: 0.08
   survey_penalty: 0.22
   empirical_only_penalty: 0.18
+signal_caps:
+  instrument_gap: 1.8
+  access_barrier: 1.6
+  result_specificity: 1.6
+  resolution_mechanics: 1.6
+  survey_penalty: 1.4
+  empirical_only_penalty: 1.4
 signals:
   instrument_gap:
-    - hypothetical
-    - contingent claim
-    - state-contingent
-    - binary payoff
-    - synthetic asset
-    - derivative security
-    - incomplete market
+    - phrase: hypothetical
+      weight: 0.5
+    - phrase: contingent claim
+      weight: 1.3
+    - phrase: state-contingent
+      weight: 1.2
+    - phrase: binary payoff
+      weight: 1.1
+    - phrase: synthetic asset
+      weight: 0.9
+    - phrase: derivative security
+      weight: 1.0
+    - phrase: incomplete market
+      weight: 0.7
   access_barrier:
-    - illiquid
-    - thin market
-    - transaction cost
-    - short-sale constraint
-    - limited participation
-    - market friction
-    - non-traded
+    - phrase: illiquid
+      weight: 1.2
+    - phrase: thin market
+      weight: 0.8
+    - phrase: transaction cost
+      weight: 1.0
+    - phrase: short-sale constraint
+      weight: 1.0
+    - phrase: limited participation
+      weight: 0.8
+    - phrase: market friction
+      weight: 0.7
+    - phrase: non-traded
+      weight: 0.9
   result_specificity:
-    - closed-form
-    - closed form
-    - exact solution
-    - exact characterization
-    - analytic expression
-    - optimal policy
-    - characterize
+    - phrase: closed-form
+      weight: 1.3
+    - phrase: closed form
+      weight: 1.3
+    - phrase: exact solution
+      weight: 1.2
+    - phrase: exact characterization
+      weight: 1.0
+    - phrase: analytic expression
+      weight: 1.0
+    - phrase: optimal policy
+      weight: 0.8
+    - phrase: characterize
+      weight: 0.4
   resolution_mechanics:
-    - settlement
-    - resolution
-    - maturity
-    - expiration
-    - expiry
-    - liquidation
-    - exercise
+    - phrase: settlement
+      weight: 1.2
+    - phrase: resolution
+      weight: 0.8
+    - phrase: maturity
+      weight: 0.5
+    - phrase: expiration
+      weight: 0.6
+    - phrase: expiry
+      weight: 0.6
+    - phrase: liquidation
+      weight: 1.0
+    - phrase: exercise
+      weight: 0.5
   survey_penalty:
-    - survey
-    - review
-    - literature review
+    - phrase: survey
+      weight: 0.8
+    - phrase: review
+      weight: 0.6
+    - phrase: literature review
+      weight: 1.0
   empirical_only_penalty:
-    - stylized fact
-    - stylized facts
-    - empirical study
-    - empirical analysis
-    - we document
+    - phrase: stylized fact
+      weight: 0.9
+    - phrase: stylized facts
+      weight: 1.0
+    - phrase: empirical study
+      weight: 0.8
+    - phrase: empirical analysis
+      weight: 0.8
+    - phrase: we document
+      weight: 0.7
