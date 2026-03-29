@@ -29,12 +29,7 @@
     "store:materialize-unrealized-ideas-index": "python3 scripts/materialize_unrealized_ideas_index.py",
     "store:materialize-stranded-result-ledger": "python3 scripts/materialize_stranded_result_ledger.py",
     "score:materialize-stranding": "uv run --with pyyaml python3 scripts/materialize_stranding_scores.py",
-    "score:exposure": "python3 scripts/score_mechanism_exposure.py",
-    "retrieve:build": "python3 scripts/build_retrieval_stack.py",
-    "mine:queryless": "python3 scripts/mine_queryless_candidates.py",
-    "labels:bootstrap-queryless": "python3 scripts/bootstrap_queryless_labels.py",
-    "adjudicate:analyst": "python3 scripts/run_analyst_adjudication.py",
-    "rank:candidates": "python3 scripts/build_candidate_family_ranking.py",
+
     "briefs:generate": "python3 scripts/generate_strategy_briefs.py",
     "live:materialize-downstream": "python3 scripts/materialize_live_downstream_run.py",
     "queue:assess-live": "python3 scripts/assess_live_brief_queue.py",

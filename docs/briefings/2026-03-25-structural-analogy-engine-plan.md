@@ -762,14 +762,14 @@ Current status:
 ## Active Signoff Block
 
 - Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by removing noncanonical `corpus:*` package commands for the old launch-and-failure workflow, which is outside the canonical staged command set
+- Why this commit exists: continue the cleanup pass by removing noncanonical ranking and queryless package commands that sit outside the canonical staged pipeline
 - Stages touched: `S16`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"corpus:(launch|launch:pipeline|reconcile-failures|retryable-failures|run-pipeline)\"' package.json`, `git status --short package.json scripts/launch_qfin_download.py scripts/reconcile_failures.py scripts/retry_failures.py scripts/run_qfin_pipeline.py`, `npm run docs:lint`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"(score:exposure|retrieve:build|mine:queryless|labels:bootstrap-queryless|adjudicate:analyst|rank:candidates)\"' package.json docs scripts tests`, `git status --short package.json scripts/score_mechanism_exposure.py scripts/build_retrieval_stack.py scripts/mine_queryless_candidates.py scripts/bootstrap_queryless_labels.py scripts/run_analyst_adjudication.py scripts/build_candidate_family_ranking.py`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
 - Artifacts produced: `none`
-- Acceptance result: `the active package surface is smaller: the old corpus launch-and-failure corpus:* commands are removed because they advertised a noncanonical workflow while the legacy scripts remain in place for later archival`
-- Open risks after commit: `dirty legacy corpus files still prevent a broader archive move, so this slice only removes the tracked package entrypoints for the old launch-and-failure workflow while leaving the scripts themselves in place for later archival`
+- Acceptance result: `the active package surface is smaller: the old ranking and queryless commands are removed because they sit outside the canonical staged pipeline while the dirty legacy scripts remain in place for later archival`
+- Open risks after commit: `dirty ranking-era scripts still prevent a broader archive move, so this slice only removes the tracked package entrypoints for the old queryless and ranking workflow while leaving the scripts themselves in place for later archival`
 - Next intended commit: `S16 active/archive cleanup foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
