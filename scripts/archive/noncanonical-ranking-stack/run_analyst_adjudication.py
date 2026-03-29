@@ -4,10 +4,18 @@ import argparse
 import json
 import math
 import sqlite3
+import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
+
+STACK_DIR = Path(__file__).resolve().parent
+if str(STACK_DIR) not in sys.path:
+    # @context requirement -- the archived ranking stack shares local modules
+    # by bare import name, so the archive has to restore that path explicitly
+    # after moving the files out of the active root.
+    sys.path.insert(0, str(STACK_DIR))
 
 import score_mechanism_exposure as exposure_scoring
 
@@ -83,6 +91,11 @@ def parse_args():
         "--score-version",
         default=DEFAULT_SCORE_VERSION,
         help="Exposure score version to refresh after labels are written.",
+    )
+    parser.add_argument(
+        "--skip-exposure-refresh",
+        action="store_true",
+        help="Skip the c09 exposure refresh when only reranker labels are needed.",
     )
     return parser.parse_args()
 
@@ -727,8 +740,10 @@ def main():
     try:
         ensure_store_contract(connection, schema_sql_path)
         run_id = ensure_run(connection, args.run_id, args)
-        exposure_run_id = f"{run_id}-exposure-refresh"
-        exposure_scoring.ensure_run(connection, exposure_run_id, args.score_version)
+        exposure_run_id = None
+        if not args.skip_exposure_refresh:
+            exposure_run_id = f"{run_id}-exposure-refresh"
+            exposure_scoring.ensure_run(connection, exposure_run_id, args.score_version)
         connection.commit()
 
         label_records = parse_json_lines(labels_path)
@@ -752,9 +767,11 @@ def main():
             if not training_rows:
                 raise SystemExit("analyst labels did not yield any trainable adjudication rows")
             models = train_mode_models(training_rows)
-            exposure_summary = rerun_exposure_scoring(
-                connection, args.score_version, exposure_run_id
-            )
+            exposure_summary = None
+            if exposure_run_id is not None:
+                exposure_summary = rerun_exposure_scoring(
+                    connection, args.score_version, exposure_run_id
+                )
             update_ids = persist_weight_updates(
                 connection,
                 run_id,
@@ -770,9 +787,9 @@ def main():
                 """
                 UPDATE extraction_runs
                 SET run_status = ?, completed_at = ?
-                WHERE run_id IN (?, ?)
+                WHERE run_id IN (?, COALESCE(?, ?))
                 """,
-                ("completed", now_utc(), run_id, exposure_run_id),
+                ("completed", now_utc(), run_id, exposure_run_id, run_id),
             )
             connection.commit()
         except Exception:

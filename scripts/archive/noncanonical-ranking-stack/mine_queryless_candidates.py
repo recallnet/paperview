@@ -272,6 +272,50 @@ def build_sparse_stats(documents):
     return doc_tokens, document_frequency
 
 
+def build_candidate_pools(documents, doc_tokens, document_frequency, graph):
+    candidate_pools = {}
+    corpus_size = max(len(documents), 1)
+    max_posting_size = max(200, corpus_size // 20)
+    graph_neighbor_cap = 256
+    sparse_neighbor_cap = 384
+
+    token_postings = defaultdict(set)
+    for mechanism_id, tokens in doc_tokens.items():
+        for token in tokens:
+            if document_frequency[token] > max_posting_size:
+                continue
+            token_postings[token].add(mechanism_id)
+
+    for source_id, source_doc in documents.items():
+        pool = set()
+        outgoing = graph.get(source_id, {})
+        if outgoing:
+            ranked_graph_neighbors = sorted(
+                outgoing.items(), key=lambda item: item[1], reverse=True
+            )[:graph_neighbor_cap]
+            pool.update(candidate_id for candidate_id, _ in ranked_graph_neighbors)
+
+        sparse_scores = Counter()
+        for token in doc_tokens[source_id]:
+            for candidate_id in token_postings.get(token, ()):
+                if candidate_id == source_id:
+                    continue
+                sparse_scores[candidate_id] += 1
+        for candidate_id, _ in sparse_scores.most_common(sparse_neighbor_cap):
+            pool.add(candidate_id)
+
+        if not pool:
+            for candidate_id, candidate_doc in documents.items():
+                if candidate_id == source_id:
+                    continue
+                if candidate_doc["literature_family"] == source_doc["literature_family"]:
+                    pool.add(candidate_id)
+                    if len(pool) >= sparse_neighbor_cap:
+                        break
+        candidate_pools[source_id] = sorted(pool)
+    return candidate_pools
+
+
 def keyword_overlap_ratio(source_tokens, candidate_tokens):
     return jaccard(source_tokens, candidate_tokens)
 
@@ -596,13 +640,13 @@ def build_mode_scores(
 def build_hits(documents, embeddings, graph, top_k_per_mode):
     doc_tokens, document_frequency = build_sparse_stats(documents)
     corpus_size = max(len(documents), 1)
+    candidate_pools = build_candidate_pools(documents, doc_tokens, document_frequency, graph)
     hits_by_mode_and_source = defaultdict(list)
 
     for source_id, source_doc in documents.items():
         source_tokens = doc_tokens[source_id]
-        for candidate_id, candidate_doc in documents.items():
-            if candidate_id == source_id:
-                continue
+        for candidate_id in candidate_pools[source_id]:
+            candidate_doc = documents[candidate_id]
             candidate_tokens = doc_tokens[candidate_id]
             structural_score, structural_support = structural_similarity(
                 source_id, candidate_id, source_doc, candidate_doc, embeddings, graph

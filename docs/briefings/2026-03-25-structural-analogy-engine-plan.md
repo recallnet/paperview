@@ -645,15 +645,24 @@ Current status:
   - `generate_edge_reset_funnel_report.py`
   - `export_edge_semantic_trace.py`
   - `edge_semantic_validity.py`
+- seventh archived slice moved to `scripts/archive/noncanonical-ranking-stack/`:
+  - `normalize_mechanism_fingerprints.py`
+  - `score_mechanism_exposure.py`
+  - `build_retrieval_stack.py`
+  - `mine_queryless_candidates.py`
+  - `bootstrap_queryless_labels.py`
+  - `run_analyst_adjudication.py`
+  - `build_candidate_family_ranking.py`
 - this first slice is intentionally narrow: it archives tracked pilot utilities that are not part of the canonical staged command set and do not have active package-script entrypoints
 - the benchmark cleanup pass removed `retrieve:benchmark` from `package.json`, so that archived script no longer competes with the canonical staged commands
 - the research-pack cleanup pass removed `research:materialize-findings` from `package.json`, and the archived runner now points at the archived export helper instead of reaching back into the active root
 - the corpus-helper cleanup pass removed the old `corpus:*` helper entrypoints from `package.json` and moved the untracked helper files into the archive, so those root-level status utilities no longer compete with the canonical stages
 - the corpus-pipeline cleanup pass moved the old launch, retry, reconcile, and pipeline runners into the archive and patched their internal imports and subprocess paths so the archived workflow remains self-contained
 - the edge-reset cleanup pass moved the old edge-reset runner, card generator, funnel report, and semantic helpers into the archive, and the archived runner now points at its archived card generator instead of the former root path
+- the ranking-stack cleanup pass moved the old fingerprint, retrieval, queryless, adjudication, and ranking scripts into the archive, and the archived edge-reset runner now points at the archived ranking stack instead of the former root paths
 - historical docs still reference `materialize_mixed_family_pilot.py`, which is acceptable for `S16` because the archive preserves the file while removing it from the active script surface
 - historical docs still reference `research:materialize-findings`, which is acceptable for `S16` because the archive preserves the implementation while the active package surface is reduced
-- the stage remains in progress because additional noncanonical scripts still sit in the active root even though most competing package entrypoints are now gone
+- the stage remains in progress because additional noncanonical extraction-era and downstream helper scripts still sit in the active root even though most competing package entrypoints are now gone
 
 ---
 
@@ -780,14 +789,14 @@ Current status:
 ## Active Signoff Block
 
 - Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by moving the old edge-reset workflow into `scripts/archive/` now that its package entrypoints are gone and it no longer belongs in the active root
+- Why this commit exists: continue the cleanup pass by moving the old ranking and queryless workflow into `scripts/archive/` now that its package entrypoints are gone and it no longer belongs in the active root
 - Stages touched: `S16`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/archive/README.md`, `scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `scripts/archive/noncanonical-edge-reset/generate_edge_cards.py`, `scripts/archive/noncanonical-edge-reset/generate_edge_reset_funnel_report.py`, `scripts/archive/noncanonical-edge-reset/export_edge_semantic_trace.py`, `scripts/archive/noncanonical-edge-reset/edge_semantic_validity.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git status --short scripts/generate_edge_cards.py scripts/generate_edge_reset_funnel_report.py scripts/export_edge_semantic_trace.py scripts/materialize_edge_reset_slice.py`, `rg -n 'generate_edge_cards.py|generate_edge_reset_funnel_report.py|export_edge_semantic_trace.py|materialize_edge_reset_slice.py' package.json docs scripts tests`, `npm run codecontext:scope -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `find scripts/archive -maxdepth 2 -type f | sort`, `npm run codecontext:py -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/archive/README.md`, `scripts/archive/noncanonical-ranking-stack/normalize_mechanism_fingerprints.py`, `scripts/archive/noncanonical-ranking-stack/score_mechanism_exposure.py`, `scripts/archive/noncanonical-ranking-stack/build_retrieval_stack.py`, `scripts/archive/noncanonical-ranking-stack/mine_queryless_candidates.py`, `scripts/archive/noncanonical-ranking-stack/bootstrap_queryless_labels.py`, `scripts/archive/noncanonical-ranking-stack/run_analyst_adjudication.py`, `scripts/archive/noncanonical-ranking-stack/build_candidate_family_ranking.py`, `scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git status --short scripts/normalize_mechanism_fingerprints.py scripts/score_mechanism_exposure.py scripts/build_retrieval_stack.py scripts/mine_queryless_candidates.py scripts/bootstrap_queryless_labels.py scripts/run_analyst_adjudication.py scripts/build_candidate_family_ranking.py`, `rg -n 'normalize_mechanism_fingerprints.py|score_mechanism_exposure.py|build_retrieval_stack.py|mine_queryless_candidates.py|bootstrap_queryless_labels.py|run_analyst_adjudication.py|build_candidate_family_ranking.py' package.json docs scripts tests`, `npm run codecontext:scope -- scripts/archive/noncanonical-ranking-stack/run_analyst_adjudication.py`, `npm run codecontext:scope -- scripts/archive/noncanonical-ranking-stack/build_candidate_family_ranking.py`, `npm run codecontext:scope -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `npm run codecontext:py -- scripts/archive/noncanonical-ranking-stack/run_analyst_adjudication.py`, `npm run codecontext:py -- scripts/archive/noncanonical-ranking-stack/build_candidate_family_ranking.py`, `npm run codecontext:py -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-ranking-stack/run_analyst_adjudication.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-ranking-stack/build_candidate_family_ranking.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `find scripts/archive/noncanonical-ranking-stack -maxdepth 1 -type f | sort`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `scripts/archive/noncanonical-edge-reset/`
-- Acceptance result: `the old edge-reset runner, edge-card generator, funnel report, and semantic trace helpers are now preserved under scripts/archive, and the archived runner points at its archived card generator instead of the former root path`
-- Open risks after commit: `other noncanonical scripts still remain in the active root for later archival decisions, and one tracked downstream script still references the former root-level edge-card generator path`
+- Artifacts produced: `scripts/archive/noncanonical-ranking-stack/`
+- Acceptance result: `the old fingerprint, retrieval, queryless, adjudication, and ranking scripts are now preserved under scripts/archive, and the archived edge-reset runner points at the archived ranking stack instead of the former root paths`
+- Open risks after commit: `additional noncanonical extraction-era and downstream helper scripts still remain in the active root for later archival decisions`
 - Next intended commit: `S16 active/archive cleanup foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

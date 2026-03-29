@@ -14,6 +14,7 @@ DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_PROMPT_PATH = ROOT / "prompts" / "edge-extraction-v26.md"
 DEFAULT_SCHEMA_PATH = ROOT / "schemas" / "edge_extraction.schema.json"
 DEFAULT_RUNS_ROOT = ROOT / "data" / "structural-analogy" / "runs"
+RANKING_STACK_DIR = Path(__file__).resolve().parent.parent / "noncanonical-ranking-stack"
 
 
 def parse_args():
@@ -323,7 +324,7 @@ def main():
     summary["c08"] = run_cmd(
         [
             "python3",
-            "scripts/normalize_mechanism_fingerprints.py",
+            str(RANKING_STACK_DIR / "normalize_mechanism_fingerprints.py"),
             "--db-path",
             str(db_path),
             "--run-id",
@@ -334,7 +335,7 @@ def main():
     summary["c09"] = run_cmd(
         [
             "python3",
-            "scripts/score_mechanism_exposure.py",
+            str(RANKING_STACK_DIR / "score_mechanism_exposure.py"),
             "--db-path",
             str(db_path),
             "--run-id",
@@ -345,7 +346,7 @@ def main():
     summary["c10"] = run_cmd(
         [
             "python3",
-            "scripts/build_retrieval_stack.py",
+            str(RANKING_STACK_DIR / "build_retrieval_stack.py"),
             "--db-path",
             str(db_path),
             "--run-id",
@@ -356,7 +357,7 @@ def main():
     summary["c11"] = run_cmd(
         [
             "python3",
-            "scripts/mine_queryless_candidates.py",
+            str(RANKING_STACK_DIR / "mine_queryless_candidates.py"),
             "--db-path",
             str(db_path),
             "--run-id",
@@ -368,7 +369,7 @@ def main():
     summary["c12_bootstrap"] = run_cmd(
         [
             "python3",
-            "scripts/bootstrap_queryless_labels.py",
+            str(RANKING_STACK_DIR / "bootstrap_queryless_labels.py"),
             "--db-path",
             str(db_path),
             "--queryless-run-id",
@@ -380,7 +381,7 @@ def main():
     summary["c12"] = run_cmd(
         [
             "python3",
-            "scripts/run_analyst_adjudication.py",
+            str(RANKING_STACK_DIR / "run_analyst_adjudication.py"),
             "--db-path",
             str(db_path),
             "--queryless-run-id",
@@ -397,7 +398,7 @@ def main():
     summary["c13"] = run_cmd(
         [
             "python3",
-            "scripts/build_candidate_family_ranking.py",
+            str(RANKING_STACK_DIR / "build_candidate_family_ranking.py"),
             "--db-path",
             str(db_path),
             "--run-id",

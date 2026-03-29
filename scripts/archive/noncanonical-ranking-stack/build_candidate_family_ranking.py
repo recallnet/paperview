@@ -4,9 +4,19 @@ import argparse
 import json
 import re
 import sqlite3
+import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+
+EDGE_RESET_DIR = Path(__file__).resolve().parent.parent / "noncanonical-edge-reset"
+if str(EDGE_RESET_DIR) not in sys.path:
+    # @context requirement -- semantic validity moved with the archived
+    # edge-reset stack, so the archived ranking stack has to import it from the
+    # archive rather than relying on the old root-level helper path.
+    sys.path.insert(0, str(EDGE_RESET_DIR))
+
+from edge_semantic_validity import semantic_validity
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -47,6 +57,12 @@ def parse_args():
         default=DEFAULT_RANKING_VERSION,
         help="Candidate family ranking contract version to persist.",
     )
+    parser.add_argument(
+        "--paper-id",
+        action="append",
+        default=[],
+        help="Optional source/candidate paper filter for focused reranking slices.",
+    )
     return parser.parse_args()
 
 
@@ -77,6 +93,12 @@ def parse_json_object(value):
 def avg(values):
     values = list(values)
     return sum(values) / len(values) if values else 0.0
+
+
+def failure_gate_name(gate_name):
+    if gate_name.endswith("_pass"):
+        return f"failed_{gate_name.removesuffix('_pass')}"
+    return f"failed_{gate_name}"
 
 
 def ensure_store_contract(connection, schema_sql_path: Path):
@@ -143,8 +165,17 @@ def ensure_run(connection, run_id: str | None, adjudication_run_id: str, ranking
     return resolved_run_id
 
 
-def load_adjudicated_hits(connection, adjudication_run_id: str):
+def load_adjudicated_hits(connection, adjudication_run_id: str, paper_ids=None):
     connection.row_factory = sqlite3.Row
+    filters = ["aqh.run_id = ?"]
+    params = [adjudication_run_id]
+    if paper_ids:
+        placeholders = ", ".join("?" for _ in paper_ids)
+        filters.append(
+            f"(qch.source_paper_id IN ({placeholders}) OR qch.candidate_paper_id IN ({placeholders}))"
+        )
+        params.extend(paper_ids)
+        params.extend(paper_ids)
     rows = connection.execute(
         """
         SELECT
@@ -205,10 +236,10 @@ def load_adjudicated_hits(connection, adjudication_run_id: str):
            ORDER BY es2.updated_at DESC, es2.exposure_score_id DESC
            LIMIT 1
          )
-        WHERE aqh.run_id = ?
+        WHERE {where_clause}
         ORDER BY aqh.adjusted_score DESC, aqh.adjudicated_queryless_hit_id
-        """,
-        (adjudication_run_id,),
+        """.format(where_clause=" AND ".join(filters)),
+        params,
     ).fetchall()
 
     labels_by_hit = defaultdict(lambda: {"bool": {}, "interesting": [], "weak": []})
@@ -273,6 +304,7 @@ def build_transfer_path(hit):
 
 def gate_hit(hit):
     candidate_doc = hit["candidate_document_json"]
+    semantic = semantic_validity(candidate_doc)
     evidence_threshold_pass = (
         EVIDENCE_SCORE.get(candidate_doc.get("evidence_confidence", "unscored"), 0.25) >= 0.7
         and bool(candidate_doc.get("section_labels"))
@@ -288,22 +320,42 @@ def gate_hit(hit):
         or candidate_doc.get("fingerprint_facets", {}).get("portability_blockers")
         or hit["analyst_labels"]["weak"]
     )
-    non_null_tradecore_mapping_pass = (
-        trait_score(candidate_doc, "tradecore_fit") >= 0.6
-    )
+    executor_clarity_pass = bool(
+        candidate_doc.get("market_object")
+        or candidate_doc.get("executor_gap")
+        or candidate_doc.get("cheap_validation_step")
+    ) or trait_score(candidate_doc, "tradecore_fit") >= 0.6
     catastrophic_blockers = len(
         candidate_doc.get("fingerprint_facets", {}).get("portability_blockers", [])
     ) >= 3 or hit["blocker_penalty_score"] > 0.42
     no_catastrophic_blocker_pass = not catastrophic_blockers
+    novelty_signal_pass = (
+        hit["lexical_distance_score"] >= 0.45
+        or bool(candidate_doc.get("novelty_reason"))
+        or trait_score(candidate_doc, "novel_market_portability") >= 0.6
+    )
     gate_results = {
         "evidence_threshold_pass": evidence_threshold_pass,
         "explicit_transfer_path_pass": explicit_transfer_path_pass,
         "explicit_failure_mode_pass": explicit_failure_mode_pass,
-        "non_null_tradecore_mapping_pass": non_null_tradecore_mapping_pass,
+        "executor_clarity_pass": executor_clarity_pass,
         "no_catastrophic_blocker_pass": no_catastrophic_blocker_pass,
+        "novelty_signal_pass": novelty_signal_pass,
+        "semantic_validity_pass": semantic["semantic_valid"],
     }
-    gate_pass = all(gate_results.values())
-    return gate_pass, gate_results, transfer_path
+    # @context decision -- The reset to edge-card discovery means low `tradecore_fit`
+    # can no longer hard-fail a candidate family. We still require evidence,
+    # transfer path, and no catastrophic blockers, but lexically-far or novel
+    # candidates are allowed through as "suppressed" instead of being silently killed.
+    gate_pass = (
+        evidence_threshold_pass
+        and explicit_transfer_path_pass
+        and explicit_failure_mode_pass
+        and no_catastrophic_blocker_pass
+        and semantic["semantic_valid"]
+        and (executor_clarity_pass or novelty_signal_pass)
+    )
+    return gate_pass, gate_results, transfer_path, semantic["semantic_failure_reasons"]
 
 
 def base_utility(hit):
@@ -315,6 +367,14 @@ def base_utility(hit):
     )
     evidence_score = EVIDENCE_SCORE.get(candidate_doc.get("evidence_confidence", "unscored"), 0.25)
     tradecore_mapping = trait_score(candidate_doc, "tradecore_fit")
+    novelty_bonus = 1.0 if (
+        hit["lexical_distance_score"] >= 0.5
+        or candidate_doc.get("novelty_reason")
+        or trait_score(candidate_doc, "novel_market_portability") >= 0.6
+    ) else 0.0
+    familiar_tradecore_penalty = 1.0 if (
+        tradecore_mapping >= 0.6 and hit["lexical_distance_score"] < 0.3
+    ) else 0.0
     return clamp(
         0.30 * hit["adjusted_score"]
         + 0.16 * hit["candidate_worth_followup_score"]
@@ -323,8 +383,10 @@ def base_utility(hit):
         + 0.10 * hit["lexical_distance_score"]
         + 0.10 * analyst_novelty
         + 0.06 * evidence_score
-        + 0.08 * tradecore_mapping
+        + 0.04 * tradecore_mapping
+        + 0.08 * novelty_bonus
         - 0.12 * hit["blocker_penalty_score"]
+        - 0.08 * familiar_tradecore_penalty
     )
 
 
@@ -343,7 +405,7 @@ def family_key(hit):
 def build_family_records(hits):
     families = {}
     for hit in hits:
-        gate_pass, gate_results, transfer_path = gate_hit(hit)
+        gate_pass, gate_results, transfer_path, semantic_failure_reasons = gate_hit(hit)
         utility = base_utility(hit)
         family_name = family_key(hit)
         entry = families.setdefault(
@@ -367,6 +429,7 @@ def build_family_records(hits):
             "gate_pass": gate_pass,
             "gate_results": gate_results,
             "transfer_path": transfer_path,
+            "semantic_failure_reasons": semantic_failure_reasons,
             "base_utility_score": utility,
         }
         entry["members"].append(member)
@@ -383,8 +446,35 @@ def build_family_records(hits):
             passed_members or members,
             key=lambda member: (member["base_utility_score"], member["adjusted_score"]),
         )
-        blocker_status = "satisfied" if passed_members else "blocked"
-        family_status = "queued" if passed_members else "rejected"
+        gate_fail_counts = Counter()
+        semantic_fail_counts = Counter()
+        for member in members:
+            for gate_name, gate_pass in member["gate_results"].items():
+                if not gate_pass:
+                    gate_fail_counts[gate_name] += 1
+            for reason in member.get("semantic_failure_reasons", []):
+                semantic_fail_counts[reason] += 1
+        suppression_reasons = []
+        for gate_name, count in gate_fail_counts.most_common():
+            if count <= 0:
+                continue
+            suppression_reasons.append({"gate": failure_gate_name(gate_name), "count": count})
+        semantic_failure_reasons = [
+            {"reason": reason, "count": count}
+            for reason, count in semantic_fail_counts.most_common()
+            if count > 0
+        ]
+        # @context requirement -- The edge-card reset requires explicit suppression
+        # reasons for weird candidates. Families that fail the hard pass should
+        # stay inspectable as `suppressed` unless they are already explicit dead ends.
+        blocker_status = "satisfied" if passed_members else "suppressed"
+        family_status = "queued" if passed_members else "suppressed"
+        if (
+            not passed_members
+            and representative["candidate_insight_type"] == "research_dead_end_worth_excluding"
+        ):
+            blocker_status = "dead_end"
+            family_status = "rejected"
         family_records.append(
             {
                 **entry,
@@ -405,13 +495,18 @@ def build_family_records(hits):
                             member["adjudicated_queryless_hit_id"] for member in passed_members
                         ],
                         "representative_candidate_mechanism_instance_id": representative["candidate_mechanism_instance_id"],
+                        "suppression_reasons": suppression_reasons,
+                        "semantic_failure_reasons": semantic_failure_reasons,
+                        "suppressed_member_hit_ids": [
+                            member["adjudicated_queryless_hit_id"] for member in members if not member["gate_pass"]
+                        ],
                     },
                 },
                 "representative": representative,
                 "mean_base_utility_score": avg(
                     member["base_utility_score"] for member in passed_members or members
                 ),
-                "gate_status": "passed" if passed_members else "rejected",
+                "gate_status": "passed" if passed_members else ("suppressed" if family_status == "suppressed" else "rejected"),
             }
         )
     return family_records
@@ -449,7 +544,7 @@ def rank_families(family_records):
     return sorted(
         ranked,
         key=lambda record: (
-            0 if record["gate_status"] == "passed" else 1,
+            0 if record["gate_status"] == "passed" else 1 if record["gate_status"] == "suppressed" else 2,
             -record["final_priority_score"],
             record["family_name"],
         ),
@@ -618,6 +713,9 @@ def persist_family_ranking(connection, candidate_family_id: int, run_id: str, ra
         "primary_trigger": record["primary_trigger"],
         "representative_hit_id": record["representative"]["adjudicated_queryless_hit_id"],
         "representative_adjusted_score": record["representative"]["adjusted_score"],
+        "semantic_failure_reasons": record["candidate_family_row"]["family_json"].get(
+            "semantic_failure_reasons", []
+        ),
     }
     connection.execute(
         """
@@ -694,7 +792,22 @@ def persist_strategy_candidate(connection, run_id: str, candidate_family_id: int
 
 def summarize(run_id: str, adjudication_run_id: str, ranked_records):
     passed = [record for record in ranked_records if record["gate_status"] == "passed"]
+    suppressed = [record for record in ranked_records if record["gate_status"] == "suppressed"]
     domains = Counter(record["target_domain"] for record in passed)
+    semantic_failures = Counter()
+    bad_examples = []
+    for record in ranked_records:
+        failures = record["candidate_family_row"]["family_json"].get("semantic_failure_reasons", [])
+        for item in failures:
+            semantic_failures[item["reason"]] += item["count"]
+        if failures and len(bad_examples) < 10:
+            bad_examples.append(
+                {
+                    "family_name": record["family_name"],
+                    "representative_paper_id": record["representative"]["candidate_paper_id"],
+                    "semantic_failure_reasons": failures,
+                }
+            )
     duplicate_family_rate = 0.0
     if passed:
         duplicate_family_rate = (
@@ -705,8 +818,15 @@ def summarize(run_id: str, adjudication_run_id: str, ranked_records):
         "adjudication_run_id": adjudication_run_id,
         "family_count": len(ranked_records),
         "passed_family_count": len(passed),
+        "suppressed_family_count": len(suppressed),
         "target_domain_counts": dict(sorted(domains.items())),
         "duplicate_family_rate": duplicate_family_rate,
+        "semantic_gate_reject_count": sum(semantic_failures.values()),
+        "semantic_gate_top_failure_reasons": [
+            {"reason": reason, "count": count}
+            for reason, count in semantic_failures.most_common(10)
+        ],
+        "semantic_gate_example_bad_rows": bad_examples,
         "top_passed_families": [
             {
                 "family_name": record["family_name"],
@@ -739,7 +859,7 @@ def main():
         run_id = ensure_run(connection, args.run_id, args.adjudication_run_id, args.ranking_version)
         connection.commit()
 
-        hits = load_adjudicated_hits(connection, args.adjudication_run_id)
+        hits = load_adjudicated_hits(connection, args.adjudication_run_id, args.paper_id)
         if not hits:
             raise SystemExit(
                 "no adjudicated_queryless_hits found for the requested run; complete C12 before running C13"

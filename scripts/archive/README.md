@@ -21,6 +21,11 @@ Current archive groups:
   from the older extraction-first reset workflow. These are preserved as a
   group so the archived flow still points at its own card generator.
 
+- `noncanonical-ranking-stack/`
+  Ranking, retrieval, queryless-mining, adjudication, and fingerprint scoring
+  scripts from the older downstream ranking workflow. These are preserved as a
+  group so the archived edge-reset flow can still call the archived stack.
+
 - `noncanonical-benchmarks/`
   Benchmark utilities that were useful for one-off retrieval evaluation but
   are not part of the canonical staged command surface.

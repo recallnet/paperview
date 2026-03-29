@@ -32,6 +32,12 @@ EMBEDDING_SURFACE_FIELD_MAP = {
     "fingerprint_text": "fingerprint_text",
 }
 POSITIVE_PAIR_KINDS = {"true_far_analog", "obvious_neighbor"}
+EDGE_WEIGHTS = {
+    "trigger_overlap": 0.35,
+    "topology_overlap": 0.25,
+    "actor_overlap": 0.15,
+    "execution_overlap": 0.10,
+}
 
 
 def parse_args():
@@ -364,6 +370,22 @@ def build_source_payload(row, evidence_bundle):
             ),
             "likely_crowding": mechanism_json.get("likely_crowding", "unknown"),
         },
+        "invariant_type": mechanism_json.get("invariant_type", "other"),
+        "invariant_statement": mechanism_json.get("invariant_statement", ""),
+        "market_object": mechanism_json.get("market_object", ""),
+        "trigger_window": mechanism_json.get("trigger_window", ""),
+        "market_lifecycle_phase": mechanism_json.get("market_lifecycle_phase", "unknown"),
+        "wrong_actor": mechanism_json.get("wrong_actor", ""),
+        "why_wrong": mechanism_json.get("why_wrong", ""),
+        "why_persistence": mechanism_json.get("why_persistence", ""),
+        "closure_mechanism": mechanism_json.get("closure_mechanism", ""),
+        "death_condition": mechanism_json.get("death_condition", ""),
+        "executor_gap": mechanism_json.get("executor_gap", ""),
+        "cheap_validation_step": mechanism_json.get("cheap_validation_step", ""),
+        "fast_falsifier": mechanism_json.get("fast_falsifier", ""),
+        "novelty_reason": mechanism_json.get("novelty_reason", ""),
+        "composition_opportunity": mechanism_json.get("composition_opportunity", ""),
+        "edge_confidence": mechanism_json.get("edge_confidence", "speculative"),
         "fingerprint_facets": {
             "trigger": parse_json_array(row["trigger_json"]),
             "state_variables": parse_json_array(row["state_variables_json"]),
@@ -478,77 +500,109 @@ def load_positive_benchmark_pairs(connection):
     return positive_pairs
 
 
+def _ordered_pair(left_id, right_id):
+    if left_id < right_id:
+        return (left_id, right_id)
+    return (right_id, left_id)
+
+
 def graph_edge_candidates(rows, positive_pairs):
-    edge_rows = []
-    for index, left in enumerate(rows):
-        left_id = left["mechanism_instance_id"]
-        left_source = build_source_payload(left, {"section_labels": [], "texts": []})
-        left_trigger = set(left_source["fingerprint_facets"]["trigger"])
-        left_topology = set(left_source["fingerprint_facets"]["market_topology"])
-        left_actor = set(left_source["fingerprint_facets"]["actor_structure"])
-        left_execution = set(left_source["fingerprint_facets"]["execution_shape"])
-        for right in rows[index + 1 :]:
-            right_id = right["mechanism_instance_id"]
-            right_source = build_source_payload(right, {"section_labels": [], "texts": []})
-            weight = 0.0
-            rationale = {
-                "trigger_overlap": list(
-                    sorted(left_trigger & set(right_source["fingerprint_facets"]["trigger"]))
-                ),
-                "topology_overlap": list(
-                    sorted(left_topology & set(right_source["fingerprint_facets"]["market_topology"]))
-                ),
-                "actor_overlap": list(
-                    sorted(left_actor & set(right_source["fingerprint_facets"]["actor_structure"]))
-                ),
-                "execution_overlap": list(
-                    sorted(
-                        left_execution
-                        & set(right_source["fingerprint_facets"]["execution_shape"])
-                    )
-                ),
+    # @context decision -- C10 has to survive growing accepted checkpoints. The original
+    # implementation rebuilt payloads for every pair and scanned all row pairs, which
+    # becomes effectively quadratic on the halfway q_fin slice. We index facet tokens
+    # first and only materialize pairs that share an actual supported relation so the
+    # graph contract stays the same while the build remains tractable.
+    row_payloads = {}
+    postings = {
+        "trigger_overlap": defaultdict(list),
+        "topology_overlap": defaultdict(list),
+        "actor_overlap": defaultdict(list),
+        "execution_overlap": defaultdict(list),
+    }
+    candidate_state = {}
+    literature_family_by_id = {}
+    max_posting_size = max(500, len(rows) // 10)
+
+    def get_candidate(candidate_key):
+        if candidate_key not in candidate_state:
+            candidate_state[candidate_key] = {
+                "trigger_overlap": set(),
+                "topology_overlap": set(),
+                "actor_overlap": set(),
+                "execution_overlap": set(),
+                "same_family": False,
+                "positive_benchmark_link": False,
             }
-            weight += 0.35 * (
-                1.0 if rationale["trigger_overlap"] else 0.0
-            )
-            weight += 0.25 * (
-                1.0 if rationale["topology_overlap"] else 0.0
-            )
-            weight += 0.15 * (
-                1.0 if rationale["actor_overlap"] else 0.0
-            )
-            weight += 0.10 * (
-                1.0 if rationale["execution_overlap"] else 0.0
-            )
-            if left["literature_family"] == right["literature_family"]:
-                weight += 0.05
-                rationale["same_family"] = True
-            if (left_id, right_id) in positive_pairs:
-                weight += 0.35
-                rationale["positive_benchmark_link"] = True
-            if weight <= 0.0:
+        return candidate_state[candidate_key]
+
+    for row in rows:
+        mechanism_id = row["mechanism_instance_id"]
+        source_payload = build_source_payload(row, {"section_labels": [], "texts": []})
+        facets = source_payload["fingerprint_facets"]
+        row_payloads[mechanism_id] = {
+            "trigger_overlap": set(facets["trigger"]),
+            "topology_overlap": set(facets["market_topology"]),
+            "actor_overlap": set(facets["actor_structure"]),
+            "execution_overlap": set(facets["execution_shape"]),
+        }
+        literature_family_by_id[mechanism_id] = row["literature_family"]
+        for rationale_key in EDGE_WEIGHTS:
+            for value in row_payloads[mechanism_id][rationale_key]:
+                postings[rationale_key][value].append(mechanism_id)
+
+    for rationale_key, posting_map in postings.items():
+        for value, mechanism_ids in posting_map.items():
+            ordered_ids = sorted(set(mechanism_ids))
+            if len(ordered_ids) < 2:
                 continue
-            edge_kind = "structural_relation"
-            if rationale.get("positive_benchmark_link"):
-                edge_kind = "benchmark_supported_relation"
-            edge_rows.append(
-                {
-                    "source_mechanism_instance_id": left_id,
-                    "target_mechanism_instance_id": right_id,
-                    "edge_kind": edge_kind,
-                    "edge_weight": min(weight, 1.0),
-                    "rationale_json": json.dumps(rationale, sort_keys=True),
-                }
-            )
-            edge_rows.append(
-                {
-                    "source_mechanism_instance_id": right_id,
-                    "target_mechanism_instance_id": left_id,
-                    "edge_kind": edge_kind,
-                    "edge_weight": min(weight, 1.0),
-                    "rationale_json": json.dumps(rationale, sort_keys=True),
-                }
-            )
+            if len(ordered_ids) > max_posting_size:
+                continue
+            for index, left_id in enumerate(ordered_ids):
+                for right_id in ordered_ids[index + 1 :]:
+                    get_candidate((left_id, right_id))[rationale_key].add(value)
+
+    for left_id, right_id in positive_pairs:
+        get_candidate(_ordered_pair(left_id, right_id))["positive_benchmark_link"] = True
+
+    edge_rows = []
+    for (left_id, right_id), rationale in candidate_state.items():
+        weight = 0.0
+        edge_rationale = {}
+        for rationale_key, base_weight in EDGE_WEIGHTS.items():
+            overlaps = sorted(rationale[rationale_key])
+            if overlaps:
+                edge_rationale[rationale_key] = overlaps
+                weight += base_weight
+        if literature_family_by_id.get(left_id) == literature_family_by_id.get(right_id):
+            weight += 0.05
+            edge_rationale["same_family"] = True
+        if rationale["positive_benchmark_link"]:
+            weight += 0.35
+            edge_rationale["positive_benchmark_link"] = True
+        if weight < 0.35:
+            continue
+        edge_kind = "structural_relation"
+        if edge_rationale.get("positive_benchmark_link"):
+            edge_kind = "benchmark_supported_relation"
+        rationale_json = json.dumps(edge_rationale, sort_keys=True)
+        edge_rows.append(
+            {
+                "source_mechanism_instance_id": left_id,
+                "target_mechanism_instance_id": right_id,
+                "edge_kind": edge_kind,
+                "edge_weight": min(weight, 1.0),
+                "rationale_json": rationale_json,
+            }
+        )
+        edge_rows.append(
+            {
+                "source_mechanism_instance_id": right_id,
+                "target_mechanism_instance_id": left_id,
+                "edge_kind": edge_kind,
+                "edge_weight": min(weight, 1.0),
+                "rationale_json": rationale_json,
+            }
+        )
     return edge_rows
 
 
