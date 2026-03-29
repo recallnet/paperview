@@ -76,3 +76,73 @@ patterns:
     kind: composition
     include: [parity_propagation_delayed_repair, refill_lag_resiliency]
     exclude: [negative_anchor]
+  - pattern_id: near_market_design_far_realized
+    label: near market design, far realized-market q-fin
+    kind: contrast
+    include: [market_design_seams]
+    exclude: [negative_anchor]
+    lexical_far_from:
+      - black-scholes
+      - option pricing
+      - delta hedging
+      - portfolio optimization
+      - mean variance
+      - market making
+      - optimal execution
+      - limit order book
+  - pattern_id: near_settlement_resolution_far_realized
+    label: near settlement and resolution, far realized-market q-fin
+    kind: contrast
+    include: [settlement_resolution_seams]
+    exclude: [negative_anchor]
+    lexical_far_from:
+      - market making
+      - optimal execution
+      - portfolio optimization
+      - option pricing
+      - stochastic volatility
+      - alpha signal
+      - asset pricing
+      - intraday execution
+  - pattern_id: near_participant_pathology_far_realized
+    label: near participant pathology, far realized-market q-fin
+    kind: contrast
+    include: [participant_pathologies]
+    exclude: [negative_anchor]
+    lexical_far_from:
+      - efficient market
+      - portfolio optimization
+      - option pricing
+      - black-scholes
+      - market making
+      - execution schedule
+      - mean variance
+      - asset allocation
+  - pattern_id: near_state_graph_far_realized
+    label: near state-graph inconsistency, far realized-market q-fin
+    kind: contrast
+    include: [state_graph_inconsistencies]
+    exclude: [negative_anchor]
+    lexical_far_from:
+      - market making
+      - optimal execution
+      - option pricing
+      - portfolio optimization
+      - execution cost
+      - liquidity provision
+      - alpha factor
+      - mean variance
+  - pattern_id: near_lifecycle_far_realized
+    label: near lifecycle and professionalization, far realized-market q-fin
+    kind: contrast
+    include: [lifecycle_professionalization]
+    exclude: [negative_anchor]
+    lexical_far_from:
+      - black-scholes
+      - option pricing
+      - delta hedging
+      - optimal execution
+      - intraday market making
+      - portfolio optimization
+      - asset pricing
+      - volatility forecasting

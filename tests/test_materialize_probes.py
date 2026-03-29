@@ -81,6 +81,11 @@ class MaterializeProbesTests(unittest.TestCase):
                 "near_transition_auction_queue",
                 "near_transition_maker_queue",
                 "near_transition_parity_repair",
+                "near_market_design_far_realized",
+                "near_settlement_resolution_far_realized",
+                "near_participant_pathology_far_realized",
+                "near_state_graph_far_realized",
+                "near_lifecycle_far_realized",
             }.issubset(pattern_ids)
         )
 

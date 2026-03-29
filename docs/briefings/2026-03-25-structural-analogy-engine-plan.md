@@ -1092,8 +1092,15 @@ Current status:
   - `state_graph_inconsistencies`
   - `lifecycle_professionalization`
 - each new family now has explicit paper seeds from the current corpus plus keywords and allowed-category constraints
-- fixture coverage in `tests/test_materialize_probes.py` now guards those checked-in anchor ids directly
-- the stage remains in progress because only `STEP 1` is complete; the next canonical `S27` commit is the matching probe-pattern expansion in `configs/probes.yaml`
+- the second `S27` commit adds five matching `contrast` probe patterns to `configs/probes.yaml`:
+  - `near_market_design_far_realized`
+  - `near_settlement_resolution_far_realized`
+  - `near_participant_pathology_far_realized`
+  - `near_state_graph_far_realized`
+  - `near_lifecycle_far_realized`
+- those patterns now explicitly push away from standard realized-market q-fin discourse through `lexical_far_from` guards instead of merely reusing the new anchor families as local-similarity probes
+- fixture coverage in `tests/test_materialize_probes.py` now guards both the broadened anchor ids and the broadened pattern ids directly
+- the stage remains in progress because only `STEP 1` and `STEP 2` are complete; the next canonical `S27` commit is the live probe rematerialization with the expanded config
 
 ---
 
@@ -1232,15 +1239,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s27-anchor-broadening`
-- Why this commit exists: start the broader early-market failure-mode expansion by widening the positive anchor surface before any new probes, operators, or packets are rerun
+- Commit scope: `s27-live-probe-rerun`
+- Why this commit exists: rematerialize probe hits with the broadened anchor and contrast-pattern surface so the new early-market lanes become live candidate regions instead of config-only definitions
 - Stages touched: `S27`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/anchors.yaml`, `tests/test_materialize_probes.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:py -- tests/test_materialize_probes.py`, `python3 -m unittest -v tests.test_materialize_probes`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_probes`, `npm run docs:lint`
-- Artifacts produced: `none; this commit expands canonical anchor config only`
-- Acceptance result: `complete for S27 step 1; the five new early-market discovery lanes are live in anchors.yaml and guarded by the probe config test`
-- Open risks after commit: `probe patterns and live probe hits do not exist for the new lanes yet, so the broadened discovery surface is defined but not materialized`
-- Next intended commit: `S27 step 2 probe-pattern expansion`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `data/structural-analogy/runs/*probe*`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run store:materialize-probes -- --run-id <new-s27-probe-run>`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `probe_metrics.json`, `probe_hits.jsonl`
+- Acceptance result: `pending; complete when the broadened patterns produce live probe hits and the new lanes show up in the canonical probe artifact family`
+- Open risks after commit: `the broadened patterns may still over-collapse into mature q-fin discourse or produce sparse hits until thresholds are tuned`
+- Next intended commit: `S27 step 4 operator reruns on broadened anchor set`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
