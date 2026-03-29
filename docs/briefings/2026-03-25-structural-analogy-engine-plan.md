@@ -314,7 +314,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S32` | shortlist-gated diamond interpretation | `done` | top-40 + per-lane interpretation with `TRANSITION_SEAM` class, strict JSON |
 | `S33` | six publication surfaces + diamond board | `done` | unrealized index, stranded ledger, transition ledger, early-market ledger, findings, diamond board all rematerialized from `diamond_interpretations` |
 | `S34` | empirical test memos v2 | `done` | queue x refill, auction handoff, maker-retreat memos now published in the v2 hypothesis/data/baseline/metric/fail-fast format |
-| `S35` | lane memo suite | `in_progress` | four focused lane memos: market-design delayed parity repair, settlement-lag timing, toxic-flow filters, state-graph repair timing |
+| `S35` | lane memo suite | `done` | four focused lane memos: market-design delayed parity repair, settlement-lag timing, toxic-flow filters, state-graph repair timing |
 
 ## Completed Stages
 
@@ -1662,16 +1662,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s35-memo-4-state-graph-repair-timing-monitor`
-- Why this commit exists: turn the accepted state-graph lead into the fourth standalone lane memo so the follow-on work finishes with a linked-market repair monitor rather than stopping at venue rules and participant filters
+- Commit scope: `s35-closeout`
+- Why this commit exists: close the lane-memo follow-on stage after all four focused memos have been generated and verified from the current publication surfaces
 - Stages touched: `S35`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_lane_memos.py`, `tests/test_materialize_lane_memos.py`, `reports/lane-memo-state-graph-repair-timing-monitor.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_lane_memos.py`, `npm run codecontext:scope -- tests/test_materialize_lane_memos.py`, `npm run codecontext:py -- scripts/materialize_lane_memos.py`, `npm run codecontext:py -- tests/test_materialize_lane_memos.py`, `python3 -m unittest -v tests.test_materialize_lane_memos`, `npm run store:materialize-lane-memos -- --memo-id state-graph-repair-timing-monitor --run-id lane-memos-20260329-state-graph`, `npm run codecontext:diff -- scripts/materialize_lane_memos.py`, `npm run codecontext:diff -- tests/test_materialize_lane_memos.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_lane_memos`, `npm run docs:lint`
-- Artifacts produced: `reports/lane-memo-state-graph-repair-timing-monitor.md`
-- Acceptance result: `reports/lane-memo-state-graph-repair-timing-monitor.md` was generated successfully from the current root publication surfaces; the memo cites `2104.09309`, `1111.7103`, `2010.15105`, `2004.12011`, `1609.04620`, and `1811.08038` and turns the accepted `state_graph` lead into a graph-aware repair timing program
-- Open risks after commit: none inside memo scope; the remaining task is a clean `S35` closeout commit
-- Next intended commit: `S35 closeout`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `none`
+- Acceptance result: `S35` is complete with all four lane memos live under `reports/`: market-design delayed parity repair, settlement-lag / resolution-friction timing, rule-sensitive toxic-flow filters, and state-graph repair timing monitor
+- Open risks after commit: none
+- Next intended commit: `none`
 - Signoff status: `committed`
 - Last updated: `2026-03-29`
 
@@ -1686,4 +1686,4 @@ Current status:
   - shortlist-gated diamond interpretation
   - six publication surfaces plus `diamond_board.md`
   - three empirical memo v2 outputs
-  - a new follow-on `S35` lane-memo stage aimed at focused writeups for the strongest non-generic early-market leads, with memo 1 (`market-design delayed parity repair`), memo 2 (`settlement-lag / resolution-friction timing`), memo 3 (`rule-sensitive toxic-flow filters`), and memo 4 (`state-graph repair timing monitor`) completed
+  - a completed `S35` lane-memo stage with four focused writeups for the strongest non-generic early-market leads
