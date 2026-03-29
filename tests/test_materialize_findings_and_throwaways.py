@@ -138,6 +138,7 @@ class MaterializeFindingsAndThrowawaysTest(unittest.TestCase):
             tmp_path = Path(tmp_dir)
             db_path = tmp_path / "fixture.sqlite3"
             output_dir = tmp_path / "run"
+            root_markdown_path = tmp_path / "findings_and_throwaways.md"
             rejections_path = tmp_path / "interpretation_rejections.jsonl"
 
             connection = sqlite3.connect(db_path)
@@ -182,6 +183,8 @@ class MaterializeFindingsAndThrowawaysTest(unittest.TestCase):
                     "ledger-run",
                     "--output-dir",
                     str(output_dir),
+                    "--root-markdown-path",
+                    str(root_markdown_path),
                     "--top-k",
                     "3",
                 ],
@@ -214,12 +217,14 @@ class MaterializeFindingsAndThrowawaysTest(unittest.TestCase):
             self.assertIn("## Near Misses By Operator", markdown)
             self.assertIn("Bridge Packet A", markdown)
             self.assertIn("Failed Stranded Paper B", markdown)
+            self.assertEqual(root_markdown_path.read_text(encoding="utf-8"), markdown)
 
     def test_materializes_findings_report_from_enhanced_interpretations(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
             db_path = tmp_path / "fixture.sqlite3"
             output_dir = tmp_path / "run"
+            root_markdown_path = tmp_path / "findings_and_throwaways.md"
             rejections_path = tmp_path / "enhanced_interpretation_rejections.jsonl"
 
             connection = sqlite3.connect(db_path)
@@ -266,6 +271,8 @@ class MaterializeFindingsAndThrowawaysTest(unittest.TestCase):
                     "ledger-enhanced-run",
                     "--output-dir",
                     str(output_dir),
+                    "--root-markdown-path",
+                    str(root_markdown_path),
                     "--top-k",
                     "3",
                 ],
@@ -306,6 +313,7 @@ class MaterializeFindingsAndThrowawaysTest(unittest.TestCase):
             self.assertIn("stranded_qfin:paper-kept", markdown)
             self.assertIn("bridge:bridge-c", markdown)
             self.assertIn("Failed Stranded Paper B", markdown)
+            self.assertEqual(root_markdown_path.read_text(encoding="utf-8"), markdown)
 
 
 if __name__ == "__main__":

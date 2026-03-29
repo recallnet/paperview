@@ -1290,7 +1290,25 @@ Current status:
   - accepted items missing from publication: `0`
   - published items missing from findings: `0`
   - `all_accepted_items_exposed`: `true`
-- the stage remains in progress because the second `S28` commit still needs to rematerialize `findings_and_throwaways.md` explicitly from actual artifacts under the new truth-stabilization contract
+- the second `S28` commit upgrades `materialize_findings_and_throwaways.py` so every run now emits both:
+  - the canonical per-run artifacts under `data/structural-analogy/runs/<run-id>/`
+  - the mandatory repo-root truth surface `findings_and_throwaways.md`
+- the live `findings-and-throwaways-20260329` rerun completed successfully against the actual broadened artifacts:
+  - accepted findings: `9`
+  - rejected interpretations: `2`
+  - near misses: `15`
+  - stranded q-fin failures: `3`
+- the root `findings_and_throwaways.md` now exposes all accepted broadened lanes directly instead of leaving them only inside per-run directories:
+  - `lifecycle`: `1`
+  - `market_design`: `1`
+  - `participant_pathologies`: `1`
+  - `settlement_resolution`: `1`
+  - `state_graph`: `1`
+  - `stranded_qfin`: `2`
+  - `transition_state`: `2`
+- the stage remains in progress only for `S28` closeout and truth signoff; the two required root truth surfaces are now:
+  - `run_summary.md`
+  - `findings_and_throwaways.md`
 
 ---
 
@@ -1430,21 +1448,20 @@ Current status:
 - canonical run summary:
   - `run_summary.json`
   - `run_summary.md`
+- root findings surface:
+  - `findings_and_throwaways.md`
 
 ## Active Signoff Block
 
-- Commit scope: `s28-run-summary-foundation`
-- Why this commit exists: create the canonical `run_summary` generator and root artifacts so every later v2 run has one authoritative truth surface before findings-and-throwaways is tightened further
+- Commit scope: `s28-findings-truth-rematerialization`
+- Why this commit exists: make `findings_and_throwaways.md` a mandatory root artifact regenerated from the actual broadened run artifacts so the truth surface is not trapped only inside per-run directories
 - Stages touched: `S28`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_run_summary.py`, `tests/test_materialize_run_summary.py`, `package.json`, `run_summary.json`, `run_summary.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_research_output.py`, `npm run codecontext:scope -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- scripts/materialize_run_summary.py`, `npm run codecontext:py -- tests/test_materialize_run_summary.py`, `python3 -m unittest -v tests.test_materialize_run_summary`, `npm run store:materialize-run-summary -- --run-id run-summary-20260329`, `npm run codecontext:diff -- scripts/materialize_run_summary.py`, `npm run codecontext:diff -- tests/test_materialize_run_summary.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_run_summary`, `npm run docs:lint`
-- Artifacts produced: `run_summary.json`, `run_summary.md`
-- Acceptance result: `passed; the root summary now reconciles shortlist, enhanced interpretation, findings, and all three publication surfaces into one canonical count surface with zero hidden accepted items`
-- Open risks after commit: `findings_and_throwaways truth is still on the old materializer contract until the second S28 commit rematerializes it from actual artifacts`
-- Next intended commit: `S28 findings-and-throwaways truth rematerialization`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_findings_and_throwaways.py`, `tests/test_materialize_findings_and_throwaways.py`, `findings_and_throwaways.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- tests/test_materialize_findings_and_throwaways.py`, `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run store:materialize-findings-and-throwaways -- --run-id findings-and-throwaways-20260329 --interpretation-source enhanced --interpretation-run-id enhanced-interpretation-ingestion-20260328-broadened --interpretation-rejections-path data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328-broadened/enhanced_interpretation_rejections.jsonl --bridge-run-id bridge-materialization-20260328-broadened --composition-run-id composition-materialization-20260328-broadened --transition-run-id transition-state-candidate-materialization-20260328-broadened --stranded-ledger-run-id stranded-result-ledger-broadened-20260328`, `npm run codecontext:diff -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:diff -- tests/test_materialize_findings_and_throwaways.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/findings-and-throwaways-20260329/*`, `findings_and_throwaways.md`
+- Acceptance result: `passed; the canonical findings materializer now regenerates the root findings_and_throwaways.md from the actual broadened artifact set, and the root surface exposes the same nine accepted items already reconciled in run_summary`
+- Open risks after commit: `S28 still needs a final closeout commit to freeze the truth-stabilization chapter and point the plan at S29`
+- Next intended commit: `S28 closeout and truth signoff`
 - Signoff status: `ready`
-- Last updated: `2026-03-29`
-- Next intended commit: `S28 canonical run summary`
-- Signoff status: `draft`
 - Last updated: `2026-03-29`

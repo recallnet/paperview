@@ -39,6 +39,7 @@ def parse_args():
     parser.add_argument("--resurfacing-run-id", default="stranded-resurfacing-materialization-20260328")
     parser.add_argument("--stranded-ledger-run-id", default="stranded-result-ledger-20260328")
     parser.add_argument("--output-dir", default=None)
+    parser.add_argument("--root-markdown-path", default=str(ROOT / "findings_and_throwaways.md"))
     parser.add_argument("--top-k", type=int, default=3)
     return parser.parse_args()
 
@@ -617,6 +618,7 @@ def main():
     args = parse_args()
     db_path = Path(args.db_path).resolve()
     output_dir = Path(args.output_dir).resolve() if args.output_dir else DEFAULT_OUTPUT_ROOT / args.run_id
+    root_markdown_path = Path(args.root_markdown_path).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     rejections_path = (
         Path(args.interpretation_rejections_path).resolve()
@@ -679,8 +681,12 @@ def main():
             for row in report_rows:
                 handle.write(json.dumps(row, sort_keys=True) + "\n")
 
+        markdown_text = render_markdown(accepted, rejected, near_misses, stranded_failures)
         markdown_path = output_dir / "findings_and_throwaways.md"
-        markdown_path.write_text(render_markdown(accepted, rejected, near_misses, stranded_failures), encoding="utf-8")
+        markdown_path.write_text(markdown_text, encoding="utf-8")
+        # @context decision -- S28 makes findings_and_throwaways.md a mandatory every-run surface
+        # at repo root so accepted evidence is not trapped only under per-run directories.
+        root_markdown_path.write_text(markdown_text, encoding="utf-8")
 
         metrics = {
             "run_id": args.run_id,
@@ -704,6 +710,7 @@ def main():
                 for family in NEAR_MISS_OPERATOR_FAMILIES
             },
             "operator_families_covered": sorted(set(NEAR_MISS_OPERATOR_FAMILIES) | {"stranded_resurfacing"}),
+            "root_markdown_path": str(root_markdown_path),
         }
         metrics_path = output_dir / "findings_and_throwaways_metrics.json"
         metrics_path.write_text(json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8")
