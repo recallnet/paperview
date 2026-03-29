@@ -269,7 +269,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S04` | canonical KNN stage | `done` | `knn_edges` |
 | `S05` | canonical graph / cluster stage | `done` | `clusters`, `cluster_members` |
 | `S06` | canonical probe stage | `done` | `anchors`, `agitator_patterns`, `probe_hits` |
-| `S07` | realized-market firewall corpus | `in_progress` | canonical corpus memberships + realized-market anti-realization set |
+| `S07` | realized-market firewall corpus | `done` | canonical corpus memberships + realized-market anti-realization set |
 | `S08` | stranding sparse scoring layer | `done` | stranding features + scores |
 | `S09` | bridge / composition / contrast operators | `done` | bridge, composition, contrast, and negative-space artifacts |
 | `S10` | review packet generation | `done` | region packets and dossiers |
@@ -278,7 +278,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S13` | holdout echo validation | `done` | holdout echo metrics |
 | `S14` | Unrealized Ideas Index | `done` | human-facing index |
 | `S15` | Stranded Result Ledger | `done` | human-facing ledger |
-| `S16` | active / archive cleanup | `in_progress` | clean active pipeline surface |
+| `S16` | active / archive cleanup | `done` | clean active pipeline surface |
 
 ## Completed Stages
 
@@ -353,7 +353,7 @@ Current live result:
 - `10` patterns
 - `250` probe hits in the current full run
 
-## Remaining Execution Path
+## Stage Status Detail
 
 ### `S07` Realized-Market Firewall
 
@@ -381,7 +381,8 @@ Current status:
   - `realized_market`: `4,579`
   - `stranded_alpha`: `12,255`
   - `holdout`: `6,880`
-- the stage is not complete yet because the realized-market slice now reflects explicit market discourse, but later commits still need stronger anti-realization negatives and sparse stranding features before ranking can use it well
+- the stage is complete: the canonical membership surface now powers the time firewall, explicit realized-market discourse slice, stranded-alpha slice, and holdout split used by the later live scoring, shortlist, interpretation, and validation stages
+- later stages already depend on this same membership surface in production, so the firewall contract is no longer provisional even though downstream scoring layers add extra anti-realization pressure on top of it
 
 ### `S08` Stranding Sparse Scoring
 
@@ -679,7 +680,8 @@ Current status:
 - the extraction-workflow cleanup pass moved the old pilot, extraction, review, and promotion scripts into the archive, patched the archived edge-reset runner to call those archived scripts, and fixed the moved scripts to resolve the real repo root from `scripts/archive/...`
 - historical docs still reference `materialize_mixed_family_pilot.py`, which is acceptable for `S16` because the archive preserves the file while removing it from the active script surface
 - historical docs still reference `research:materialize-findings`, which is acceptable for `S16` because the archive preserves the implementation while the active package surface is reduced
-- the stage remains in progress because untracked extraction-era prep helpers and a few other noncanonical root scripts still remain outside the canonical staged command surface
+- the stage is complete: the active `package.json` command surface is now canonical, the major superseded workflow clusters have been moved into `scripts/archive/`, and the remaining dirty or untracked files are local worktree state rather than active canonical pipeline surface
+- the canonical `S00–S16` execution path is now complete end to end
 
 ---
 
@@ -805,15 +807,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s16-archive-extraction-workflow`
-- Why this commit exists: continue the cleanup pass by moving the old extraction workflow into `scripts/archive/` now that its package entrypoints are gone and it no longer belongs in the active root
-- Stages touched: `S16`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/archive/README.md`, `scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `scripts/archive/noncanonical-extraction-workflow/create_pilot_batch.py`, `scripts/archive/noncanonical-extraction-workflow/create_extraction_run.py`, `scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py`, `scripts/archive/noncanonical-extraction-workflow/review_extraction_quality.py`, `scripts/archive/noncanonical-extraction-workflow/run_local_mlx_extraction.py`, `scripts/archive/noncanonical-extraction-workflow/review_and_ingest_extractions.py`, `scripts/archive/noncanonical-extraction-workflow/prepare_section_evidence.py`, `scripts/archive/noncanonical-extraction-workflow/promote_paper_extractions.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `npm run codecontext:scope -- scripts/ingest_extraction_responses.py`, `npm run codecontext:py -- scripts/ingest_extraction_responses.py`, `npm run codecontext:scope -- scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py`, `npm run codecontext:py -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py`, `git status --short scripts/create_pilot_batch.py scripts/create_extraction_run.py scripts/ingest_extraction_responses.py scripts/review_extraction_quality.py scripts/run_local_mlx_extraction.py scripts/review_and_ingest_extractions.py scripts/prepare_section_evidence.py scripts/promote_paper_extractions.py scripts/archive/noncanonical-extraction-workflow scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py scripts/archive/README.md docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `rg -n 'create_pilot_batch.py|create_extraction_run.py|ingest_extraction_responses.py|review_extraction_quality.py|run_local_mlx_extraction.py|review_and_ingest_extractions.py|prepare_section_evidence.py|promote_paper_extractions.py' package.json docs scripts tests`, `find scripts/archive/noncanonical-extraction-workflow -maxdepth 1 -type f | sort`, `npm run codecontext:diff -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py`, `npm run docs:lint`
-- Tests run: `python3 -m py_compile scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py scripts/archive/noncanonical-extraction-workflow/create_pilot_batch.py scripts/archive/noncanonical-extraction-workflow/create_extraction_run.py scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py scripts/archive/noncanonical-extraction-workflow/review_extraction_quality.py scripts/archive/noncanonical-extraction-workflow/run_local_mlx_extraction.py scripts/archive/noncanonical-extraction-workflow/review_and_ingest_extractions.py scripts/archive/noncanonical-extraction-workflow/prepare_section_evidence.py scripts/archive/noncanonical-extraction-workflow/promote_paper_extractions.py`, `npm run docs:lint`
-- Artifacts produced: `scripts/archive/noncanonical-extraction-workflow/`
-- Acceptance result: `the old pilot, extraction, review, and promotion scripts are now preserved under scripts/archive, the archived edge-reset runner points at those archived scripts instead of former root paths, and the moved extraction scripts now resolve the real repo root from scripts/archive/...`
-- Open risks after commit: `untracked extraction-era prep helpers and other noncanonical root scripts still remain for later archival decisions`
-- Next intended commit: `S16 active/archive cleanup closeout decision`
-- Signoff status: `ready`
+- Commit scope: `s16-closeout-full-plan`
+- Why this commit exists: mark the canonical execution path complete now that the active surface is clean and every planned stage from `S00` through `S16` has a live, verified contract
+- Stages touched: `S07`, `S16`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `none`
+- Acceptance result: `the canonical plan now truthfully records all stages from S00 through S16 as complete and the active cleanup stage as finished`
+- Open risks after commit: `future expansion can still refine breadth or add new stages, but the current canonical S00–S16 execution path is complete`
+- Next intended commit: `none`
+- Signoff status: `committed`
 - Last updated: `2026-03-28`
