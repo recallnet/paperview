@@ -63,7 +63,7 @@ def run_export(args, family_names, output_dir):
     output_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
         "python3",
-        str(ROOT / "scripts" / "export_cluster_cartography.py"),
+        str(Path(__file__).resolve().parent / "export_cluster_cartography.py"),
         "--db-path",
         str(Path(args.db_path).resolve()),
         "--run-id",
@@ -87,6 +87,8 @@ def run_export(args, family_names, output_dir):
     ]
     for family_name in family_names:
         cmd.extend(["--family-name", family_name])
+    # @context history -- This runner is archived with its paired export helper so historical
+    # research-pack rebuilds still work without pointing back into the active scripts root.
     subprocess.run(cmd, check=True, cwd=str(ROOT))
 
 

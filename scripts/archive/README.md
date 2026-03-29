@@ -10,6 +10,10 @@ Current archive groups:
   Benchmark utilities that were useful for one-off retrieval evaluation but
   are not part of the canonical staged command surface.
 
+- `noncanonical-research-packs/`
+  Research-pack and export utilities that produced earlier analyst-facing
+  bundles but are not part of the canonical `S01` to `S16` staged pipeline.
+
 - `noncanonical-pilots/`
   Pilot and benchmark materializers that were useful during earlier discovery
   exploration but are not part of the active `S01` to `S16` staged command set.

@@ -627,9 +627,14 @@ Current status:
   - `materialize_mixed_family_pilot.py`
 - second archived slice moved to `scripts/archive/noncanonical-benchmarks/`:
   - `benchmark_retrieval_stack.py`
+- third archived slice moved to `scripts/archive/noncanonical-research-packs/`:
+  - `materialize_research_finding_pack.py`
+  - `export_cluster_cartography.py`
 - this first slice is intentionally narrow: it archives tracked pilot utilities that are not part of the canonical staged command set and do not have active package-script entrypoints
 - the benchmark cleanup pass removed `retrieve:benchmark` from `package.json`, so that archived script no longer competes with the canonical staged commands
+- the research-pack cleanup pass removed `research:materialize-findings` from `package.json`, and the archived runner now points at the archived export helper instead of reaching back into the active root
 - historical docs still reference `materialize_mixed_family_pilot.py`, which is acceptable for `S16` because the archive preserves the file while removing it from the active script surface
+- historical docs still reference `research:materialize-findings`, which is acceptable for `S16` because the archive preserves the implementation while the active package surface is reduced
 - the stage remains in progress because extraction-era package commands and other superseded utilities still need later cleanup passes
 
 ---
@@ -757,13 +762,13 @@ Current status:
 ## Active Signoff Block
 
 - Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by removing a tracked noncanonical benchmark command from the active surface without touching dirty extraction-era files
+- Why this commit exists: continue the cleanup pass by archiving the tracked research-finding-pack utility and its paired export helper while leaving the active staged pipeline unchanged
 - Stages touched: `S16`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/archive/README.md`, `scripts/archive/noncanonical-benchmarks/benchmark_retrieval_stack.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n \"retrieve:benchmark\\|benchmark_retrieval_stack.py\" -- package.json docs scripts tests`, `find scripts/archive -maxdepth 2 -type f | sort`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/archive/README.md`, `scripts/archive/noncanonical-research-packs/materialize_research_finding_pack.py`, `scripts/archive/noncanonical-research-packs/export_cluster_cartography.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:py -- scripts/archive/noncanonical-research-packs/materialize_research_finding_pack.py`, `git grep -n \"research:materialize-findings\\|materialize_research_finding_pack.py\\|export_cluster_cartography.py\" -- package.json docs scripts tests`, `find scripts/archive -maxdepth 2 -type f | sort`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `scripts/archive/noncanonical-benchmarks/`
-- Acceptance result: `the second S16 cleanup slice is live: benchmark_retrieval_stack.py moved into the archive, its package entrypoint was removed, and the active staged command surface is smaller without touching dirty extraction-era files`
+- Artifacts produced: `scripts/archive/noncanonical-research-packs/`
+- Acceptance result: `the third S16 cleanup slice is live: the research finding pack runner and export helper moved into the archive, the package entrypoint was removed, and the archived runner still points at its paired archived helper`
 - Open risks after commit: `package-wired extraction-era and edge-reset surfaces still need later cleanup after these safer archive-only slices`
 - Next intended commit: `S16 active/archive cleanup foundation`
 - Signoff status: `ready`
