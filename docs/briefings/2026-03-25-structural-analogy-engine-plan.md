@@ -295,7 +295,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S18` | transition-state score materializer | `done` | `transition_state_scores` table + metrics |
 | `S19` | transition-state operator | `done` | `transition_state_candidates` table + artifacts |
 | `S20` | stranded q-fin resurfacing operator | `done` | `stranded_resurfacing_candidates` table + artifacts |
-| `S21` | findings and throwaways materializer | `pending` | `findings_and_throwaways.*` per-run report |
+| `S21` | findings and throwaways materializer | `done` | `findings_and_throwaways.*` per-run report |
 | `S22` | transition-state microstructure ledger | `pending` | `transition_state_ledger.*` publication surface |
 | `S23` | enhanced interpretation batch | `pending` | expanded top-10-20 per operator family interpretation |
 | `S24` | re-materialize all publication surfaces | `pending` | all four publication outputs from a single run |
@@ -852,6 +852,25 @@ Accept when:
 - `findings_and_throwaways.*` artifacts exist (markdown + JSONL + metrics)
 - the report covers all operator families
 
+Current status:
+
+- the `S21` commit adds the canonical report stage in `scripts/materialize_findings_and_throwaways.py`
+- the report stays synthesis-only over canonical surfaces: selective interpretations, ingestion rejection JSONL, operator candidate pools, and stranded resurfacing rows that failed ledger conversion
+- fixture coverage in `tests/test_materialize_findings_and_throwaways.py` proves the report includes accepted findings, ingestion rejections, operator near-misses, and stranded q-fin failures in one output set
+- the live rerun `npm run store:materialize-findings-and-throwaways -- --run-id findings-and-throwaways-20260328` completed successfully with:
+  - `accepted_count`: `2`
+  - `rejected_count`: `1`
+  - `near_miss_count`: `15`
+  - `stranded_qfin_failure_count`: `3`
+- the report now covers all operator families through dedicated sections for:
+  - `bridge`
+  - `composition`
+  - `contrast`
+  - `negative_space`
+  - `transition_state`
+  - `stranded_resurfacing`
+- the stage is complete: `findings_and_throwaways.md`, `.jsonl`, and `_metrics.json` exist and the live report now exposes survivors, rejects, near-misses, and failed ledger conversions in one canonical artifact
+
 ### `S22` Transition-State Microstructure Ledger
 
 Build:
@@ -1019,15 +1038,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s20-stranded-qfin-resurfacing-operator`
-- Why this commit exists: turn the existing stranding and transition-state priors into a distinct stranded q-fin resurfacing queue over the 2015–2023 stranded-alpha slice
-- Stages touched: `S20`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_stranded_resurfacing_candidates.py`, `tests/test_materialize_stranded_resurfacing_candidates.py`, `package.json`, `sql/paperview_schema.sql`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_stranding_scores.py`, `sed -n '1,260p' scripts/materialize_stranded_result_ledger.py`, `git show HEAD:sql/paperview_schema.sql | rg -n "selective_interpretations|stranded_result_ledger|corpus_memberships|stranding_scores" -n -C 2`, `npm run codecontext:py -- scripts/materialize_stranded_resurfacing_candidates.py`, `npm run codecontext:py -- tests/test_materialize_stranded_resurfacing_candidates.py`, `python3 -m unittest -v tests.test_materialize_stranded_resurfacing_candidates`, `npm run store:materialize-stranded-resurfacing-candidates -- --run-id stranded-resurfacing-materialization-20260328`, `python3 - <<'PY' ... stranded resurfacing metrics and top rows ... PY`, `npm run codecontext:diff -- scripts/materialize_stranded_resurfacing_candidates.py`, `npm run codecontext:diff -- tests/test_materialize_stranded_resurfacing_candidates.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_stranded_resurfacing_candidates`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/stranded-resurfacing-materialization-20260328/stranded_resurfacing_candidate_metrics.json`, `data/structural-analogy/runs/stranded-resurfacing-materialization-20260328/stranded_resurfacing_candidates.jsonl`
-- Acceptance result: `passed; stranded resurfacing candidates are now ranked and queryable as a distinct operator over the stranded-alpha q-fin slice`
-- Open risks after commit: `the resurfacing queue is live, but S21 still has to synthesize accepted, rejected, and near-miss evidence into the findings report the user actually asked for`
-- Next intended commit: `S21 findings and throwaways materializer`
+- Commit scope: `s21-findings-and-throwaways-materializer`
+- Why this commit exists: consolidate the useful evidence from interpretation, rejection, operator, and resurfacing stages into one canonical report the user can actually read
+- Stages touched: `S21`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_findings_and_throwaways.py`, `tests/test_materialize_findings_and_throwaways.py`, `package.json`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_unrealized_ideas_index.py`, `npm run codecontext:scope -- scripts/materialize_stranded_result_ledger.py`, `rg -n "review_packets|shortlist_items|selective_interpretations|transition_state_candidates|stranded_resurfacing_candidates|interpretation_rejections|holdout_echoes" sql/paperview_schema.sql scripts tests package.json`, `sed -n '1,280p' scripts/materialize_unrealized_ideas_index.py`, `sed -n '1,260p' scripts/materialize_stranded_result_ledger.py`, `sed -n '1,260p' tests/test_materialize_unrealized_ideas_index.py`, `rg -n "CREATE TABLE IF NOT EXISTS (bridge_candidates|composition_candidates|contrast_candidates|negative_space_candidates|transition_state_candidates|stranded_resurfacing_candidates|review_packets|shortlist_items)" sql/paperview_schema.sql`, `sed -n '1,260p' scripts/materialize_shortlist.py`, `sed -n '1,240p' tests/test_ingest_selective_interpretations.py`, `rg -n "CREATE TABLE IF NOT EXISTS anchors|CREATE TABLE IF NOT EXISTS agitator_patterns" sql/paperview_schema.sql`, `sqlite3 data/structural-analogy/paperview.sqlite3 ".schema anchors" ".schema agitator_patterns"`, `npm run codecontext:py -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- tests/test_materialize_findings_and_throwaways.py`, `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run store:materialize-findings-and-throwaways -- --run-id findings-and-throwaways-20260328`, `python3 - <<'PY' ... findings metrics and section counts ... PY`, `npm run codecontext:diff -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:diff -- tests/test_materialize_findings_and_throwaways.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/findings-and-throwaways-20260328/findings_and_throwaways.md`, `data/structural-analogy/runs/findings-and-throwaways-20260328/findings_and_throwaways.jsonl`, `data/structural-analogy/runs/findings-and-throwaways-20260328/findings_and_throwaways_metrics.json`
+- Acceptance result: `passed; the report now exists as a canonical per-run artifact that covers accepted findings, rejected interpretations, near-miss operator rows, and stranded q-fin failures`
+- Open risks after commit: `S21 must stay a synthesis-only surface over canonical stage outputs; if the live interpretation coverage remains tiny, the report can still be truthful but sparse`
+- Next intended commit: `S22 transition-state microstructure ledger`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
