@@ -300,6 +300,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S23` | enhanced interpretation batch | `done` | expanded batch + enhanced interpretation ingestion |
 | `S24` | re-materialize all publication surfaces | `done` | all four publication outputs from a single enhanced interpretation run |
 | `S25` | consolidated research output report | `done` | `research_output.md` — single human-readable document with all findings |
+| `S26` | executable test memos | `done` | `reports/test-memo-*.md` — three concrete research programs grounded in the current findings |
 
 ## Completed Stages
 
@@ -1023,6 +1024,44 @@ Current status:
 - the live rerun `npm run store:materialize-research-output -- --run-id research-output-20260328 --unrealized-run-id unrealized-ideas-index-enhanced-20260328 --stranded-run-id stranded-result-ledger-enhanced-20260328 --transition-run-id transition-state-ledger-enhanced-20260328 --findings-run-id findings-and-throwaways-enhanced-20260328` completed successfully and overwrote the repo-root report
 - the stage is complete: `research_output.md` exists at the repo root, leads with the main research thesis, writes up the three best practical leads plus stranded and transition-state findings, and now reads as a research memo over the enhanced publication family rather than as a pipeline-status dump
 
+### `S26` Executable Test Memos
+
+Build:
+
+- add a canonical materializer that writes three standalone test memos under `reports/`
+- each memo must be specific enough for someone with order-book data to start work immediately
+- the three memos are:
+  - `reports/test-memo-queue-refill.md`
+  - `reports/test-memo-auction-handoff.md`
+  - `reports/test-memo-maker-retreat.md`
+- each memo must turn the current research findings into an executable research program with:
+  - a thesis
+  - concrete event or regime definitions
+  - explicit baseline and seam-aware tests where applicable
+  - success metrics
+  - data requirements
+  - known risks
+  - supporting arXiv paper references from the live research memo and publication surfaces
+- register the materializer as an npm command (`store:materialize-test-memos`)
+- add fixture coverage proving the materializer writes all three memo files with the required sections
+
+Accept when:
+
+- `reports/` exists at the repo root and contains the three named memos
+- each memo reads like an immediately executable research program, not like a pipeline report
+- the materializer is wired as an npm command and can be re-run idempotently
+
+Current status:
+
+- the `S26` commit adds the canonical memo materializer in `scripts/materialize_test_memos.py`
+- the staged command surface now includes `npm run store:materialize-test-memos`
+- fixture coverage in `tests/test_materialize_test_memos.py` proves the materializer writes all three memo files with the required executable sections and paper references
+- the live rerun `npm run store:materialize-test-memos -- --run-id test-memos-20260328` completed successfully and wrote:
+  - `reports/test-memo-queue-refill.md`
+  - `reports/test-memo-auction-handoff.md`
+  - `reports/test-memo-maker-retreat.md`
+- the stage is complete: the strongest current seams now have standalone research-program memos that can be rerun from canonical state instead of living as one-off docs
+
 ---
 
 ## Development Policy
@@ -1160,15 +1199,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s25-research-memo-rewrite`
-- Why this commit exists: the first `S25` report satisfied the root-output contract but still read like a publication-surface inventory; this fix rewrites `research_output.md` as a real research memo that leads with the thesis, practical leads, stranded results, seam map, honest funnel, and concrete next actions
-- Stages touched: `S25`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_research_output.py`, `tests/test_materialize_research_output.py`, `research_output.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_research_output.py`, `npm run codecontext:py -- scripts/materialize_research_output.py`, `npm run codecontext:py -- tests/test_materialize_research_output.py`, `python3 -m unittest -v tests.test_materialize_research_output`, `npm run store:materialize-research-output -- --run-id research-output-20260328 --unrealized-run-id unrealized-ideas-index-enhanced-20260328 --stranded-run-id stranded-result-ledger-enhanced-20260328 --transition-run-id transition-state-ledger-enhanced-20260328 --findings-run-id findings-and-throwaways-enhanced-20260328`, `npm run codecontext:diff -- scripts/materialize_research_output.py`, `npm run codecontext:diff -- tests/test_materialize_research_output.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_research_output`, `npm run docs:lint`
-- Artifacts produced: `research_output.md`
-- Acceptance result: `complete; the root report now leads with the core thesis, writes up the best practical leads and stranded findings in prose, includes the seam map and honest funnel, and removes publication-id / score-dump style output from the repo-root memo`
-- Open risks after commit: `none inside S25; future work is new research or new stages, not more root-report cleanup`
+- Commit scope: `s26-test-memos`
+- Why this commit exists: convert the current research memo into three immediately executable test programs for queue/refill, auction handoff, and maker-retreat work instead of doing more discovery or pipeline expansion
+- Stages touched: `S26`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_test_memos.py`, `tests/test_materialize_test_memos.py`, `package.json`, `reports/test-memo-queue-refill.md`, `reports/test-memo-auction-handoff.md`, `reports/test-memo-maker-retreat.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_test_memos.py`, `npm run codecontext:py -- tests/test_materialize_test_memos.py`, `python3 -m unittest -v tests.test_materialize_test_memos`, `npm run store:materialize-test-memos -- --run-id test-memos-20260328`, `npm run codecontext:diff -- scripts/materialize_test_memos.py`, `npm run codecontext:diff -- tests/test_materialize_test_memos.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_test_memos`, `npm run docs:lint`
+- Artifacts produced: `reports/test-memo-queue-refill.md`, `reports/test-memo-auction-handoff.md`, `reports/test-memo-maker-retreat.md`
+- Acceptance result: `complete; all three memos now exist under reports/, contain executable definitions and test designs, and are generated by the canonical stage command from the current research state`
+- Open risks after commit: `none inside S26; follow-on work is executing the memos, not rewriting them`
 - Next intended commit: `none`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
