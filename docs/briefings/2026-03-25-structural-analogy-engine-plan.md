@@ -1018,10 +1018,10 @@ Current status:
 
 - the `S25` commit adds the canonical root-level materializer in `scripts/materialize_research_output.py`
 - the materializer reads only the four completed enhanced publication surfaces and overwrites `research_output.md` at the repo root on each run
-- fixture coverage in `tests/test_materialize_research_output.py` proves the generated report is non-empty and contains all six required sections
+- fixture coverage in `tests/test_materialize_research_output.py` proves the generated report is non-empty, contains the thesis-led memo sections, and does not leak publication-id style pipeline fields back into the root report
 - the staged command surface now includes `npm run store:materialize-research-output`
 - the live rerun `npm run store:materialize-research-output -- --run-id research-output-20260328 --unrealized-run-id unrealized-ideas-index-enhanced-20260328 --stranded-run-id stranded-result-ledger-enhanced-20260328 --transition-run-id transition-state-ledger-enhanced-20260328 --findings-run-id findings-and-throwaways-enhanced-20260328` completed successfully and overwrote the repo-root report
-- the stage is complete: `research_output.md` exists at the repo root, contains all six sections, and reads as a research memo over the enhanced publication family rather than as a pipeline-status dump
+- the stage is complete: `research_output.md` exists at the repo root, leads with the main research thesis, writes up the three best practical leads plus stranded and transition-state findings, and now reads as a research memo over the enhanced publication family rather than as a pipeline-status dump
 
 ---
 
@@ -1160,15 +1160,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s25-research-output-report`
-- Why this commit exists: add the consolidated research output materializer that produces a single human-readable `research_output.md` from all four publication surfaces, and make it the mandatory final pipeline step
+- Commit scope: `s25-research-memo-rewrite`
+- Why this commit exists: the first `S25` report satisfied the root-output contract but still read like a publication-surface inventory; this fix rewrites `research_output.md` as a real research memo that leads with the thesis, practical leads, stranded results, seam map, honest funnel, and concrete next actions
 - Stages touched: `S25`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_research_output.py`, `tests/test_materialize_research_output.py`, `package.json`, `research_output.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_research_output.py`, `npm run codecontext:py -- tests/test_materialize_research_output.py`, `python3 -m unittest -v tests.test_materialize_research_output`, `npm run store:materialize-research-output -- --run-id research-output-20260328 --unrealized-run-id unrealized-ideas-index-enhanced-20260328 --stranded-run-id stranded-result-ledger-enhanced-20260328 --transition-run-id transition-state-ledger-enhanced-20260328 --findings-run-id findings-and-throwaways-enhanced-20260328`, `npm run codecontext:diff -- scripts/materialize_research_output.py`, `npm run codecontext:diff -- tests/test_materialize_research_output.py`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_research_output.py`, `tests/test_materialize_research_output.py`, `research_output.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_research_output.py`, `npm run codecontext:py -- scripts/materialize_research_output.py`, `npm run codecontext:py -- tests/test_materialize_research_output.py`, `python3 -m unittest -v tests.test_materialize_research_output`, `npm run store:materialize-research-output -- --run-id research-output-20260328 --unrealized-run-id unrealized-ideas-index-enhanced-20260328 --stranded-run-id stranded-result-ledger-enhanced-20260328 --transition-run-id transition-state-ledger-enhanced-20260328 --findings-run-id findings-and-throwaways-enhanced-20260328`, `npm run codecontext:diff -- scripts/materialize_research_output.py`, `npm run codecontext:diff -- tests/test_materialize_research_output.py`, `npm run docs:lint`
 - Tests run: `python3 -m unittest -v tests.test_materialize_research_output`, `npm run docs:lint`
 - Artifacts produced: `research_output.md`
-- Acceptance result: `complete; the consolidated root report now exists, contains all six required sections, and synthesizes the enhanced publication surfaces as research findings`
-- Open risks after commit: `none inside S25; the canonical plan is now fully complete unless a new stage is added`
+- Acceptance result: `complete; the root report now leads with the core thesis, writes up the best practical leads and stranded findings in prose, includes the seam map and honest funnel, and removes publication-id / score-dump style output from the repo-root memo`
+- Open risks after commit: `none inside S25; future work is new research or new stages, not more root-report cleanup`
 - Next intended commit: `none`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

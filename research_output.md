@@ -1,153 +1,77 @@
-# Research Output
+# Research Memo
 
-## Executive Summary
+There may be executable edge in modeling passive quote value immediately after shocks, auctions, or maker withdrawals, especially when refill timing and queue dynamics diverge from naive displayed-depth assumptions.
 
-The strongest cross-domain clue is `bridge:queue_value_passive_quoting__refill_lag_local_shock`: Passive quote value after a shock appears to depend on both queue priority and liquidity refill lag rather than on spread alone.
-The stranded q-fin resurfacing pass produced concrete execution-style results, led by `stranded_qfin:2106.00581` and `adaptive execution with impact-aware control`.
-The clearest microstructure seam is `near auction handoff and queue value`: Queue value appears to change abruptly at the auction-to-continuous transition, suggesting a distinct post-uncrossing quoting regime.
-The remaining throwaways still matter because they separate explicit rejections from high-value near misses and stranded failures that deserve another research pass.
+## Three Best Practical Leads
 
-## Unrealized Cross-Domain Ideas
+### 1. Post-shock passive quoting via queue value plus refill lag
 
-### 1. Bridge packet: queue_value_passive_quoting x refill_lag_local_shock
+What it is: Passive quote value after a shock appears to depend on both queue priority and liquidity refill lag rather than on spread alone.
+Why the system surfaced it: the queue/refill pairing is the only cross-domain idea that survived all the way to publication, and the same motif kept recurring across bridge, composition, and transition-state evidence instead of appearing as a one-off packet.
+What papers back it: `1902.10743` (From Glosten-Milgrom to the whole limit order book and applications to financial regulation), `2408.03181` (Correlation emergence in two coupled simulated limit order books), `2406.04969` (An Algebraic Framework for the Modeling of Limit Order Books), `2009.02808` (Limit Order Book (LOB) shape modeling in presence of heterogeneously informed market participants), `1005.0182` (A Multi Agent Model for the Limit Order Book Dynamics).
+First test: Measure queue-position edge after volatility shocks with refill-time controls on recent LOB data.
+Gap remaining: The literature isolates queue value and resiliency separately and stops short of an execution rule that combines them. The missing piece is a live rule that ties shock state, queue position, and refill timing into one quoting policy.
 
-- publication id: `bridge:queue_value_passive_quoting__refill_lag_local_shock`
-- classification: `COMPOSITIONAL_CANDIDATE`
-- confidence: `medium`
-- result: Passive quote value after a shock appears to depend on both queue priority and liquidity refill lag rather than on spread alone.
-- modern equivalent: post-shock passive quoting in electronic books
-- first test: Measure queue-position edge after volatility shocks with refill-time controls on recent LOB data.
-- why unrealized: The literature isolates queue value and resiliency separately and stops short of an execution rule that combines them.
-- holdout echoes:
-  - `1902.10743` | From Glosten-Milgrom to the whole limit order book and applications to financial regulation | echo `0.827148`
-  - `2408.03181` | Correlation emergence in two coupled simulated limit order books | echo `0.78294`
-  - `2406.04969` | An Algebraic Framework for the Modeling of Limit Order Books | echo `0.766262`
+### 2. Auction-to-continuous-book transition seam
 
-## Stranded Q-Fin Results
+What it is: Auction price formation may hand off into a temporarily underfilled book where liquidity refill lags price discovery. Queue value appears to change abruptly at the auction-to-continuous transition, suggesting a distinct post-uncrossing quoting regime.
+Why the system surfaced it: the auction seam survived twice as a transition-state publication surface and separately as an accepted bridge lead, which means the handoff signal appears both in direct microstructure papers and in cross-domain recombination.
+What papers back it: `2101.03086` (Market Making with Stochastic Liquidity Demand: Simultaneous Order Arrival and Price Change Forecasts), `1011.6402` (The Price Impact of Order Book Events), `cond-mat/0210475` (Statistical theory of the continuous double auction).
+First test: Measure whether queue priority gained immediately after auction uncrossing predicts short-horizon adverse selection. Then test whether refill-speed asymmetry in the same post-uncrossing window adds incremental signal beyond queue priority alone.
+Gap remaining: Need a venue-by-venue definition of the auction-to-book state boundary. The seam still needs a venue-specific definition of when auction logic hands off to continuous-book logic.
 
-### 1. 2106.00581
+### 3. Maker-retreat regime switch for queue-based quoting
 
-- publication id: `stranded_qfin:2106.00581`
-- confidence: `medium`
-- priority tier: `p2`
-- result: The paper offers a concrete illiquidity-aware execution control that still looks testable on modern data.
-- why stranded: It reads like mathematical finance rather than a practitioner-ready execution template, so the result never surfaced as a live strategy clue.
-- instrument assumed: intraday optimal execution under temporary impact
-- modern equivalent: adaptive execution with impact-aware control
-- first test: Re-estimate the proposed impact-aware control on current intraday data and compare it to simpler adaptive execution baselines.
-- gap to close: Need evidence that the control law survives modern queue dynamics and hidden-liquidity behavior.
+What it is: Displayed depth can lose protective value when makers retreat under stress, changing what queue position is worth.
+Why the system surfaced it: the accepted bridge says displayed depth stops being reliable protection when makers back away, and the same queue-centric microstructure papers keep reappearing in the near-miss set, which points to a regime switch rather than a generic liquidity story.
+What papers back it: `1005.0182` (A Multi Agent Model for the Limit Order Book Dynamics), `2009.02808` (Limit Order Book (LOB) shape modeling in presence of heterogeneously informed market participants), `2101.03086` (Market Making with Stochastic Liquidity Demand: Simultaneous Order Arrival and Price Change Forecasts).
+First test: Backtest queue survival and fill quality when maker inventory stress indicators spike.
+Gap remaining: the lead still lacks a dedicated transition-state ledger entry, so the maker-withdrawal regime has an accepted interpretation but not yet a publication-grade representative seam or canonical representative paper.
 
-### 2. 2204.08581
+## The Stranded Results That Came Back
 
-- publication id: `stranded_qfin:2204.08581`
-- confidence: `high`
-- priority tier: `p2`
-- result: Machine-learning surrogates can speed the search for near-optimal execution schedules under parametric impact models.
-- why stranded: The result is practical but remained stranded inside execution-model calibration language instead of being promoted as a deployable trading workflow.
-- instrument assumed: algorithmic execution in liquid futures or equities
-- modern equivalent: execution policy search with fast surrogates
-- first test: Replicate the surrogate-assisted execution policy on newer fragmented limit-order-book data with realistic fees.
-- gap to close: Need to show that the surrogate remains stable under venue fragmentation and regime shifts.
+### 1. 2106.00581 — $N$-player and Mean-field Games in Itô-diffusion Markets with Competitive or Homophilous Interaction (2021-06-14)
 
-## Transition-State Microstructure Seams
+What it is in plain language: The paper offers a concrete illiquidity-aware execution control that still looks testable on modern data.
+What changed since publication: modern depth feeds, cheaper intraday calibration, and queue-aware backtesting infrastructure make an impact-aware control law much easier to test now than it was in 2021.
+Why it matters now: the old result reads like math-finance control theory, but today it can be treated as a concrete adaptive execution policy for fragmented electronic books. Modern equivalent: adaptive execution with impact-aware control
+First test: Re-estimate the proposed impact-aware control on current intraday data and compare it to simpler adaptive execution baselines.
+Gap remaining: Need evidence that the control law survives modern queue dynamics and hidden-liquidity behavior.
 
-### 1. near auction handoff and queue value
+### 2. 2204.08581 — On Parametric Optimal Execution and Machine Learning Surrogates (2023-10-29)
 
-- publication id: `transition_state:near_transition_auction_queue:2101.03086`
-- representative paper: `2101.03086`
-- confidence: `medium`
-- priority tier: `p1`
-- result: Queue value appears to change abruptly at the auction-to-continuous transition, suggesting a distinct post-uncrossing quoting regime.
-- why unrealized: Auction studies and queue-value studies are adjacent but stop short of a combined transition-state hypothesis.
-- instrument assumed: opening or closing auction transition in lit books
-- modern equivalent: auction handoff queue-value model
-- first test: Measure whether queue priority gained immediately after auction uncrossing predicts short-horizon adverse selection.
-- gap to close: Need a venue-by-venue definition of the auction-to-book state boundary.
+What it is in plain language: Machine-learning surrogates can speed the search for near-optimal execution schedules under parametric impact models.
+What changed since publication: surrogate-model tooling, GPU inference, and broader venue-fragmented execution data make fast policy search much more operationally plausible now than when the paper first appeared.
+Why it matters now: the original result sat inside calibration language, but today it looks like a practical execution-research workflow for searching policy space quickly. Modern equivalent: execution policy search with fast surrogates
+First test: Replicate the surrogate-assisted execution policy on newer fragmented limit-order-book data with realistic fees.
+Gap remaining: Need to show that the surrogate remains stable under venue fragmentation and regime shifts.
 
-### 2. near auction handoff and refill resiliency
+## The Transition-State Seam Map
 
-- publication id: `transition_state:near_transition_auction_refill:1011.6402`
-- representative paper: `1011.6402`
-- confidence: `medium`
-- priority tier: `p1`
-- result: Liquidity refill after auction uncrossing may lag the new price enough to create a brief execution edge.
-- why unrealized: The literature frames the phenomenon as market design and resiliency, not as a trading or quoting signal.
-- instrument assumed: post-auction spread and depth normalization
-- modern equivalent: auction handoff refill-lag monitor
-- first test: Test refill-speed asymmetry immediately after auction uncrossing against naive post-auction mean-reversion signals.
-- gap to close: Need microsecond-resolution venue data to separate refill from directional continuation.
+- queue x refill: evidenced. Passive quote value after a shock appears to depend on both queue priority and liquidity refill lag rather than on spread alone. This seam has the strongest support because it is already a published cross-domain idea and keeps reappearing in the near-miss set.
+- auction x refill: evidenced. Liquidity refill after auction uncrossing may lag the new price enough to create a brief execution edge. The seam is grounded by `1011.6402` (The Price Impact of Order Book Events) and the accepted auction/refill bridge.
+- auction x queue: evidenced. Queue value appears to change abruptly at the auction-to-continuous transition, suggesting a distinct post-uncrossing quoting regime. The seam is grounded by `2101.03086` (Market Making with Stochastic Liquidity Demand: Simultaneous Order Arrival and Price Change Forecasts) and reinforced by the older auction microstructure backdrop in `cond-mat/0210475` (Statistical theory of the continuous double auction).
+- maker-stress x queue: provisional evidence. Displayed depth can lose protective value when makers retreat under stress, changing what queue position is worth. It has an accepted interpretation but not yet a dedicated ledger entry.
+- parity x refill: speculative. The seam still shows up in transition and bridge evidence, but the current run preserves it only as a rejection (`invalid_enum:classification:BAD_CLASS`) plus the recurring near miss around `1011.6402` (The Price Impact of Order Book Events).
 
-## Near-Misses and Throwaways
+## The Conversion Funnel
 
-### Rejected Interpretations
+The system is strong at discovery and weak at synthesis.
 
-- `transition_state:near_transition_parity_repair:2406.04969` | reason `unknown_batch_item_id`
-  title: no matched packet
-- `transition_state:near_transition_maker_queue:UNKNOWN` | reason `unknown_batch_item_id`
-  title: no matched packet
-- `bridge:parity_propagation__queue_value_passive_quoting` | reason `invalid_enum:classification:BAD_CLASS`
-  title: no matched packet
+The search started with 17,323 scored discovery papers, narrowed to 24 shortlist items, then to 8 accepted interpretations, and finally to 1 published unrealized cross-domain idea, 2 stranded q-fin results, and 2 transition-state entries.
+What this means: discovery is working. The system is repeatedly finding the same microstructure motif across bridge, composition, transition, and stranded-q-fin paths. What is still weak is synthesis and ledger translation: too many good packets stop at interpretation or remain one step away from a publishable test memo.
 
-### Operator Near-Misses
+## What To Do Next
 
-- `2009.02808` | `bridge` | score `2.441005`
-  title: Limit Order Book (LOB) shape modeling in presence of heterogeneously informed market participants
-  clue: queue_value_passive_quoting x refill_lag_local_shock
-- `cond-mat/0210475` | `bridge` | score `2.354075`
-  title: Statistical theory of the continuous double auction
-  clue: auction_parimutuel_design x refill_lag_local_shock
-- `1005.0182` | `bridge` | score `2.34996`
-  title: A Multi Agent Model for the Limit Order Book Dynamics
-  clue: queue_value_passive_quoting x refill_lag_local_shock
-- `2009.02808` | `composition` | score `3.202651`
-  title: Limit Order Book (LOB) shape modeling in presence of heterogeneously informed market participants
-  clue: queue_value_passive_quoting x refill_lag_local_shock
-- `1207.2946` | `composition` | score `3.156657`
-  title: Microscopic understanding of heavy-tailed return distributions in an agent-based model
-  clue: queue_value_passive_quoting x refill_lag_local_shock
-- `1005.0182` | `composition` | score `3.135477`
-  title: A Multi Agent Model for the Limit Order Book Dynamics
-  clue: queue_value_passive_quoting x refill_lag_local_shock
-- `2205.14699` | `contrast` | score `3.889789`
-  title: Managing Risk in DeFi Portfolios
-  clue: near settlement, lexically far
-- `2201.08875` | `contrast` | score `2.570519`
-  title: Information-Based Trading
-  clue: near auction design, lexically far
-- `2012.13230` | `contrast` | score `2.55789`
-  title: SoK: Lending Pools in Decentralized Finance
-  clue: near settlement, lexically far
-- `1405.5805` | `negative_space` | score `2.930531`
-  title: Micro and Macro Benefits of Random Investments in Financial Markets
-  clue: Dead-end / theorem-only negative anchor
-- `math/0703832` | `negative_space` | score `2.86941`
-  title: Queueing Theoretic Approaches to Financial Price Fluctuations
-  clue: Dead-end / theorem-only negative anchor
-- `0908.0949` | `negative_space` | score `2.863749`
-  title: A queueing theory description of fat-tailed price returns in imperfect financial markets
-  clue: Dead-end / theorem-only negative anchor
-- `2101.03086` | `transition_state` | score `0.702172`
-  title: Market Making with Stochastic Liquidity Demand: Simultaneous Order Arrival and Price Change Forecasts
-  clue: near queue value and refill resiliency
-- `2101.03086` | `transition_state` | score `0.698541`
-  title: Market Making with Stochastic Liquidity Demand: Simultaneous Order Arrival and Price Change Forecasts
-  clue: near auction handoff and queue value
-- `1011.6402` | `transition_state` | score `0.680657`
-  title: The Price Impact of Order Book Events
-  clue: near parity repair and refill resiliency
+Operationalize the queue x refill seam first. Use full-depth order-book data with event markers for volatility shocks, auction uncrossings, fill outcomes, queue position, refill timing, and maker-withdrawal proxies.
+The first test should be an event study plus simulated passive quoting policy: compare a shock-conditioned queue/refill model against naive spread-based passive posting after shocks and immediately after auction uncrossings.
+Success means the seam survives realistic fees and adverse-selection controls: the queue/refill-conditioned policy should improve fill-quality-adjusted expectancy, not just fill rate, across more than one venue or instrument.
+The second test should layer maker withdrawal on top of the same framework. If queue value degrades materially when makers retreat, that turns the current accepted maker bridge into a concrete regime switch rather than a narrative add-on.
 
-### Stranded Q-Fin Failures
+## The Near-Misses That Matter
 
-- `1712.10105` | reason `interpretation_classification:NO_TRANSLATION`
-  title: Variance swaps under Lévy process with stochastic volatility and stochastic interest rate in incomplete markets
-- `1903.06928` | reason `not_shortlisted_for_interpretation`
-  title: Active and Passive Portfolio Management with Latent Factors
-- `2005.04297` | reason `not_shortlisted_for_interpretation`
-  title: Pricing Path-Dependent Derivatives under Multiscale Stochastic Volatility Models: a Malliavin Representation
-
-## What to Investigate Next
-
-- Validate `bridge:queue_value_passive_quoting__refill_lag_local_shock` on recent order-book data: Measure queue-position edge after volatility shocks with refill-time controls on recent LOB data.
-- Treat `near auction handoff and queue value` as the top transition-state seam and test: Measure whether queue priority gained immediately after auction uncrossing predicts short-horizon adverse selection.
-- Resurface `2106.00581` into a live execution memo: Re-estimate the proposed impact-aware control on current intraday data and compare it to simpler adaptive execution baselines.
-- Review stranded failure `1712.10105` to decide whether it needs a new interpretation pass or explicit rejection.
+- `2009.02808` (Limit Order Book (LOB) shape modeling in presence of heterogeneously informed market participants) is worth a second look because it keeps surfacing as the top queue/refill near miss and may supply the state variables for shock-conditioned passive quoting.
+- `cond-mat/0210475` (Statistical theory of the continuous double auction) is worth a second look because it is the cleanest older foundation for the auction-to-book transition seam and keeps reappearing around auction/refill evidence.
+- `1005.0182` (A Multi Agent Model for the Limit Order Book Dynamics) is worth a second look because it gives a maker-behavior and queue-dynamics lens on why displayed depth may lose protective value under stress.
+- `2205.14699` (Managing Risk in DeFi Portfolios) is an interesting cross-domain signal because DeFi settlement and liquidation risk may rhyme with fragmented execution stress even though the venue structure is different.
+- `2012.13230` (SoK: Lending Pools in Decentralized Finance) is an interesting cross-domain signal because pool depletion and refill mechanics may transfer into how the system thinks about liquidity recovery after stress.
