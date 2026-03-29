@@ -53,7 +53,7 @@ class MaterializeProbesTests(unittest.TestCase):
         finally:
             conn.close()
 
-    def test_repo_transition_state_configs_include_required_families(self):
+    def test_repo_probe_configs_include_required_anchor_families(self):
         anchors_payload = yaml.safe_load((ROOT / "configs" / "anchors.yaml").read_text(encoding="utf-8"))
         probes_payload = yaml.safe_load((ROOT / "configs" / "probes.yaml").read_text(encoding="utf-8"))
 
@@ -67,6 +67,11 @@ class MaterializeProbesTests(unittest.TestCase):
                 "auction_handoff",
                 "maker_retreat_inventory_stress",
                 "parity_propagation_delayed_repair",
+                "market_design_seams",
+                "settlement_resolution_seams",
+                "participant_pathologies",
+                "state_graph_inconsistencies",
+                "lifecycle_professionalization",
             }.issubset(anchor_ids)
         )
         self.assertTrue(

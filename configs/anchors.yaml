@@ -175,6 +175,120 @@ anchors:
     min_keyword_hits: 2
     notes: Transition-state anchor for delayed convergence and slow repair after cross-market dislocation.
     tags: [parity, delayed-repair, transition-state]
+  - anchor_id: market_design_seams
+    label: Market-design seams
+    anchor_type: positive
+    paper_ids: ["0711.3581", "1009.2329", "1205.4008", "1612.08486", "2202.00127", "2212.07827", "2302.04184"]
+    keywords:
+      - market design
+      - mechanism design
+      - matching engine
+      - order priority
+      - tick size
+      - market structure
+      - price discovery failure
+      - regulatory arbitrage
+      - dark pool
+      - venue fragmentation
+      - best execution
+      - order protection rule
+      - maker-taker
+      - inverted venue
+    allowed_categories: [q-fin, econ, cs]
+    min_keyword_hits: 2
+    notes: Positive anchor for rule-driven seams where venue design, routing, or order-handling rules create exploitable gaps.
+    tags: [market-design, rules, fragmentation, broadening-pass]
+  - anchor_id: settlement_resolution_seams
+    label: Settlement / resolution seams
+    anchor_type: positive
+    paper_ids: ["2205.14699", "2012.13230", "1205.1533", "1304.5065", "1401.3994", "1604.00254"]
+    keywords:
+      - settlement
+      - clearing
+      - netting
+      - margin
+      - collateral
+      - delivery failure
+      - fails-to-deliver
+      - central counterparty
+      - ccp
+      - novation
+      - close-out
+      - default waterfall
+      - variation margin
+      - initial margin
+    allowed_categories: [q-fin, econ, cs]
+    min_keyword_hits: 2
+    notes: Positive anchor for seams that appear between execution and final settlement, including CCP, collateral, and DeFi-style resolution mechanics.
+    tags: [settlement, clearing, collateral, broadening-pass]
+  - anchor_id: participant_pathologies
+    label: Participant pathologies
+    anchor_type: positive
+    paper_ids: ["0711.3581", "1110.4811", "1109.4726", "1511.00740", "2009.14818", "2308.08683"]
+    keywords:
+      - noise trader
+      - retail flow
+      - toxic flow
+      - informed trading
+      - adverse selection
+      - cream-skimming
+      - predatory trading
+      - latency arbitrage
+      - spoofing
+      - layering
+      - quote stuffing
+      - momentum ignition
+      - order anticipation
+    allowed_categories: [q-fin, econ, physics, cs]
+    min_keyword_hits: 2
+    notes: Positive anchor for repeatable patterns caused by participant type, manipulation, or asymmetric speed and information.
+    tags: [participants, pathology, toxicity, broadening-pass]
+  - anchor_id: state_graph_inconsistencies
+    label: State-graph inconsistencies
+    anchor_type: positive
+    paper_ids: ["0803.3093", "physics/0602171", "cond-mat/0202391", "1711.08799", "1407.7328", "2409.00270"]
+    keywords:
+      - cross-listing
+      - dual listing
+      - basis
+      - basis trade
+      - cash-futures basis
+      - etf premium
+      - etf discount
+      - nav deviation
+      - index arbitrage
+      - triangular arbitrage
+      - cross-currency
+      - fx triangle
+      - put-call parity
+      - conversion
+      - reversal
+      - synthetic
+    allowed_categories: [q-fin, econ, physics, cond-mat]
+    min_keyword_hits: 2
+    notes: Broader linked-market anchor for temporary disagreement across related instruments, venues, and synthetic constructions.
+    tags: [state-graph, parity, basis, broadening-pass]
+  - anchor_id: lifecycle_professionalization
+    label: Lifecycle / professionalization
+    anchor_type: positive
+    paper_ids: ["1211.1919", "1311.4160", "1511.07773", "2112.07386", "2212.07827", "2302.04184"]
+    keywords:
+      - market maturation
+      - professionalization
+      - electronification
+      - hft entry
+      - algorithmic trading impact
+      - market quality
+      - liquidity provision evolution
+      - fragmentation
+      - consolidation
+      - competition among venues
+      - new market
+      - emerging market microstructure
+    allowed_categories: [q-fin, econ, physics, cs]
+    min_keyword_hits: 2
+    notes: Positive anchor for how failure modes change as markets professionalize, electronify, and become more tightly arbitraged.
+    tags: [lifecycle, maturation, professionalization, broadening-pass]
   - anchor_id: negative_anchor
     label: Dead-end / theorem-only negative anchor
     anchor_type: negative
