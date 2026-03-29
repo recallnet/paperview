@@ -570,6 +570,54 @@ CREATE TABLE IF NOT EXISTS transition_state_candidates (
 CREATE INDEX IF NOT EXISTS idx_transition_state_candidates_run_pattern_rank
 ON transition_state_candidates(run_id, pattern_id, transition_state_rank);
 
+-- @context decision -- S31 requires dedicated state-graph operator rows because linked-market
+-- inconsistency ideas were previously buried inside generic bridge/composition outputs. Persisting
+-- them separately lets later shortlist and publication stages reason about this lane as a
+-- first-class operator family with explicit provenance.
+CREATE TABLE IF NOT EXISTS state_graph_candidates (
+  run_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  representative_view_id INTEGER,
+  state_graph_candidate_score REAL NOT NULL,
+  state_graph_rank INTEGER NOT NULL,
+  diamond_score_run_id TEXT NOT NULL,
+  probe_run_id TEXT NOT NULL,
+  bridge_run_id TEXT NOT NULL,
+  composition_run_id TEXT NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, paper_id),
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (representative_view_id) REFERENCES text_views(view_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_state_graph_candidates_run_rank
+ON state_graph_candidates(run_id, state_graph_rank);
+
+-- @context decision -- Participant-pathology candidates also need their own canonical operator
+-- surface. Without this table, behavior-driven seams remain implicit inside broader lane scores
+-- and generic operators, which prevents later stages from enforcing per-lane diversity and
+-- operator provenance.
+CREATE TABLE IF NOT EXISTS participant_pathology_candidates (
+  run_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  representative_view_id INTEGER,
+  participant_pathology_candidate_score REAL NOT NULL,
+  participant_pathology_rank INTEGER NOT NULL,
+  diamond_score_run_id TEXT NOT NULL,
+  probe_run_id TEXT NOT NULL,
+  bridge_run_id TEXT NOT NULL,
+  composition_run_id TEXT NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, paper_id),
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (representative_view_id) REFERENCES text_views(view_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_participant_pathology_candidates_run_rank
+ON participant_pathology_candidates(run_id, participant_pathology_rank);
+
 -- @context decision -- Stranded resurfacing candidates are a distinct operator surface over the
 -- stranded-alpha q-fin slice, not a copy of the global stranding score table. Persisting them
 -- canonically keeps later findings and publication stages tied to an explicit resurfacing queue

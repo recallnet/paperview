@@ -310,7 +310,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `DS5` | holdout-echo validation | `done` | 51 pre-2024 candidates evaluated; 26 have meaningful 2024+ echoes |
 | `S29` | six-lane discovery expansion | `done` | canonical `diamond_lane_scores` surface live for 6 lanes; lifecycle remains auxiliary and the top 20 spans 4 lanes with transition-state at 20% |
 | `S30` | diamond score and representation redesign | `done` | canonical `diamond_scores` surface live with unified scoring and problem/mechanism/regime/stranding views; top 20 still spans 4 lanes but market-design remains absent from the top band |
-| `S31` | eight-operator materialization | `pending` | bridge, composition, contrast, negative-space, transition-state, state-graph, participant-pathology, stranded-qfin operators |
+| `S31` | eight-operator materialization | `done` | all 8 canonical operator surfaces are now live, including new `state_graph` and `participant_pathology` tables over the unified `diamond_scores` ranking |
 | `S32` | shortlist-gated diamond interpretation | `pending` | top-40 + per-lane interpretation with `TRANSITION_SEAM` class, strict JSON |
 | `S33` | six publication surfaces + diamond board | `pending` | unrealized index, stranded ledger, transition ledger, early-market ledger, findings, diamond board |
 | `S34` | empirical test memos v2 | `pending` | queue x refill, auction handoff, maker-retreat memos with hypothesis/data/baseline/metric/fail-fast |
@@ -1561,6 +1561,11 @@ Current status:
 - `npm run store:materialize-compositions`
 - `npm run store:materialize-contrasts`
 - `npm run store:materialize-negative-space`
+- `npm run store:materialize-transition-state-scores`
+- `npm run store:materialize-transition-state-candidates`
+- `npm run store:materialize-state-graph-candidates`
+- `npm run store:materialize-participant-pathology-candidates`
+- `npm run store:materialize-stranded-resurfacing-candidates`
 - `npm run store:materialize-review-packets`
 - `npm run store:materialize-shortlist`
 - `npm run store:materialize-selective-interpretation-batch`
@@ -1656,15 +1661,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s30-diamond-score-redesign`
-- Why this commit exists: unify the six-lane score surface into one canonical `diamond_score` contract and expose explicit problem, mechanism, regime, and stranding views so later shortlist, interpretation, and publication stages operate on one auditable ranking surface
-- Stages touched: `S30`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_diamond_scores.py`, `tests/test_materialize_diamond_scores.py`, `package.json`, `sql/paperview_schema.sql`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_diamond_scores.py`, `npm run codecontext:py -- tests/test_materialize_diamond_scores.py`, `python3 -m unittest -v tests.test_materialize_diamond_scores`, `npm run score:materialize-diamond-scores -- --run-id diamond-score-materialization-20260329`, `npm run codecontext:diff -- scripts/materialize_diamond_scores.py`, `npm run codecontext:diff -- tests/test_materialize_diamond_scores.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_diamond_scores`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/diamond-score-materialization-20260329/diamond_score_metrics.json`, `data/structural-analogy/runs/diamond-score-materialization-20260329/diamond_score_top.jsonl`
-- Acceptance result: `ready` — live `diamond_scores` now rank all `17,323` discovery papers under one canonical score with explicit problem/mechanism/regime/stranding views; the top 20 still spans `4` lanes and transition-state contributes `25%`
-- Open risks after commit: `market_design` still has `0` top-20 rows under the unified score, so S31 must broaden operator evidence rather than relying on score tuning alone to lift that lane`
-- Next intended commit: `S31 eight-operator materialization`
+- Commit scope: `s31-missing-operator-surfaces`
+- Why this commit exists: complete the eight-operator stack by adding dedicated `state_graph` and `participant_pathology` operator surfaces grounded in the new `diamond_scores` ranking instead of leaving those lanes implied only through generic bridge/composition outputs
+- Stages touched: `S31`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_state_graph_candidates.py`, `scripts/materialize_participant_pathology_candidates.py`, `tests/test_materialize_state_graph_candidates.py`, `tests/test_materialize_participant_pathology_candidates.py`, `package.json`, `sql/paperview_schema.sql`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_state_graph_candidates.py`, `npm run codecontext:py -- scripts/materialize_participant_pathology_candidates.py`, `npm run codecontext:py -- tests/test_materialize_state_graph_candidates.py`, `npm run codecontext:py -- tests/test_materialize_participant_pathology_candidates.py`, `python3 -m unittest -v tests.test_materialize_state_graph_candidates tests.test_materialize_participant_pathology_candidates`, `npm run store:materialize-state-graph-candidates -- --run-id state-graph-candidate-materialization-20260329`, `npm run store:materialize-participant-pathology-candidates -- --run-id participant-pathology-candidate-materialization-20260329`, `npm run codecontext:diff -- scripts/materialize_state_graph_candidates.py`, `npm run codecontext:diff -- scripts/materialize_participant_pathology_candidates.py`, `npm run codecontext:diff -- tests/test_materialize_state_graph_candidates.py`, `npm run codecontext:diff -- tests/test_materialize_participant_pathology_candidates.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_state_graph_candidates tests.test_materialize_participant_pathology_candidates`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/state-graph-candidate-materialization-20260329/state_graph_candidate_metrics.json`, `data/structural-analogy/runs/state-graph-candidate-materialization-20260329/state_graph_candidates.jsonl`, `data/structural-analogy/runs/participant-pathology-candidate-materialization-20260329/participant_pathology_candidate_metrics.json`, `data/structural-analogy/runs/participant-pathology-candidate-materialization-20260329/participant_pathology_candidates.jsonl`
+- Acceptance result: `ready` — the missing operator families are now live: `state_graph` produced `24` candidates with top paper `2104.09309`, and `participant_pathology` produced `25` candidates with top paper `1104.0587`; the repo now has all 8 operator surfaces called for by `S31`
+- Open risks after commit: `market_design` is still not a dedicated operator family, so S32 must enforce per-lane shortlist diversity through the new eight-operator stack rather than letting the stronger behavior and state-graph surfaces dominate`
+- Next intended commit: `S32 shortlist-gated diamond interpretation`
 - Signoff status: `ready`
 - Last updated: `2026-03-29`
