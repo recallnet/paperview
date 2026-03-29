@@ -396,6 +396,43 @@ CREATE TABLE IF NOT EXISTS stranded_result_ledger (
 CREATE INDEX IF NOT EXISTS idx_stranded_result_ledger_run_rank
 ON stranded_result_ledger (run_id, ledger_rank);
 
+-- @context decision -- The transition-state ledger is a publication-stage surface over live S19
+-- transition candidates plus accepted interpretations for the same pairing key. Persisting it
+-- canonically keeps microstructure transition findings queryable without collapsing them back into
+-- the broader unrealized index or the q-fin-only stranded ledger.
+CREATE TABLE IF NOT EXISTS transition_state_ledger (
+  run_id TEXT NOT NULL,
+  candidate_run_id TEXT NOT NULL,
+  shortlist_run_id TEXT NOT NULL,
+  interpretation_run_id TEXT NOT NULL,
+  pattern_id TEXT NOT NULL,
+  shortlist_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  published_at TEXT NOT NULL,
+  home_domain TEXT NOT NULL,
+  result_summary TEXT NOT NULL,
+  why_stranded_or_unrealized TEXT NOT NULL,
+  instrument_assumed TEXT NOT NULL,
+  modern_equivalent TEXT NOT NULL,
+  first_test TEXT NOT NULL,
+  gap_to_close TEXT NOT NULL,
+  priority_tier TEXT NOT NULL,
+  relation_type TEXT NOT NULL,
+  ledger_rank INTEGER NOT NULL,
+  transition_state_score REAL NOT NULL,
+  confidence TEXT NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, pattern_id),
+  FOREIGN KEY (pattern_id) REFERENCES agitator_patterns(pattern_id) ON DELETE CASCADE,
+  FOREIGN KEY (shortlist_run_id, shortlist_id) REFERENCES shortlist_items(run_id, shortlist_id) ON DELETE CASCADE,
+  FOREIGN KEY (interpretation_run_id, shortlist_id) REFERENCES selective_interpretations(run_id, shortlist_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_transition_state_ledger_run_rank
+ON transition_state_ledger (run_id, ledger_rank);
+
 -- @context decision -- The realized-market firewall, stranded-alpha slice, and holdout validation
 -- must share one canonical membership surface. Keeping corpus memberships generic avoids baking the
 -- time firewall into ad hoc stage scripts and lets later scoring query the same run-scoped truth.

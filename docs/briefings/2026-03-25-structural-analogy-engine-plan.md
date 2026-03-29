@@ -296,7 +296,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S19` | transition-state operator | `done` | `transition_state_candidates` table + artifacts |
 | `S20` | stranded q-fin resurfacing operator | `done` | `stranded_resurfacing_candidates` table + artifacts |
 | `S21` | findings and throwaways materializer | `done` | `findings_and_throwaways.*` per-run report |
-| `S22` | transition-state microstructure ledger | `pending` | `transition_state_ledger.*` publication surface |
+| `S22` | transition-state microstructure ledger | `done` | `transition_state_ledger.*` publication surface |
 | `S23` | enhanced interpretation batch | `pending` | expanded top-10-20 per operator family interpretation |
 | `S24` | re-materialize all publication surfaces | `pending` | all four publication outputs from a single run |
 
@@ -884,6 +884,20 @@ Accept when:
 - `transition_state_ledger.*` artifacts exist
 - entries are tied to transition-state candidates and interpretations
 
+Current status:
+
+- the `S22` commit adds the canonical publication stage in `scripts/materialize_transition_state_ledger.py`
+- the ledger binds each transition-state publication row to both a live `transition_state_candidates` representative paper and a positive accepted interpretation for the same pairing key from the current shortlist
+- fixture coverage in `tests/test_materialize_transition_state_ledger.py` proves that only pairings with both candidate support and positive interpretations are published
+- the live rerun `npm run store:materialize-transition-state-ledger -- --run-id transition-state-ledger-20260328` completed successfully with:
+  - `entry_count`: `2`
+  - `top_ranked_pattern_id`: `near_transition_queue_refill`
+  - `counts_by_priority_tier`: `p1=2`, `p2=0`, `p3=0`
+- the two live transition-state ledger rows are now:
+  - `near_transition_queue_refill` -> `composition:queue_value_passive_quoting__refill_lag_local_shock` via representative paper `2101.03086`
+  - `near_transition_auction_refill` -> `bridge:auction_parimutuel_design__refill_lag_local_shock` via representative paper `1011.6402`
+- the stage is complete: `transition_state_ledger.md`, `.jsonl`, and `_metrics.json` exist and each published row is tied to both transition-state candidates and canonical interpretations
+
 ### `S23` Enhanced Interpretation Batch
 
 Build:
@@ -1038,15 +1052,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s21-findings-and-throwaways-materializer`
-- Why this commit exists: consolidate the useful evidence from interpretation, rejection, operator, and resurfacing stages into one canonical report the user can actually read
-- Stages touched: `S21`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_findings_and_throwaways.py`, `tests/test_materialize_findings_and_throwaways.py`, `package.json`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_unrealized_ideas_index.py`, `npm run codecontext:scope -- scripts/materialize_stranded_result_ledger.py`, `rg -n "review_packets|shortlist_items|selective_interpretations|transition_state_candidates|stranded_resurfacing_candidates|interpretation_rejections|holdout_echoes" sql/paperview_schema.sql scripts tests package.json`, `sed -n '1,280p' scripts/materialize_unrealized_ideas_index.py`, `sed -n '1,260p' scripts/materialize_stranded_result_ledger.py`, `sed -n '1,260p' tests/test_materialize_unrealized_ideas_index.py`, `rg -n "CREATE TABLE IF NOT EXISTS (bridge_candidates|composition_candidates|contrast_candidates|negative_space_candidates|transition_state_candidates|stranded_resurfacing_candidates|review_packets|shortlist_items)" sql/paperview_schema.sql`, `sed -n '1,260p' scripts/materialize_shortlist.py`, `sed -n '1,240p' tests/test_ingest_selective_interpretations.py`, `rg -n "CREATE TABLE IF NOT EXISTS anchors|CREATE TABLE IF NOT EXISTS agitator_patterns" sql/paperview_schema.sql`, `sqlite3 data/structural-analogy/paperview.sqlite3 ".schema anchors" ".schema agitator_patterns"`, `npm run codecontext:py -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- tests/test_materialize_findings_and_throwaways.py`, `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run store:materialize-findings-and-throwaways -- --run-id findings-and-throwaways-20260328`, `python3 - <<'PY' ... findings metrics and section counts ... PY`, `npm run codecontext:diff -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:diff -- tests/test_materialize_findings_and_throwaways.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/findings-and-throwaways-20260328/findings_and_throwaways.md`, `data/structural-analogy/runs/findings-and-throwaways-20260328/findings_and_throwaways.jsonl`, `data/structural-analogy/runs/findings-and-throwaways-20260328/findings_and_throwaways_metrics.json`
-- Acceptance result: `passed; the report now exists as a canonical per-run artifact that covers accepted findings, rejected interpretations, near-miss operator rows, and stranded q-fin failures`
-- Open risks after commit: `S21 must stay a synthesis-only surface over canonical stage outputs; if the live interpretation coverage remains tiny, the report can still be truthful but sparse`
-- Next intended commit: `S22 transition-state microstructure ledger`
+- Commit scope: `s22-transition-state-microstructure-ledger`
+- Why this commit exists: publish the live transition-state pairings into a dedicated ledger surface instead of leaving them only as candidate queues and findings-report near-misses
+- Stages touched: `S22`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_transition_state_ledger.py`, `tests/test_materialize_transition_state_ledger.py`, `package.json`, `sql/paperview_schema.sql`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_transition_state_candidates.py`, `npm run codecontext:scope -- scripts/materialize_stranded_result_ledger.py`, `rg -n "transition_state_ledger|transition_state" sql/paperview_schema.sql package.json tests scripts/materialize_selective_interpretation_batch.py tests/test_materialize_selective_interpretation_batch.py scripts/materialize_shortlist.py tests/test_materialize_shortlist.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select item_type, count(*) from shortlist_items where run_id='shortlist-materialization-20260328' group by item_type order by item_type;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select shortlist_id, item_type, packet_kind from shortlist_items where run_id='shortlist-materialization-20260328' order by shortlist_rank limit 24;"`, `sed -n '320,430p' sql/paperview_schema.sql`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select shortlist_id, classification, modern_equivalent, result_summary, first_step, why_stranded_or_unrealized, confidence from selective_interpretations where run_id='selective-interpretation-ingestion-20260328' order by shortlist_id;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select item_ref, title, summary_json from review_packets where run_id='review-packet-materialization-20260328' and packet_kind in ('bridge','composition') and item_ref in ('queue_value_passive_quoting__refill_lag_local_shock','auction_parimutuel_design__refill_lag_local_shock','auction_parimutuel_design__queue_value_passive_quoting','maker_stress_inventory_retreat__queue_value_passive_quoting','parity_propagation__refill_lag_local_shock');"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select pattern_id, paper_id, transition_state_rank, transition_state_candidate_score from transition_state_candidates where run_id='transition-state-candidate-materialization-20260328' and transition_state_rank<=3 order by pattern_id, transition_state_rank;"`, `npm run codecontext:py -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:py -- tests/test_materialize_transition_state_ledger.py`, `python3 -m unittest -v tests.test_materialize_transition_state_ledger`, `npm run store:materialize-transition-state-ledger -- --run-id transition-state-ledger-20260328`, `python3 - <<'PY' ... transition-state ledger metrics and top rows ... PY`, `npm run codecontext:diff -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_transition_state_ledger.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_transition_state_ledger`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/transition-state-ledger-20260328/transition_state_ledger.md`, `data/structural-analogy/runs/transition-state-ledger-20260328/transition_state_ledger.jsonl`, `data/structural-analogy/runs/transition-state-ledger-20260328/transition_state_ledger_metrics.json`
+- Acceptance result: `passed; transition-state publication rows now exist as a dedicated ledger tied to both live transition candidates and positive accepted interpretations`
+- Open risks after commit: `the current ledger will still be sparse until S23 expands interpretation coverage across all transition-state pairings`
+- Next intended commit: `S23 enhanced interpretation batch`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

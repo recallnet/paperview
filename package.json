@@ -32,6 +32,7 @@
     "store:materialize-unrealized-ideas-index": "python3 scripts/materialize_unrealized_ideas_index.py",
     "store:materialize-stranded-result-ledger": "python3 scripts/materialize_stranded_result_ledger.py",
     "store:materialize-findings-and-throwaways": "python3 scripts/materialize_findings_and_throwaways.py",
+    "store:materialize-transition-state-ledger": "python3 scripts/materialize_transition_state_ledger.py",
     "score:materialize-stranding": "uv run --with pyyaml python3 scripts/materialize_stranding_scores.py",
     "test:unit": "python3 -m unittest discover -s tests -p 'test_*.py' -v",
     "docs:lint": "recall-docs-governance lint",
