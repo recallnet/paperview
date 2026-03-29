@@ -16,6 +16,11 @@ Current archive groups:
   acquisition workflow. These are preserved together so the archived workflow
   remains coherent without competing from the active root.
 
+- `noncanonical-edge-reset/`
+  Edge-reset slice runners, edge-card generators, and semantic trace helpers
+  from the older extraction-first reset workflow. These are preserved as a
+  group so the archived flow still points at its own card generator.
+
 - `noncanonical-benchmarks/`
   Benchmark utilities that were useful for one-off retrieval evaluation but
   are not part of the canonical staged command surface.
