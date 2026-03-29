@@ -314,6 +314,40 @@ CREATE TABLE IF NOT EXISTS selective_interpretations (
 CREATE INDEX IF NOT EXISTS idx_selective_interpretations_run_classification
 ON selective_interpretations (run_id, classification);
 
+-- @context decision -- S23 expands interpretation coverage beyond shortlist rows, but the
+-- shortlist-gated `selective_interpretations` contract must remain intact so S12 publication
+-- surfaces do not silently widen. The enhanced table stores schema-shaped interpretations against
+-- canonical expanded batch ids and preserves source metadata for later S24 re-materialization.
+CREATE TABLE IF NOT EXISTS enhanced_interpretations (
+  run_id TEXT NOT NULL,
+  batch_run_id TEXT NOT NULL,
+  batch_item_id TEXT NOT NULL,
+  operator_family TEXT NOT NULL,
+  source_kind TEXT NOT NULL,
+  source_run_id TEXT NOT NULL,
+  source_ref TEXT NOT NULL,
+  family_rank INTEGER NOT NULL,
+  source_score REAL NOT NULL,
+  packet_title TEXT NOT NULL,
+  classification TEXT NOT NULL,
+  result_summary TEXT NOT NULL,
+  first_step TEXT NOT NULL,
+  instrument_assumed TEXT NOT NULL,
+  modern_equivalent TEXT NOT NULL,
+  why_stranded_or_unrealized TEXT NOT NULL,
+  gap_to_close TEXT NOT NULL,
+  confidence TEXT NOT NULL,
+  raw_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, batch_item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_enhanced_interpretations_run_classification
+ON enhanced_interpretations (run_id, classification);
+
+CREATE INDEX IF NOT EXISTS idx_enhanced_interpretations_run_family
+ON enhanced_interpretations (run_id, operator_family, family_rank);
+
 -- @context decision -- Holdout echoes are canonical validation artifacts: they connect interpreted
 -- shortlist items to later 2024+ market-adjacent papers so downstream index and ledger stages can
 -- measure whether a pre-2024 idea later surfaced in market discourse.

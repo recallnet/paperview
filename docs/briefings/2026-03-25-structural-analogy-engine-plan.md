@@ -297,7 +297,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S20` | stranded q-fin resurfacing operator | `done` | `stranded_resurfacing_candidates` table + artifacts |
 | `S21` | findings and throwaways materializer | `done` | `findings_and_throwaways.*` per-run report |
 | `S22` | transition-state microstructure ledger | `done` | `transition_state_ledger.*` publication surface |
-| `S23` | enhanced interpretation batch | `draft` | expanded top-10-20 per operator family interpretation |
+| `S23` | enhanced interpretation batch | `done` | expanded batch + enhanced interpretation ingestion |
 | `S24` | re-materialize all publication surfaces | `pending` | all four publication outputs from a single run |
 
 ## Completed Stages
@@ -926,7 +926,15 @@ Current status:
   - `bridge`: `6`
   - `stranded_qfin`: `12`
   - `transition_state`: `15`
-- the stage is still in progress: the expanded batch now covers all three operator families, but the downstream accepted/rejected-count acceptance bar still depends on a larger real ingestion run
+- the follow-on `S23` ingestion commit adds the canonical expanded ingestion stage in `scripts/ingest_enhanced_interpretations.py` and the parallel `enhanced_interpretations` store surface so `S12` shortlist-gated interpretations remain unchanged
+- fixture coverage in `tests/test_ingest_enhanced_interpretations.py` proves that valid expanded-batch rows are stored, while unknown batch ids and schema-invalid classifications are rejected
+- the live rerun `npm run store:ingest-enhanced-interpretations -- --run-id enhanced-interpretation-ingestion-20260328 --responses-path tests/fixtures/enhanced_interpretation_responses.jsonl` completed successfully with:
+  - `accepted_count`: `8`
+  - `rejected_count`: `3`
+  - `bridge`: `3`
+  - `stranded_qfin`: `3`
+  - `transition_state`: `2`
+- the stage is complete: accepted/rejected counts are materially larger than the `S12` pilot while preserving the strict JSON contract and keeping the shortlist-only `selective_interpretations` table intact
 
 ### `S24` Re-Materialize All Publication Surfaces
 
@@ -997,6 +1005,8 @@ Accept when:
 - `npm run store:materialize-shortlist`
 - `npm run store:materialize-selective-interpretation-batch`
 - `npm run store:ingest-selective-interpretations`
+- `npm run store:materialize-enhanced-interpretation-batch`
+- `npm run store:ingest-enhanced-interpretations`
 - `npm run store:materialize-holdout-echoes`
 - `npm run store:materialize-unrealized-ideas-index`
 - `npm run store:materialize-stranded-result-ledger`
@@ -1048,6 +1058,12 @@ Accept when:
 - selective interpretation ingestion:
   - `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_ingestion_metrics.json`
   - `data/structural-analogy/runs/selective-interpretation-ingestion-20260328/interpretation_rejections.jsonl`
+- enhanced interpretation batch:
+  - `data/structural-analogy/runs/enhanced-interpretation-batch-20260328/enhanced_interpretation_batch_metrics.json`
+  - `data/structural-analogy/runs/enhanced-interpretation-batch-20260328/enhanced_interpretation_batch.jsonl`
+- enhanced interpretation ingestion:
+  - `data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_ingestion_metrics.json`
+  - `data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_rejections.jsonl`
 - holdout echoes:
   - `data/structural-analogy/runs/holdout-echo-materialization-20260328/holdout_echo_metrics.json`
   - `data/structural-analogy/runs/holdout-echo-materialization-20260328/holdout_echoes.jsonl`
@@ -1067,15 +1083,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s23-enhanced-interpretation-batch-foundation`
-- Why this commit exists: expand the interpretation preparation surface beyond the shortlist pilot so the next ingestion pass can cover bridge, stranded q-fin, and transition-state families under one strict contract
+- Commit scope: `s23-enhanced-interpretation-ingestion`
+- Why this commit exists: add the canonical ingestion surface for the expanded S23 batch without weakening the shortlist-only `S12` interpretation contract
 - Stages touched: `S23`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_enhanced_interpretation_batch.py`, `tests/test_materialize_enhanced_interpretation_batch.py`, `package.json`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_selective_interpretation_batch.py`, `npm run codecontext:scope -- scripts/materialize_transition_state_ledger.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select packet_kind, count(*) from review_packets where run_id='review-packet-materialization-20260328' group by packet_kind order by packet_kind;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select count(*) from stranded_resurfacing_candidates where run_id='stranded-resurfacing-materialization-20260328';"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select count(*) from transition_state_candidates where run_id='transition-state-candidate-materialization-20260328' and transition_state_rank <= 20;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select count(*) from transition_state_ledger where run_id='transition-state-ledger-20260328';"`, `npm run codecontext:py -- scripts/materialize_enhanced_interpretation_batch.py`, `npm run codecontext:py -- tests/test_materialize_enhanced_interpretation_batch.py`, `python3 -m unittest -v tests.test_materialize_enhanced_interpretation_batch`, `npm run store:materialize-enhanced-interpretation-batch -- --run-id enhanced-interpretation-batch-20260328`, `python3 - <<'PY' ... enhanced batch metrics and family counts ... PY`, `npm run codecontext:diff -- scripts/materialize_enhanced_interpretation_batch.py`, `npm run codecontext:diff -- tests/test_materialize_enhanced_interpretation_batch.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_enhanced_interpretation_batch`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/enhanced-interpretation-batch-20260328/enhanced_interpretation_batch.jsonl`, `data/structural-analogy/runs/enhanced-interpretation-batch-20260328/enhanced_interpretation_batch_metrics.json`
-- Acceptance result: `partial; the expanded batch now covers all three operator families with 33 prepared items, but the stage remains in progress until a larger ingestion run produces materially larger accepted/rejected counts than the S12 pilot`
-- Open risks after commit: `this foundation expands batch coverage, but S23 remains incomplete until a larger real interpretation ingestion run produces materially larger accepted/rejected counts than the S12 pilot`
-- Next intended commit: `S23 expanded interpretation ingestion`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `scripts/ingest_enhanced_interpretations.py`, `tests/test_ingest_enhanced_interpretations.py`, `tests/fixtures/enhanced_interpretation_responses.jsonl`, `package.json`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:scope -- scripts/ingest_selective_interpretations.py`, `npm run codecontext:scope -- scripts/materialize_enhanced_interpretation_batch.py`, `python3 - <<'PY' ... inspect enhanced batch item ids ... PY`, `npm run codecontext:py -- scripts/ingest_enhanced_interpretations.py`, `npm run codecontext:py -- tests/test_ingest_enhanced_interpretations.py`, `python3 -m unittest -v tests.test_ingest_enhanced_interpretations`, `npm run store:ingest-enhanced-interpretations -- --run-id enhanced-interpretation-ingestion-20260328 --responses-path tests/fixtures/enhanced_interpretation_responses.jsonl`, `python3 - <<'PY' ... enhanced ingestion metrics and counts ... PY`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select operator_family, classification, count(*) from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' group by operator_family, classification order by operator_family, classification;"`, `npm run codecontext:diff -- scripts/ingest_enhanced_interpretations.py`, `npm run codecontext:diff -- tests/test_ingest_enhanced_interpretations.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_ingest_enhanced_interpretations`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_ingestion_metrics.json`, `data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_rejections.jsonl`
+- Acceptance result: `complete; the expanded ingestion run accepted 8 rows and rejected 3, materially above the S12 pilot while preserving the strict schema and keeping shortlist-gated interpretations separate`
+- Open risks after commit: `expanded publication surfaces still read from shortlist-gated interpretations today, so S24 must explicitly re-materialize all four publication surfaces against the enhanced interpretation store`
+- Next intended commit: `S24 re-materialize all publication surfaces`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
