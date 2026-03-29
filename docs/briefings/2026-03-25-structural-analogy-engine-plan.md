@@ -302,7 +302,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S25` | consolidated research output report | `done` | `research_output.md` — single human-readable document with all findings |
 | `S26` | executable test memos | `done` | `reports/test-memo-*.md` — three concrete research programs grounded in the current findings |
 | `S27` | early-market failure-mode broadening pass | `done` | broader anchor, probe, operator, interpretation, and publication surfaces for thin, early, and weakly arbitraged markets |
-| `S28` | stabilize truth — canonical run summary | `pending` | `run_summary.json`, `run_summary.md`, reconciled counts across all surfaces |
+| `S28` | stabilize truth — canonical run summary | `in_progress` | `run_summary.json`, `run_summary.md`, reconciled counts across all surfaces |
 | `S29` | six-lane discovery expansion | `pending` | 6 lanes with anchors, probes, and lane-specific scoring |
 | `S30` | diamond score and representation redesign | `pending` | unified `diamond_score`, problem/mechanism/regime/stranding views, challenge capsules |
 | `S31` | eight-operator materialization | `pending` | bridge, composition, contrast, negative-space, transition-state, state-graph, participant-pathology, stranded-qfin operators |
@@ -1237,6 +1237,61 @@ Current status:
   - two retained transition-state ledger seams used as the mature-venue benchmark rather than the only discovery center of gravity
 - `S27` is now complete because the five new early-market lanes survive through anchors, probes, operators, review packets, enhanced interpretation, publication surfaces, and the root research memo
 
+### `S28` Stabilize Truth — Canonical Run Summary
+
+Build:
+
+- one canonical truth surface that reconciles counts across shortlist, interpretation, publication ledgers, findings, and the root memo
+- a machine-readable `run_summary.json` plus a human-readable `run_summary.md`
+- ordered `S28` execution:
+  1. canonical `run_summary` materializer foundation
+  2. findings-and-throwaways truth rematerialization from actual artifacts
+  3. `S28` closeout and truth signoff
+
+Accept when:
+
+- `run_summary.json` and `run_summary.md` exist and reconcile the active broadened run counts truthfully
+- `findings_and_throwaways.md` is regenerated from actual artifacts rather than relying on stale or parallel-race state
+- no accepted interpretation count is only implicit in intermediate artifacts
+
+Current status:
+
+- `S28` is the first v2 chapter and is intentionally narrower than the whole lane expansion: the goal is to stabilize truth before any more discovery changes land
+- the first `S28` commit targets only the canonical run-summary foundation so the repo gets one authoritative count surface before findings-and-throwaways rematerialization is tightened in the next commit
+- the summary surface must reconcile at least:
+  - shortlist count
+  - enhanced interpretation accepted and rejected counts
+  - accepted counts by lane family
+  - unrealized index, stranded ledger, and transition ledger publication counts
+  - whether any accepted interpretation is missing from a published or findings surface
+- the first `S28` commit adds the canonical staged command `npm run store:materialize-run-summary` plus root outputs `run_summary.json` and `run_summary.md`
+- the live `run-summary-20260329` result reconciles the current broadened run truthfully:
+  - shortlist: `24`
+  - accepted enhanced interpretations: `9`
+  - rejected enhanced interpretations: `2`
+  - findings accepted rows: `9`
+  - findings rejected rows: `2`
+  - findings near misses: `15`
+  - stranded q-fin failures: `3`
+  - unrealized index entries: `5`
+  - stranded ledger entries: `2`
+  - transition ledger entries: `2`
+  - published entries total: `9`
+- accepted and published lane coverage now matches exactly in the canonical summary surface:
+  - `lifecycle`: `1`
+  - `market_design`: `1`
+  - `participant_pathologies`: `1`
+  - `settlement_resolution`: `1`
+  - `state_graph`: `1`
+  - `stranded_qfin`: `2`
+  - `transition_state`: `2`
+- the reconciliation check is now explicit and machine-readable:
+  - accepted items missing from findings: `0`
+  - accepted items missing from publication: `0`
+  - published items missing from findings: `0`
+  - `all_accepted_items_exposed`: `true`
+- the stage remains in progress because the second `S28` commit still needs to rematerialize `findings_and_throwaways.md` explicitly from actual artifacts under the new truth-stabilization contract
+
 ---
 
 ## Development Policy
@@ -1299,6 +1354,7 @@ Current status:
 - `npm run store:materialize-transition-state-ledger`
 - `npm run store:materialize-findings-and-throwaways`
 - `npm run store:materialize-research-output`
+- `npm run store:materialize-run-summary`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -1371,18 +1427,24 @@ Current status:
   - `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_top.jsonl`
 - consolidated research output:
   - `research_output.md`
+- canonical run summary:
+  - `run_summary.json`
+  - `run_summary.md`
 
 ## Active Signoff Block
 
-- Commit scope: `s28-stabilize-truth`
-- Why this commit exists: create a canonical run summary that reconciles all counts across shortlist, interpretation, ledgers, and reports into one authoritative surface
+- Commit scope: `s28-run-summary-foundation`
+- Why this commit exists: create the canonical `run_summary` generator and root artifacts so every later v2 run has one authoritative truth surface before findings-and-throwaways is tightened further
 - Stages touched: `S28`
-- Code paths touched:
-- Commands run:
-- Tests run:
-- Artifacts produced:
-- Acceptance result: `pending`
-- Open risks after commit: `S28-S34 are all pending`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_run_summary.py`, `tests/test_materialize_run_summary.py`, `package.json`, `run_summary.json`, `run_summary.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_research_output.py`, `npm run codecontext:scope -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- scripts/materialize_run_summary.py`, `npm run codecontext:py -- tests/test_materialize_run_summary.py`, `python3 -m unittest -v tests.test_materialize_run_summary`, `npm run store:materialize-run-summary -- --run-id run-summary-20260329`, `npm run codecontext:diff -- scripts/materialize_run_summary.py`, `npm run codecontext:diff -- tests/test_materialize_run_summary.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_run_summary`, `npm run docs:lint`
+- Artifacts produced: `run_summary.json`, `run_summary.md`
+- Acceptance result: `passed; the root summary now reconciles shortlist, enhanced interpretation, findings, and all three publication surfaces into one canonical count surface with zero hidden accepted items`
+- Open risks after commit: `findings_and_throwaways truth is still on the old materializer contract until the second S28 commit rematerializes it from actual artifacts`
+- Next intended commit: `S28 findings-and-throwaways truth rematerialization`
+- Signoff status: `ready`
+- Last updated: `2026-03-29`
 - Next intended commit: `S28 canonical run summary`
 - Signoff status: `draft`
 - Last updated: `2026-03-29`

@@ -1,0 +1,80 @@
+{
+  "accepted_by_lane": {
+    "lifecycle": 1,
+    "market_design": 1,
+    "participant_pathologies": 1,
+    "settlement_resolution": 1,
+    "state_graph": 1,
+    "stranded_qfin": 2,
+    "transition_state": 2
+  },
+  "counts": {
+    "enhanced_interpretation_accepted_count": 9,
+    "enhanced_interpretation_rejected_count": 2,
+    "findings_accepted_count": 9,
+    "findings_near_miss_count": 15,
+    "findings_rejected_count": 2,
+    "findings_stranded_failure_count": 3,
+    "published_entry_count": 9,
+    "shortlist_count": 24,
+    "stranded_entry_count": 2,
+    "transition_entry_count": 2,
+    "unrealized_entry_count": 5
+  },
+  "published_by_lane": {
+    "lifecycle": 1,
+    "market_design": 1,
+    "participant_pathologies": 1,
+    "settlement_resolution": 1,
+    "state_graph": 1,
+    "stranded_qfin": 2,
+    "transition_state": 2
+  },
+  "reconciliation": {
+    "accepted_interpretation_ids": [
+      "lifecycle:composition:lifecycle_professionalization__market_design_seams",
+      "market_design:composition:market_design_seams__refill_lag_resiliency",
+      "participant_pathologies:composition:market_design_seams__participant_pathologies",
+      "settlement_resolution:composition:amm_settlement_latency__settlement_resolution_seams",
+      "state_graph:composition:market_design_seams__state_graph_inconsistencies",
+      "stranded_qfin:2106.00581",
+      "stranded_qfin:2204.08581",
+      "transition_state:near_transition_auction_queue:2101.03086",
+      "transition_state:near_transition_auction_refill:1011.6402"
+    ],
+    "accepted_not_in_findings": [],
+    "accepted_not_in_publication": [],
+    "all_accepted_items_exposed": true,
+    "findings_accepted_ids": [
+      "lifecycle:composition:lifecycle_professionalization__market_design_seams",
+      "market_design:composition:market_design_seams__refill_lag_resiliency",
+      "participant_pathologies:composition:market_design_seams__participant_pathologies",
+      "settlement_resolution:composition:amm_settlement_latency__settlement_resolution_seams",
+      "state_graph:composition:market_design_seams__state_graph_inconsistencies",
+      "stranded_qfin:2106.00581",
+      "stranded_qfin:2204.08581",
+      "transition_state:near_transition_auction_queue:2101.03086",
+      "transition_state:near_transition_auction_refill:1011.6402"
+    ],
+    "publication_not_in_findings": [],
+    "published_ids": [
+      "lifecycle:composition:lifecycle_professionalization__market_design_seams",
+      "market_design:composition:market_design_seams__refill_lag_resiliency",
+      "participant_pathologies:composition:market_design_seams__participant_pathologies",
+      "settlement_resolution:composition:amm_settlement_latency__settlement_resolution_seams",
+      "state_graph:composition:market_design_seams__state_graph_inconsistencies",
+      "stranded_qfin:2106.00581",
+      "stranded_qfin:2204.08581",
+      "transition_state:near_transition_auction_queue:2101.03086",
+      "transition_state:near_transition_auction_refill:1011.6402"
+    ]
+  },
+  "run_ids": {
+    "enhanced_interpretation_run_id": "enhanced-interpretation-ingestion-20260328-broadened",
+    "findings_run_id": "findings-and-throwaways-broadened-20260328",
+    "shortlist_run_id": "shortlist-materialization-20260328",
+    "stranded_run_id": "stranded-result-ledger-broadened-20260328",
+    "transition_run_id": "transition-state-ledger-broadened-20260328",
+    "unrealized_run_id": "unrealized-ideas-index-broadened-20260328"
+  }
+}
