@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument("--cluster-run-id", default="cluster-materialization-20260328")
     parser.add_argument("--bridge-run-id", default="bridge-materialization-20260328")
     parser.add_argument("--composition-run-id", default="composition-materialization-20260328")
+    parser.add_argument("--transition-run-id", default="transition-state-candidate-materialization-20260328")
     parser.add_argument("--stranding-run-id", default="stranding-score-materialization-20260328")
     parser.add_argument("--membership-run-id", default="corpus-membership-materialization-20260328")
     parser.add_argument("--output-dir", default=None)
@@ -26,6 +27,7 @@ def parse_args():
     parser.add_argument("--top-clusters", type=int, default=6)
     parser.add_argument("--top-bridges", type=int, default=6)
     parser.add_argument("--top-compositions", type=int, default=6)
+    parser.add_argument("--top-transitions", type=int, default=6)
     parser.add_argument("--top-stranded", type=int, default=6)
     return parser.parse_args()
 
@@ -217,6 +219,78 @@ def render_pair_packet(packet_kind: str, row: sqlite3.Row, representative_rows) 
     return "\n".join(lines) + "\n"
 
 
+def fetch_transition_packets(connection: sqlite3.Connection, run_id: str, limit: int):
+    # @context decision -- Transition-state candidates are grouped by pattern rather than anchor pair.
+    # Keeping them in review packets lets broadened packet runs expose seam-specific evidence without
+    # forcing later shortlist work to infer pattern-level regions back out of paper rows.
+    rows = connection.execute(
+        """
+        SELECT
+          pattern_id,
+          AVG(transition_state_candidate_score) AS avg_score,
+          MAX(transition_state_candidate_score) AS max_score,
+          COUNT(*) AS candidate_count
+        FROM transition_state_candidates
+        WHERE run_id = ?
+        GROUP BY pattern_id
+        ORDER BY max_score DESC, avg_score DESC, candidate_count DESC, pattern_id ASC
+        LIMIT ?
+        """,
+        (run_id, limit),
+    ).fetchall()
+    packets = []
+    for row in rows:
+        representative_rows = connection.execute(
+            """
+            SELECT
+              c.paper_id,
+              COALESCE(p.title, c.paper_id) AS title,
+              c.transition_state_candidate_score AS score
+            FROM transition_state_candidates c
+            JOIN papers p
+              ON p.paper_id = c.paper_id
+            WHERE c.run_id = ?
+              AND c.pattern_id = ?
+            ORDER BY c.transition_state_candidate_score DESC, c.transition_state_rank ASC, p.title ASC, c.paper_id ASC
+            LIMIT 5
+            """,
+            (run_id, row["pattern_id"]),
+        ).fetchall()
+        packets.append(
+            {
+                "packet_kind": "transition_state",
+                "item_ref": row["pattern_id"],
+                "title": f"Transition-state packet: {row['pattern_id']}",
+                "summary": {
+                    "pattern_id": row["pattern_id"],
+                    "avg_score": round(float(row["avg_score"] or 0.0), 6),
+                    "max_score": round(float(row["max_score"] or 0.0), 6),
+                    "candidate_count": int(row["candidate_count"]),
+                    "representative_papers": [item["paper_id"] for item in representative_rows],
+                },
+                "markdown": render_transition_packet(row, representative_rows),
+                "source_run_ids": {"transition_run_id": run_id},
+            }
+        )
+    return packets
+
+
+def render_transition_packet(row: sqlite3.Row, representative_rows) -> str:
+    lines = [
+        f"# Transition-State Packet: {row['pattern_id']}",
+        "",
+        f"- pattern id: `{row['pattern_id']}`",
+        f"- candidate count: `{row['candidate_count']}`",
+        f"- avg score: `{round(float(row['avg_score'] or 0.0), 6)}`",
+        f"- max score: `{round(float(row['max_score'] or 0.0), 6)}`",
+        "",
+        "## Representative Papers",
+    ]
+    for item in representative_rows:
+        lines.append(f"- `{item['paper_id']}` | {item['title']} | score `{round(float(item['score'] or 0.0), 6)}`")
+    return "\n".join(lines) + "\n"
+
+
 def fetch_stranded_packets(connection: sqlite3.Connection, stranding_run_id: str, membership_run_id: str, limit: int):
     rows = connection.execute(
         """
@@ -329,6 +403,7 @@ def main():
                 "cluster_run_id": args.cluster_run_id,
                 "bridge_run_id": args.bridge_run_id,
                 "composition_run_id": args.composition_run_id,
+                "transition_run_id": args.transition_run_id,
                 "stranding_run_id": args.stranding_run_id,
                 "membership_run_id": args.membership_run_id,
             },
@@ -366,6 +441,7 @@ def main():
                 "composition",
             )
         )
+        packets.extend(fetch_transition_packets(connection, args.transition_run_id, args.top_transitions))
         packets.extend(fetch_stranded_packets(connection, args.stranding_run_id, args.membership_run_id, args.top_stranded))
 
         counts = persist_packets(connection, args.run_id, packet_dir, packets)

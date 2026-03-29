@@ -1142,7 +1142,31 @@ Current status:
   - `patterns_with_candidates`: `5`
   - `transition_candidate_count`: `95`
   - `top_score`: `0.702172`
-- the stage remains in progress because `STEP 5` through `STEP 7` are still pending; the next canonical `S27` commit is expanded review packet generation over the broadened operator outputs
+- the fifth `S27` commit extends the canonical review-packet materializer so broadened reruns include transition-state candidate packets alongside clusters, bridges, compositions, and stranded q-fin packets
+- fixture coverage in `tests/test_materialize_review_packets.py` now proves deterministic materialization across all five packet kinds, including the new `transition_state` packet surface
+- the live broadened review-packet rerun `review-packet-materialization-20260328-broadened` completed successfully against:
+  - `bridge-materialization-20260328-broadened`
+  - `composition-materialization-20260328-broadened`
+  - `transition-state-candidate-materialization-20260328-broadened`
+- the live broadened packet counts are:
+  - `cluster`: `6`
+  - `bridge`: `6`
+  - `composition`: `6`
+  - `stranded_qfin`: `6`
+  - `transition_state`: `5`
+  - `total_packets`: `29`
+- the broadened packet disk surface now visibly includes the new early-market bridge and composition seams:
+  - `bridge__market-design-seams-refill-lag-local-shock.md`
+  - `bridge__market-design-seams-parity-propagation-delayed-repair.md`
+  - `composition__market-design-seams-refill-lag-resiliency.md`
+  - `composition__market-design-seams-refill-lag-local-shock.md`
+- the same broadened packet run also now persists dedicated transition-state packet files:
+  - `transition_state__near-transition-auction-queue.md`
+  - `transition_state__near-transition-auction-refill.md`
+  - `transition_state__near-transition-maker-queue.md`
+  - `transition_state__near-transition-parity-repair.md`
+  - `transition_state__near-transition-queue-refill.md`
+- the stage remains in progress because `STEP 6` and `STEP 7` are still pending; the next canonical `S27` commit is the expanded enhanced interpretation batch over the broadened packet surface
 
 ---
 
@@ -1281,15 +1305,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s27-operator-reruns`
-- Why this commit exists: rerun the canonical bridge, composition, and transition-state operator surfaces after the broadened anchors and probes so the new lanes become real candidates instead of only probe hits
+- Commit scope: `s27-review-packets`
+- Why this commit exists: materialize broadened review packets from the widened bridge, composition, and transition-state outputs so the new early-market seams become human-reviewable packet surfaces
 - Stages touched: `S27`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `data/structural-analogy/runs/*bridge*`, `data/structural-analogy/runs/*composition*`, `data/structural-analogy/runs/*transition-state-candidate*`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_bridges.py`, `npm run codecontext:scope -- scripts/materialize_compositions.py`, `npm run codecontext:scope -- scripts/materialize_transition_state_candidates.py`, `npm run store:materialize-bridges -- --run-id bridge-materialization-20260328-broadened`, `npm run store:materialize-compositions -- --run-id composition-materialization-20260328-broadened`, `npm run store:materialize-transition-state-candidates -- --run-id transition-state-candidate-materialization-20260328-broadened`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `bridge_metrics.json`, `bridges.jsonl`, `composition_metrics.json`, `compositions.jsonl`, `transition_state_candidate_metrics.json`, `transition_state_candidates.jsonl`
-- Acceptance result: `complete; the broadened bridge and composition reruns expanded from 15 anchor pairs / 300 candidates to 105 anchor pairs / 2100 candidates each, and the live outputs now contain new cross-lane seams led by market-design pairings rather than only the original transition-state cluster`
-- Open risks after commit: `the transition-state candidate stage did not broaden yet because it still reads the original transition-state-specific probe and score runs, and the first concurrent bridge attempt hit a SQLite write lock before the successful sequential rerun`
-- Next intended commit: `S27 step 5 expanded review packets`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_review_packets.py`, `tests/test_materialize_review_packets.py`, `data/structural-analogy/runs/review-packet-materialization-20260328-broadened/*`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_review_packets.py`, `npm run codecontext:scope -- tests/test_materialize_review_packets.py`, `npm run codecontext:py -- scripts/materialize_review_packets.py`, `npm run codecontext:py -- tests/test_materialize_review_packets.py`, `python3 -m unittest -v tests.test_materialize_review_packets`, `python3 scripts/materialize_review_packets.py --run-id review-packet-materialization-20260328-broadened --bridge-run-id bridge-materialization-20260328-broadened --composition-run-id composition-materialization-20260328-broadened --transition-run-id transition-state-candidate-materialization-20260328-broadened`, `npm run codecontext:diff -- scripts/materialize_review_packets.py`, `npm run codecontext:diff -- tests/test_materialize_review_packets.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_review_packets`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/review-packet-materialization-20260328-broadened/review_packets/*`, `data/structural-analogy/runs/review-packet-materialization-20260328-broadened/review_packet_metrics.json`
+- Acceptance result: `complete; the broadened review-packet rerun wrote 29 live packets across cluster, bridge, composition, stranded_qfin, and transition_state packet kinds, including new market-design packet seams from the broadened operator surface`
+- Open risks after commit: `broadened packet selection is still dominated by market-design paired with legacy microstructure seams, so later shortlist and interpretation stages may need explicit lane-balancing pressure to keep settlement and state-graph lanes visible`
+- Next intended commit: `S27 step 6 expanded enhanced interpretation batch`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

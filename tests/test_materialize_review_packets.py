@@ -25,6 +25,7 @@ def seed_packet_fixture(connection: sqlite3.Connection) -> None:
             ("p_cluster_b", "Auction Spillover Design", "cs.GT", "2021-01-01"),
             ("p_bridge", "Bridge Market Maker", "q-fin.TR", "2020-02-01"),
             ("p_comp", "Composed Settlement Design", "cs.GT", "2021-02-01"),
+            ("p_transition", "Auction Queue Transition", "q-fin.TR", "2022-02-01"),
             ("p_stranded", "Incomplete Market Friction", "q-fin.PR", "2019-05-01"),
         ],
     )
@@ -69,6 +70,30 @@ def seed_packet_fixture(connection: sqlite3.Connection) -> None:
           run_id, source_anchor_id, target_anchor_id, paper_id, composition_score, composition_rank, rationale_json
         )
         VALUES ('composition-run', 'queue_anchor', 'settlement_anchor', 'p_comp', 3.25, 1, '{}')
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO agitator_patterns (
+          pattern_id, label, kind, text, positive_tags_json, negative_tags_json, active
+        )
+        VALUES (
+          'near_transition_auction_queue',
+          'Auction x Queue',
+          'transition',
+          'auction queue seam',
+          '[]',
+          '[]',
+          1
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO transition_state_candidates (
+          run_id, pattern_id, paper_id, representative_view_id, transition_state_candidate_score, transition_state_rank, rationale_json
+        )
+        VALUES ('transition-run', 'near_transition_auction_queue', 'p_transition', NULL, 0.78, 1, '{}')
         """
     )
 
@@ -122,6 +147,8 @@ class MaterializeReviewPacketsTest(unittest.TestCase):
                 "bridge-run",
                 "--composition-run-id",
                 "composition-run",
+                "--transition-run-id",
+                "transition-run",
                 "--stranding-run-id",
                 "stranding-run",
                 "--membership-run-id",
@@ -133,6 +160,8 @@ class MaterializeReviewPacketsTest(unittest.TestCase):
                 "--top-bridges",
                 "1",
                 "--top-compositions",
+                "1",
+                "--top-transitions",
                 "1",
                 "--top-stranded",
                 "1",
@@ -151,12 +180,18 @@ class MaterializeReviewPacketsTest(unittest.TestCase):
                 ORDER BY packet_kind, item_ref
                 """
             ).fetchall()
-            self.assertEqual(len(rows), 4)
-            self.assertEqual([row["packet_kind"] for row in rows], ["bridge", "cluster", "composition", "stranded_qfin"])
+            self.assertEqual(len(rows), 5)
+            self.assertEqual(
+                [row["packet_kind"] for row in rows],
+                ["bridge", "cluster", "composition", "stranded_qfin", "transition_state"],
+            )
 
             metrics = json.loads((output_dir / "review_packet_metrics.json").read_text(encoding="utf-8"))
-            self.assertEqual(metrics["packet_counts"], {"bridge": 1, "cluster": 1, "composition": 1, "stranded_qfin": 1})
-            self.assertEqual(metrics["total_packets"], 4)
+            self.assertEqual(
+                metrics["packet_counts"],
+                {"bridge": 1, "cluster": 1, "composition": 1, "stranded_qfin": 1, "transition_state": 1},
+            )
+            self.assertEqual(metrics["total_packets"], 5)
 
             for row in rows:
                 packet_path = Path(row["packet_path"])
@@ -170,6 +205,10 @@ class MaterializeReviewPacketsTest(unittest.TestCase):
 
             stranded_markdown = rows[3]["packet_markdown"]
             self.assertIn("Incomplete Market Friction", stranded_markdown)
+
+            transition_markdown = rows[4]["packet_markdown"]
+            self.assertIn("Auction Queue Transition", transition_markdown)
+            self.assertIn("near_transition_auction_queue", transition_markdown)
 
             connection.close()
 
