@@ -226,6 +226,97 @@ class MaterializeTransitionStateLedgerTests(unittest.TestCase):
             self.assertIn("publication source surface: `enhanced_interpretation`", markdown)
             self.assertNotIn("Maker x Queue", markdown)
 
+    def test_materializes_ledger_from_diamond_transition_interpretations(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            canonical_db = tmp / "paperview.sqlite3"
+            subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "init_local_store.py"), "--db-path", str(canonical_db)],
+                check=True,
+                cwd=ROOT,
+            )
+            conn = sqlite3.connect(str(canonical_db))
+            conn.executescript(
+                """
+                INSERT INTO agitator_patterns (
+                  pattern_id, label, kind, text, positive_tags_json, negative_tags_json, active
+                ) VALUES
+                  ('near_transition_queue_refill', 'Queue x Refill', 'transition', 'queue refill', '[]', '[]', 1),
+                  ('near_transition_auction_queue', 'Auction x Queue', 'transition', 'auction queue', '[]', '[]', 1),
+                  ('near_transition_maker_queue', 'Maker x Queue', 'transition', 'maker queue', '[]', '[]', 1);
+
+                INSERT INTO papers (paper_id, source_corpus, title, abstract, primary_category, published_at) VALUES
+                  ('queue-paper', 'arxiv', 'Queue Paper', '', 'q-fin.TR', '2021-01-01'),
+                  ('auction-paper', 'arxiv', 'Auction Paper', '', 'q-fin.MF', '2020-01-01'),
+                  ('maker-paper', 'arxiv', 'Maker Paper', '', 'q-fin.TR', '2019-01-01');
+
+                INSERT INTO diamond_interpretations (
+                  run_id, batch_run_id, batch_item_id, lane_family, operator_family, source_kind, source_run_id, source_ref,
+                  family_rank, shortlist_rank, selection_bucket, source_score, diamond_score, packet_title, classification,
+                  result_summary, first_test, instrument_assumed, modern_equivalent, why_stranded_or_unrealized, gap_to_close,
+                  confidence, raw_json
+                ) VALUES
+                  ('diamond-run', 'diamond-batch-run', 'transition_state:near_transition_queue_refill:queue-paper', 'transition_state', 'transition_state', 'transition_state_candidate', 'candidate-run', 'near_transition_queue_refill', 1, 1, 'lane_quota', 0.72, 0.84, 'Diamond Transition Packet: Queue x Refill', 'TRANSITION_SEAM', 'queue diamond result', 'queue diamond test', 'queue diamond instrument', 'queue diamond clue', 'queue diamond why', 'queue diamond gap', 'high', '{}'),
+                  ('diamond-run', 'diamond-batch-run', 'transition_state:near_transition_auction_queue:auction-paper', 'transition_state', 'transition_state', 'transition_state_candidate', 'candidate-run', 'near_transition_auction_queue', 1, 2, 'lane_quota', 0.68, 0.79, 'Diamond Transition Packet: Auction x Queue', 'TRANSITION_SEAM', 'auction diamond result', 'auction diamond test', 'auction diamond instrument', 'auction diamond clue', 'auction diamond why', 'auction diamond gap', 'medium', '{}'),
+                  ('diamond-run', 'diamond-batch-run', 'transition_state:near_transition_maker_queue:maker-paper', 'transition_state', 'transition_state', 'transition_state_candidate', 'candidate-run', 'near_transition_maker_queue', 1, 3, 'lane_quota', 0.47, 0.52, 'Diamond Transition Packet: Maker x Queue', 'NO_TRANSLATION', 'maker diamond result', 'maker diamond test', 'maker diamond instrument', 'maker diamond clue', 'maker diamond why', 'maker diamond gap', 'medium', '{}');
+
+                INSERT INTO transition_state_candidates (
+                  run_id, pattern_id, paper_id, transition_state_candidate_score, transition_state_rank, rationale_json
+                ) VALUES
+                  ('candidate-run', 'near_transition_queue_refill', 'queue-paper', 0.72, 1, '{}'),
+                  ('candidate-run', 'near_transition_auction_queue', 'auction-paper', 0.68, 1, '{}'),
+                  ('candidate-run', 'near_transition_maker_queue', 'maker-paper', 0.47, 1, '{}');
+                """
+            )
+            conn.commit()
+            conn.close()
+
+            output_dir = tmp / "transition-ledger-diamond-run"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT_PATH),
+                    "--db-path",
+                    str(canonical_db),
+                    "--run-id",
+                    "ledger-run",
+                    "--candidate-run-id",
+                    "candidate-run",
+                    "--interpretation-source",
+                    "diamond_transition",
+                    "--interpretation-run-id",
+                    "diamond-run",
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            conn = sqlite3.connect(str(canonical_db))
+            conn.row_factory = sqlite3.Row
+            try:
+                rows = conn.execute(
+                    """
+                    SELECT pattern_id, publication_source_surface, publication_item_id, relation_type
+                    FROM transition_state_ledger
+                    WHERE run_id='ledger-run'
+                    ORDER BY ledger_rank, pattern_id
+                    """
+                ).fetchall()
+            finally:
+                conn.close()
+
+            self.assertEqual([row["pattern_id"] for row in rows], ["near_transition_queue_refill", "near_transition_auction_queue"])
+            self.assertEqual(rows[0]["publication_source_surface"], "diamond_interpretation")
+            self.assertEqual(rows[0]["publication_item_id"], "transition_state:near_transition_queue_refill:queue-paper")
+            self.assertEqual(rows[0]["relation_type"], "seam")
+            self.assertEqual(rows[1]["relation_type"], "seam")
+
+            markdown = (output_dir / "transition_state_ledger.md").read_text(encoding="utf-8")
+            self.assertIn("publication source surface: `diamond_interpretation`", markdown)
+            self.assertNotIn("Maker x Queue", markdown)
+
 
 if __name__ == "__main__":
     unittest.main()

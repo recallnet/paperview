@@ -16,7 +16,7 @@ def parse_args():
     parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH))
     parser.add_argument("--run-id", default="stranded-result-ledger-20260328")
     parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
-    parser.add_argument("--interpretation-source", choices=("selective", "enhanced_stranded"), default="selective")
+    parser.add_argument("--interpretation-source", choices=("selective", "enhanced_stranded", "diamond_stranded"), default="selective")
     parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--stranding-run-id", default="stranding-score-materialization-20260328")
     parser.add_argument("--output-dir", default=None)
@@ -216,6 +216,39 @@ def fetch_enhanced_source_rows(connection: sqlite3.Connection, interpretation_ru
     ).fetchall()
 
 
+def fetch_diamond_source_rows(connection: sqlite3.Connection, interpretation_run_id: str, stranding_run_id: str) -> list[sqlite3.Row]:
+    return connection.execute(
+        """
+        SELECT
+          di.batch_item_id,
+          di.source_ref AS paper_id,
+          di.shortlist_rank AS family_rank,
+          di.classification,
+          di.result_summary,
+          di.first_test,
+          di.instrument_assumed,
+          di.modern_equivalent,
+          di.why_stranded_or_unrealized,
+          di.gap_to_close,
+          di.confidence,
+          COALESCE(p.published_at, 'unknown') AS published_at,
+          COALESCE(p.primary_category, 'unknown') AS home_domain,
+          COALESCE(ss.stranding_score, 0.0) AS stranding_score
+        FROM diamond_interpretations di
+        JOIN papers p
+          ON p.paper_id = di.source_ref
+        LEFT JOIN stranding_scores ss
+          ON ss.run_id = ?
+         AND ss.paper_id = di.source_ref
+        WHERE di.run_id = ?
+          AND di.lane_family = 'stranded_qfin'
+          AND di.classification = 'STRANDED_QFIN_RESULT'
+        ORDER BY ss.stranding_score DESC, di.shortlist_rank ASC, di.batch_item_id ASC
+        """,
+        (stranding_run_id, interpretation_run_id),
+    ).fetchall()
+
+
 def main():
     args = parse_args()
     db_path = Path(args.db_path).resolve()
@@ -242,8 +275,10 @@ def main():
             source_rows = fetch_selective_source_rows(
                 connection, args.interpretation_run_id, args.shortlist_run_id, args.stranding_run_id
             )
-        else:
+        elif args.interpretation_source == "enhanced_stranded":
             source_rows = fetch_enhanced_source_rows(connection, args.interpretation_run_id, args.stranding_run_id)
+        else:
+            source_rows = fetch_diamond_source_rows(connection, args.interpretation_run_id, args.stranding_run_id)
 
         # @context decision -- The ledger is intentionally narrower than the broader index: it only
         # publishes interpreted stranded q-fin paper rows. That preserves the ledger as a practical
@@ -253,7 +288,11 @@ def main():
         rows = []
         for rank, row in enumerate(source_rows, start=1):
             ledger_row = {
-                "publication_source_surface": "selective" if args.interpretation_source == "selective" else "enhanced_interpretation",
+                "publication_source_surface": (
+                    "selective"
+                    if args.interpretation_source == "selective"
+                    else "enhanced_interpretation" if args.interpretation_source == "enhanced_stranded" else "diamond_interpretation"
+                ),
                 "publication_interpretation_run_id": args.interpretation_run_id,
                 "publication_item_id": row["shortlist_id"] if args.interpretation_source == "selective" else row["batch_item_id"],
                 "shortlist_id": row["shortlist_id"] if args.interpretation_source == "selective" else row["batch_item_id"],
@@ -264,7 +303,7 @@ def main():
                 "why_stranded_or_unrealized": row["why_stranded_or_unrealized"],
                 "instrument_assumed": row["instrument_assumed"],
                 "modern_equivalent": row["modern_equivalent"],
-                "first_test": row["first_step"],
+                "first_test": row["first_step"] if args.interpretation_source != "diamond_stranded" else row["first_test"],
                 "gap_to_close": row["gap_to_close"],
                 "priority_tier": priority_tier(float(row["stranding_score"] or 0.0), row["confidence"]),
                 "relation_type": relation_type(row["classification"]),

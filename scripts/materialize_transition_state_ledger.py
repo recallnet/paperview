@@ -21,6 +21,7 @@ POSITIVE_CLASSIFICATIONS = {
     "TRANSLATION_CANDIDATE": "adaptation",
     "COMPOSITIONAL_CANDIDATE": "calibration",
     "STRANDED_QFIN_RESULT": "direct",
+    "TRANSITION_SEAM": "seam",
 }
 
 
@@ -30,7 +31,7 @@ def parse_args():
     parser.add_argument("--run-id", default="transition-state-ledger-20260328")
     parser.add_argument("--candidate-run-id", default="transition-state-candidate-materialization-20260328")
     parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
-    parser.add_argument("--interpretation-source", choices=("selective", "enhanced_transition"), default="selective")
+    parser.add_argument("--interpretation-source", choices=("selective", "enhanced_transition", "diamond_transition"), default="selective")
     parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--output-dir", default=None)
     return parser.parse_args()
@@ -234,6 +235,42 @@ def fetch_best_enhanced_transition_by_pattern(connection: sqlite3.Connection, in
     return best_by_pattern
 
 
+def fetch_best_diamond_transition_by_pattern(connection: sqlite3.Connection, interpretation_run_id: str) -> dict[str, sqlite3.Row]:
+    rows = connection.execute(
+        """
+        SELECT
+          batch_item_id,
+          source_ref,
+          shortlist_rank,
+          classification,
+          result_summary,
+          first_test,
+          instrument_assumed,
+          modern_equivalent,
+          why_stranded_or_unrealized,
+          gap_to_close,
+          confidence
+        FROM diamond_interpretations
+        WHERE run_id = ?
+          AND lane_family = 'transition_state'
+        ORDER BY shortlist_rank ASC, batch_item_id ASC
+        """,
+        (interpretation_run_id,),
+    ).fetchall()
+    best_by_pattern: dict[str, sqlite3.Row] = {}
+    for row in rows:
+        if row["classification"] not in POSITIVE_CLASSIFICATIONS:
+            continue
+        parts = str(row["batch_item_id"]).split(":")
+        if len(parts) < 3:
+            continue
+        pattern_id = parts[1]
+        current = best_by_pattern.get(pattern_id)
+        if current is None or int(row["shortlist_rank"]) < int(current["shortlist_rank"]):
+            best_by_pattern[pattern_id] = row
+    return best_by_pattern
+
+
 def main():
     args = parse_args()
     db_path = Path(args.db_path).resolve()
@@ -260,9 +297,12 @@ def main():
         if args.interpretation_source == "selective":
             best_by_pair = fetch_best_interpretation_by_pair(connection, args.shortlist_run_id, args.interpretation_run_id)
             best_by_pattern = {}
-        else:
+        elif args.interpretation_source == "enhanced_transition":
             best_by_pair = {}
             best_by_pattern = fetch_best_enhanced_transition_by_pattern(connection, args.interpretation_run_id)
+        else:
+            best_by_pair = {}
+            best_by_pattern = fetch_best_diamond_transition_by_pattern(connection, args.interpretation_run_id)
         connection.execute("DELETE FROM transition_state_ledger WHERE run_id = ?", (args.run_id,))
 
         rows = connection.execute(
@@ -310,7 +350,7 @@ def main():
                 interpretation = best_by_pattern.get(row["pattern_id"])
                 if interpretation is None:
                     continue
-                publication_source_surface = "enhanced_interpretation"
+                publication_source_surface = "enhanced_interpretation" if args.interpretation_source == "enhanced_transition" else "diamond_interpretation"
                 publication_item_id = interpretation["batch_item_id"]
                 shortlist_id = interpretation["batch_item_id"]
                 # @context decision -- The S24 rematerialized transition ledger stays narrower than
@@ -342,7 +382,9 @@ def main():
                     "why_stranded_or_unrealized": interpretation["why_stranded_or_unrealized"],
                     "instrument_assumed": interpretation["instrument_assumed"],
                     "modern_equivalent": interpretation["modern_equivalent"],
-                    "first_test": interpretation["first_step"],
+                    "first_test": interpretation["first_test"]
+                    if args.interpretation_source == "diamond_transition"
+                    else interpretation["first_step"],
                     "gap_to_close": interpretation["gap_to_close"],
                     "priority_tier": priority_tier(float(row["transition_state_candidate_score"] or 0.0), interpretation["confidence"]),
                     "relation_type": POSITIVE_CLASSIFICATIONS[interpretation["classification"]],

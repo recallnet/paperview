@@ -352,6 +352,50 @@ ON diamond_interpretations (run_id, classification);
 CREATE INDEX IF NOT EXISTS idx_diamond_interpretations_run_lane
 ON diamond_interpretations (run_id, lane_family, shortlist_rank);
 
+CREATE TABLE IF NOT EXISTS early_market_failure_modes_ledger (
+  run_id TEXT NOT NULL,
+  interpretation_run_id TEXT NOT NULL,
+  batch_item_id TEXT NOT NULL,
+  lane_family TEXT NOT NULL,
+  title TEXT NOT NULL,
+  failure_mode TEXT NOT NULL,
+  wrong_actor TEXT NOT NULL,
+  why_persists TEXT NOT NULL,
+  what_closes_it TEXT NOT NULL,
+  likely_market_stage TEXT NOT NULL,
+  first_test TEXT NOT NULL,
+  modern_equivalent TEXT NOT NULL,
+  gap_to_close TEXT NOT NULL,
+  confidence TEXT NOT NULL,
+  ledger_rank INTEGER NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, batch_item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_early_market_failure_modes_run_rank
+ON early_market_failure_modes_ledger (run_id, ledger_rank);
+
+CREATE TABLE IF NOT EXISTS diamond_board_entries (
+  run_id TEXT NOT NULL,
+  publication_item_id TEXT NOT NULL,
+  lane_family TEXT NOT NULL,
+  source_surface TEXT NOT NULL,
+  board_rank INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  result_summary TEXT NOT NULL,
+  modern_equivalent TEXT NOT NULL,
+  first_test TEXT NOT NULL,
+  gap_to_close TEXT NOT NULL,
+  confidence TEXT NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, publication_item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_diamond_board_entries_run_rank
+ON diamond_board_entries (run_id, board_rank);
+
 -- @context decision -- S23 expands interpretation coverage beyond shortlist rows, but the
 -- shortlist-gated `selective_interpretations` contract must remain intact so S12 publication
 -- surfaces do not silently widen. The enhanced table stores schema-shaped interpretations against

@@ -161,6 +161,42 @@ def seed_unrealized_index_fixture(connection: sqlite3.Connection) -> None:
         VALUES ('composition-broadened-run', 'market_design_seams', 'refill_lag_resiliency', 'source-market-design', 3.4, 1, '{}')
         """
     )
+    connection.executemany(
+        """
+        INSERT INTO diamond_interpretations (
+          run_id, batch_run_id, batch_item_id, lane_family, operator_family, source_kind, source_run_id, source_ref,
+          family_rank, shortlist_rank, selection_bucket, source_score, diamond_score, packet_title, classification,
+          result_summary, first_test, instrument_assumed, modern_equivalent, why_stranded_or_unrealized, gap_to_close,
+          confidence, raw_json
+        )
+        VALUES (
+          'diamond-run', 'diamond-batch-run', ?, ?, ?, ?, ?, ?, ?, ?, 'lane_quota', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '{}'
+        )
+        """,
+        [
+            (
+                "market_design:composition:market_design_seams__refill_lag_resiliency",
+                "market_design",
+                "composition",
+                "composition_candidate_pair",
+                "composition-broadened-run",
+                "market_design_seams__refill_lag_resiliency",
+                1,
+                1,
+                2.7,
+                0.81,
+                "Diamond Market Design Packet",
+                "TRANSLATION_CANDIDATE",
+                "diamond result",
+                "diamond first test",
+                "diamond instrument",
+                "diamond modern",
+                "diamond why",
+                "diamond gap",
+                "high",
+            ),
+        ],
+    )
 
     connection.executemany(
         """
@@ -351,6 +387,46 @@ class MaterializeUnrealizedIdeasIndexTest(unittest.TestCase):
 
             markdown = (output_dir / "unrealized_ideas_index.md").read_text(encoding="utf-8")
             self.assertIn("Composition packet: market_design_seams x refill_lag_resiliency", markdown)
+
+    def test_materializes_diamond_rows_from_diamond_interpretations(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            db_path = tmp_path / "fixture.sqlite3"
+            output_dir = tmp_path / "run"
+
+            connection = sqlite3.connect(db_path)
+            seed_unrealized_index_fixture(connection)
+            connection.close()
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT_PATH),
+                    "--db-path",
+                    str(db_path),
+                    "--run-id",
+                    "diamond-index-run",
+                    "--interpretation-source",
+                    "diamond",
+                    "--interpretation-run-id",
+                    "diamond-run",
+                    "--membership-run-id",
+                    "membership-run",
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            rows = [
+                json.loads(line)
+                for line in (output_dir / "unrealized_ideas_index.jsonl").read_text(encoding="utf-8").strip().splitlines()
+            ]
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["publication_source_surface"], "diamond_interpretation")
+            self.assertEqual(rows[0]["publication_item_id"], "market_design:composition:market_design_seams__refill_lag_resiliency")
+            self.assertEqual(rows[0]["holdout_echo_score"], 0.0)
 
 
 if __name__ == "__main__":

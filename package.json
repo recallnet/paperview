@@ -38,6 +38,8 @@
     "store:materialize-stranded-result-ledger": "python3 scripts/materialize_stranded_result_ledger.py",
     "store:materialize-findings-and-throwaways": "python3 scripts/materialize_findings_and_throwaways.py",
     "store:materialize-transition-state-ledger": "python3 scripts/materialize_transition_state_ledger.py",
+    "store:materialize-early-market-ledger": "python3 scripts/materialize_early_market_failure_modes_ledger.py",
+    "store:materialize-diamond-board": "python3 scripts/materialize_diamond_board.py",
     "store:materialize-research-output": "python3 scripts/materialize_research_output.py",
     "store:materialize-run-summary": "python3 scripts/materialize_run_summary.py",
     "store:materialize-test-memos": "python3 scripts/materialize_test_memos.py",

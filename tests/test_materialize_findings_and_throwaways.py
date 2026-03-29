@@ -127,6 +127,19 @@ def seed_fixture(connection: sqlite3.Connection) -> None:
         ) VALUES
           ('ledger-enhanced-run', 'shortlist-run', 'enhanced-run', 'stranded_qfin:paper-kept', 'enhanced_interpretation', 'enhanced-run', 'stranded_qfin:paper-kept',
            'paper-kept', '2020-01-01', 'q-fin.PR', 'enhanced kept result', 'enhanced kept why', 'enhanced kept instrument', 'enhanced kept clue', 'enhanced kept step', 'enhanced kept gap', 'p1', 'direct', 1, 0.4, 'high', '{}');
+
+        INSERT INTO diamond_interpretations (
+          run_id, batch_run_id, batch_item_id, lane_family, operator_family, source_kind, source_run_id, source_ref,
+          family_rank, shortlist_rank, selection_bucket, source_score, diamond_score, packet_title, classification,
+          result_summary, first_test, instrument_assumed, modern_equivalent, why_stranded_or_unrealized, gap_to_close,
+          confidence, raw_json
+        ) VALUES
+          ('diamond-run', 'diamond-batch-run', 'market_design:bridge:bridge-a', 'market_design', 'bridge', 'review_packet', 'packet-run', 'bridge-a', 1, 1, 'lane_quota', 2.2, 0.82, 'Diamond Bridge Packet A', 'TRANSLATION_CANDIDATE', 'diamond bridge result', 'diamond bridge test', 'diamond bridge instrument', 'diamond bridge clue', 'diamond bridge why', 'diamond bridge gap', 'high', '{}'),
+          ('diamond-run', 'diamond-batch-run', 'participant_pathologies:composition:composition-a', 'participant_pathologies', 'composition', 'review_packet', 'packet-run', 'composition-a', 1, 2, 'lane_quota', 2.0, 0.79, 'Diamond Composition Packet A', 'COMPOSITIONAL_CANDIDATE', 'diamond composition result', 'diamond composition test', 'diamond composition instrument', 'diamond composition clue', 'diamond composition why', 'diamond composition gap', 'medium', '{}'),
+          ('diamond-run', 'diamond-batch-run', 'transition_state:near_transition_queue_refill:transition-paper', 'transition_state', 'transition_state', 'transition_state_candidate', 'transition-run', 'near_transition_queue_refill', 1, 3, 'lane_quota', 0.77, 0.75, 'Diamond Transition Packet', 'TRANSITION_SEAM', 'diamond transition result', 'diamond transition test', 'diamond transition instrument', 'diamond transition clue', 'diamond transition why', 'diamond transition gap', 'high', '{}'),
+          ('diamond-run', 'diamond-batch-run', 'stranded_qfin:paper-kept', 'stranded_qfin', 'stranded_qfin', 'stranded_resurfacing_candidate', 'resurface-run', 'paper-kept', 1, 4, 'lane_quota', 0.55, 0.71, 'Diamond Stranded Packet Kept', 'STRANDED_QFIN_RESULT', 'diamond kept result', 'diamond kept test', 'diamond kept instrument', 'diamond kept clue', 'diamond kept why', 'diamond kept gap', 'high', '{}'),
+          ('diamond-run', 'diamond-batch-run', 'stranded_qfin:paper-fail-a', 'stranded_qfin', 'stranded_qfin', 'stranded_resurfacing_candidate', 'resurface-run', 'paper-fail-a', 2, 5, 'lane_quota', 0.62, 0.59, 'Diamond Stranded Packet Fail', 'NO_TRANSLATION', 'diamond failed result', 'diamond failed test', 'diamond failed instrument', 'diamond failed clue', 'diamond failed why', 'diamond failed gap', 'medium', '{}');
+
         """
     )
     connection.commit()
@@ -313,6 +326,93 @@ class MaterializeFindingsAndThrowawaysTest(unittest.TestCase):
             self.assertIn("stranded_qfin:paper-kept", markdown)
             self.assertIn("bridge:bridge-c", markdown)
             self.assertIn("Failed Stranded Paper B", markdown)
+            self.assertEqual(root_markdown_path.read_text(encoding="utf-8"), markdown)
+
+    def test_materializes_findings_report_from_diamond_interpretations(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            db_path = tmp_path / "fixture.sqlite3"
+            output_dir = tmp_path / "run"
+            root_markdown_path = tmp_path / "findings_and_throwaways.md"
+            rejections_path = tmp_path / "diamond_interpretation_rejections.jsonl"
+
+            connection = sqlite3.connect(db_path)
+            seed_fixture(connection)
+            connection.close()
+
+            rejections = [
+                {"line_number": 1, "batch_item_id": "participant_pathologies:composition:composition-a", "reason": "invalid_enum:classification:BAD_CLASS"},
+                {"line_number": 2, "batch_item_id": "market_design:bridge:missing", "reason": "unknown_batch_item_id"},
+            ]
+            with rejections_path.open("w", encoding="utf-8") as handle:
+                for row in rejections:
+                    handle.write(json.dumps(row, sort_keys=True) + "\n")
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT_PATH),
+                    "--db-path",
+                    str(db_path),
+                    "--run-id",
+                    "findings-diamond-run",
+                    "--shortlist-run-id",
+                    "shortlist-run",
+                    "--interpretation-source",
+                    "diamond",
+                    "--interpretation-run-id",
+                    "diamond-run",
+                    "--interpretation-rejections-path",
+                    str(rejections_path),
+                    "--bridge-run-id",
+                    "bridge-run",
+                    "--composition-run-id",
+                    "composition-run",
+                    "--contrast-run-id",
+                    "contrast-run",
+                    "--negative-space-run-id",
+                    "negative-run",
+                    "--transition-run-id",
+                    "transition-run",
+                    "--resurfacing-run-id",
+                    "resurface-run",
+                    "--stranded-ledger-run-id",
+                    "ledger-enhanced-run",
+                    "--output-dir",
+                    str(output_dir),
+                    "--root-markdown-path",
+                    str(root_markdown_path),
+                    "--top-k",
+                    "3",
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            metrics = json.loads((output_dir / "findings_and_throwaways_metrics.json").read_text(encoding="utf-8"))
+            self.assertEqual(metrics["interpretation_source"], "diamond")
+            self.assertEqual(metrics["accepted_count"], 4)
+            self.assertEqual(metrics["rejected_count"], 2)
+            self.assertEqual(metrics["stranded_qfin_failure_count"], 2)
+            self.assertEqual(metrics["accepted_by_operator"]["market_design"], 1)
+            self.assertEqual(metrics["accepted_by_operator"]["transition_state"], 1)
+
+            rows = [
+                json.loads(line)
+                for line in (output_dir / "findings_and_throwaways.jsonl").read_text(encoding="utf-8").strip().splitlines()
+            ]
+            accepted_ids = {row["shortlist_id"] for row in rows if row["section"] == "accepted"}
+            self.assertIn("market_design:bridge:bridge-a", accepted_ids)
+            self.assertIn("transition_state:near_transition_queue_refill:transition-paper", accepted_ids)
+            self.assertIn("stranded_qfin:paper-kept", accepted_ids)
+            rejected_ids = {row["shortlist_id"] for row in rows if row["section"] == "rejected"}
+            self.assertIn("participant_pathologies:composition:composition-a", rejected_ids)
+            self.assertIn("market_design:bridge:missing", rejected_ids)
+
+            markdown = (output_dir / "findings_and_throwaways.md").read_text(encoding="utf-8")
+            self.assertIn("market_design:bridge:bridge-a", markdown)
+            self.assertIn("transition_state:near_transition_queue_refill:transition-paper", markdown)
+            self.assertIn("participant_pathologies:composition:composition-a", markdown)
             self.assertEqual(root_markdown_path.read_text(encoding="utf-8"), markdown)
 
 

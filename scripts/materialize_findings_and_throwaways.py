@@ -13,6 +13,7 @@ POSITIVE_CLASSIFICATIONS = {
     "TRANSLATION_CANDIDATE",
     "COMPOSITIONAL_CANDIDATE",
     "STRANDED_QFIN_RESULT",
+    "TRANSITION_SEAM",
 }
 NEAR_MISS_OPERATOR_FAMILIES = (
     "bridge",
@@ -28,7 +29,7 @@ def parse_args():
     parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH))
     parser.add_argument("--run-id", default="findings-and-throwaways-20260328")
     parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
-    parser.add_argument("--interpretation-source", choices=("selective", "enhanced"), default="selective")
+    parser.add_argument("--interpretation-source", choices=("selective", "enhanced", "diamond"), default="selective")
     parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--interpretation-rejections-path", default=None)
     parser.add_argument("--bridge-run-id", default="bridge-materialization-20260328")
@@ -160,6 +161,52 @@ def fetch_positive_enhanced_findings(connection: sqlite3.Connection, interpretat
     return findings
 
 
+def fetch_positive_diamond_findings(connection: sqlite3.Connection, interpretation_run_id: str) -> list[dict]:
+    rows = connection.execute(
+        """
+        SELECT
+          batch_item_id,
+          lane_family,
+          operator_family,
+          shortlist_rank,
+          source_ref,
+          packet_title,
+          classification,
+          result_summary,
+          first_test,
+          why_stranded_or_unrealized,
+          modern_equivalent,
+          confidence
+        FROM diamond_interpretations
+        WHERE run_id = ?
+        ORDER BY shortlist_rank ASC, batch_item_id ASC
+        """,
+        (interpretation_run_id,),
+    ).fetchall()
+    findings = []
+    for row in rows:
+        if row["classification"] not in POSITIVE_CLASSIFICATIONS:
+            continue
+        findings.append(
+            {
+                "section": "accepted",
+                "operator_family": row["lane_family"],
+                "shortlist_id": row["batch_item_id"],
+                "shortlist_rank": int(row["shortlist_rank"]),
+                "item_type": row["operator_family"],
+                "item_ref": row["source_ref"],
+                "title": row["packet_title"],
+                "classification": row["classification"],
+                "confidence": row["confidence"],
+                "result_summary": row["result_summary"],
+                "first_step": row["first_test"],
+                "why": row["why_stranded_or_unrealized"],
+                "modern_equivalent": row["modern_equivalent"],
+            }
+        )
+    return findings
+
+
 def fetch_shortlist_lookup(connection: sqlite3.Connection, shortlist_run_id: str) -> dict[str, dict]:
     rows = connection.execute(
         """
@@ -276,6 +323,29 @@ def fetch_enhanced_batch_lookup(connection: sqlite3.Connection, interpretation_r
         row["batch_item_id"]: {
             "operator_family": row["operator_family"],
             "shortlist_rank": int(row["family_rank"]),
+            "title": row["packet_title"],
+        }
+        for row in rows
+    }
+
+
+def fetch_diamond_batch_lookup(connection: sqlite3.Connection, interpretation_run_id: str) -> dict[str, dict]:
+    rows = connection.execute(
+        """
+        SELECT
+          batch_item_id,
+          lane_family,
+          shortlist_rank,
+          packet_title
+        FROM diamond_interpretations
+        WHERE run_id = ?
+        """,
+        (interpretation_run_id,),
+    ).fetchall()
+    return {
+        row["batch_item_id"]: {
+            "operator_family": row["lane_family"],
+            "shortlist_rank": int(row["shortlist_rank"]),
             "title": row["packet_title"],
         }
         for row in rows
@@ -520,6 +590,57 @@ def fetch_enhanced_stranded_qfin_failures(
     return failures
 
 
+def fetch_diamond_stranded_qfin_failures(
+    connection: sqlite3.Connection,
+    interpretation_run_id: str,
+    resurfacing_run_id: str,
+    stranded_ledger_run_id: str,
+    top_k: int,
+) -> list[dict]:
+    rows = connection.execute(
+        """
+        SELECT
+          src.paper_id,
+          src.resurfacing_score,
+          src.resurfacing_rank,
+          COALESCE(p.title, src.paper_id) AS title,
+          interp.batch_item_id,
+          interp.classification
+        FROM stranded_resurfacing_candidates src
+        JOIN papers p
+          ON p.paper_id = src.paper_id
+        LEFT JOIN diamond_interpretations interp
+          ON interp.run_id = ?
+         AND interp.lane_family = 'stranded_qfin'
+         AND interp.source_ref = src.paper_id
+        LEFT JOIN stranded_result_ledger ledger
+          ON ledger.run_id = ?
+         AND ledger.paper_id = src.paper_id
+        WHERE src.run_id = ?
+          AND ledger.paper_id IS NULL
+        ORDER BY src.resurfacing_rank ASC, src.paper_id ASC
+        LIMIT ?
+        """,
+        (interpretation_run_id, stranded_ledger_run_id, resurfacing_run_id, top_k),
+    ).fetchall()
+    failures = []
+    for row in rows:
+        failures.append(
+            {
+                "section": "stranded_qfin_failure",
+                "operator_family": "stranded_resurfacing",
+                "paper_id": row["paper_id"],
+                "title": row["title"],
+                "resurfacing_score": round(float(row["resurfacing_score"] or 0.0), 6),
+                "resurfacing_rank": int(row["resurfacing_rank"]),
+                "shortlist_id": row["batch_item_id"],
+                "classification": row["classification"],
+                "failure_reason": failure_reason(row["batch_item_id"], row["classification"]),
+            }
+        )
+    return failures
+
+
 def render_markdown(
     accepted: list[dict],
     rejected: list[dict],
@@ -537,7 +658,10 @@ def render_markdown(
         "## Accepted Findings",
         "",
     ]
-    accepted_by_family = {family: [] for family in ("bridge", "composition", "stranded_qfin", "transition_state")}
+    accepted_by_family = {
+        family: []
+        for family in ("bridge", "composition", "stranded_qfin", "transition_state", "market_design", "settlement_resolution", "participant_pathologies", "state_graph")
+    }
     for row in accepted:
         accepted_by_family.setdefault(row["operator_family"], []).append(row)
     for family, rows in accepted_by_family.items():
@@ -560,7 +684,7 @@ def render_markdown(
         lines.append("")
 
     lines.extend(["## Rejected Interpretations", ""])
-    rejected_families = ["bridge", "composition", "stranded_qfin", "unknown"]
+    rejected_families = ["bridge", "composition", "stranded_qfin", "transition_state", "market_design", "settlement_resolution", "participant_pathologies", "state_graph", "unknown"]
     for family in rejected_families:
         rows = [row for row in rejected if row["operator_family"] == family]
         lines.append(f"### {family}")
@@ -659,7 +783,7 @@ def main():
                 args.stranded_ledger_run_id,
                 args.top_k,
             )
-        else:
+        elif args.interpretation_source == "enhanced":
             accepted = fetch_positive_enhanced_findings(connection, args.interpretation_run_id)
             batch_lookup = fetch_enhanced_batch_lookup(connection, args.interpretation_run_id)
             # @context decision -- S24 rematerialization must report the enhanced interpretation run
@@ -667,6 +791,17 @@ def main():
             # artifact rather than being inferred from missing table rows.
             rejected = load_enhanced_rejections(rejections_path, batch_lookup, args.top_k)
             stranded_failures = fetch_enhanced_stranded_qfin_failures(
+                connection,
+                args.interpretation_run_id,
+                args.resurfacing_run_id,
+                args.stranded_ledger_run_id,
+                args.top_k,
+            )
+        else:
+            accepted = fetch_positive_diamond_findings(connection, args.interpretation_run_id)
+            batch_lookup = fetch_diamond_batch_lookup(connection, args.interpretation_run_id)
+            rejected = load_enhanced_rejections(rejections_path, batch_lookup, args.top_k)
+            stranded_failures = fetch_diamond_stranded_qfin_failures(
                 connection,
                 args.interpretation_run_id,
                 args.resurfacing_run_id,
@@ -699,11 +834,11 @@ def main():
             "stranded_qfin_failure_count": len(stranded_failures),
             "accepted_by_operator": {
                 family: sum(1 for row in accepted if row["operator_family"] == family)
-                for family in sorted({row["operator_family"] for row in accepted} | {"bridge", "composition", "stranded_qfin", "transition_state"})
+                for family in sorted({row["operator_family"] for row in accepted} | {"bridge", "composition", "stranded_qfin", "transition_state", "market_design", "settlement_resolution", "participant_pathologies", "state_graph"})
             },
             "rejected_by_operator": {
                 family: sum(1 for row in rejected if row["operator_family"] == family)
-                for family in sorted({row["operator_family"] for row in rejected} | {"bridge", "composition", "stranded_qfin", "unknown"})
+                for family in sorted({row["operator_family"] for row in rejected} | {"bridge", "composition", "stranded_qfin", "transition_state", "market_design", "settlement_resolution", "participant_pathologies", "state_graph", "unknown"})
             },
             "near_miss_by_operator": {
                 family: sum(1 for row in near_misses if row["operator_family"] == family)

@@ -122,6 +122,39 @@ def seed_stranded_ledger_fixture(connection: sqlite3.Connection) -> None:
             ),
         ],
     )
+    connection.executemany(
+        """
+        INSERT INTO diamond_interpretations (
+          run_id, batch_run_id, batch_item_id, lane_family, operator_family, source_kind, source_run_id, source_ref,
+          family_rank, shortlist_rank, selection_bucket, source_score, diamond_score, packet_title, classification,
+          result_summary, first_test, instrument_assumed, modern_equivalent, why_stranded_or_unrealized, gap_to_close,
+          confidence, raw_json
+        )
+        VALUES (
+          'diamond-run', 'diamond-batch-run', ?, 'stranded_qfin', 'stranded_qfin', 'stranded_resurfacing_candidate',
+          'resurfacing-run', ?, ?, ?, 'lane_quota', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '{}'
+        )
+        """,
+        [
+            (
+                "stranded_qfin:paper-a",
+                "paper-a",
+                1,
+                1,
+                0.61,
+                0.72,
+                "Diamond Stranded Packet A",
+                "STRANDED_QFIN_RESULT",
+                "diamond result-a",
+                "diamond test-a",
+                "diamond instrument-a",
+                "diamond modern-a",
+                "diamond why-a",
+                "diamond gap-a",
+                "high",
+            ),
+        ],
+    )
 
     connection.executemany(
         """
@@ -245,6 +278,46 @@ class MaterializeStrandedResultLedgerTest(unittest.TestCase):
             markdown = (output_dir / "stranded_result_ledger.md").read_text(encoding="utf-8")
             self.assertIn("publication item id: `stranded_qfin:paper-a`", markdown)
             self.assertIn("publication source surface: `enhanced_interpretation`", markdown)
+
+    def test_materializes_diamond_stranded_rows(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            db_path = tmp_path / "fixture.sqlite3"
+            output_dir = tmp_path / "run"
+
+            connection = sqlite3.connect(db_path)
+            seed_stranded_ledger_fixture(connection)
+            connection.close()
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT_PATH),
+                    "--db-path",
+                    str(db_path),
+                    "--run-id",
+                    "diamond-ledger-run",
+                    "--interpretation-source",
+                    "diamond_stranded",
+                    "--interpretation-run-id",
+                    "diamond-run",
+                    "--stranding-run-id",
+                    "stranding-run",
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            rows = [
+                json.loads(line)
+                for line in (output_dir / "stranded_result_ledger.jsonl").read_text(encoding="utf-8").strip().splitlines()
+            ]
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["publication_source_surface"], "diamond_interpretation")
+            self.assertEqual(rows[0]["publication_item_id"], "stranded_qfin:paper-a")
+            self.assertEqual(rows[0]["first_test"], "diamond test-a")
 
 
 if __name__ == "__main__":
