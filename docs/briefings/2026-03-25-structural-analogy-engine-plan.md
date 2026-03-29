@@ -299,6 +299,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S22` | transition-state microstructure ledger | `done` | `transition_state_ledger.*` publication surface |
 | `S23` | enhanced interpretation batch | `done` | expanded batch + enhanced interpretation ingestion |
 | `S24` | re-materialize all publication surfaces | `done` | all four publication outputs from a single enhanced interpretation run |
+| `S25` | consolidated research output report | `pending` | `research_output.md` — single human-readable document with all findings |
 
 ## Completed Stages
 
@@ -990,6 +991,29 @@ Current status:
 - the stage is complete: all four publication surfaces are now non-empty and rematerialized from the expanded interpretation store under the `*-enhanced-20260328` run family
 - the full enhancement path is complete: `S17` through `S24` now form one closed extension path from transition-state discovery through enhanced publication rematerialization, with no remaining in-progress enhancement stages in this plan
 
+### `S25` Consolidated Research Output Report
+
+Build:
+
+- a single materializer that reads all four publication surfaces and produces one human-readable `research_output.md` at the repo root
+- the report must contain ONLY research findings and insights — no pipeline statistics, no stage traces, no metric dumps
+- the report must be structured as:
+  1. Executive summary: what the system found, stated as research conclusions
+  2. Unrealized cross-domain ideas: the full index entries with results, modern equivalents, first tests, and holdout echoes
+  3. Stranded q-fin results: the full ledger entries with results, why stranded, instrument assumed, modern equivalent, first test, gap to close
+  4. Transition-state microstructure seams: the full ledger entries with results, why unrealized, instrument, first test, gap to close
+  5. Near-misses and throwaways: top candidates that were rejected or not shortlisted, with reasons
+  6. What to investigate next: a prioritized list derived from the findings
+- register the materializer as an npm command (`store:materialize-research-output`)
+- the materializer must run as the final step of any pipeline run and always overwrite `research_output.md` at the repo root
+- add a fixture test proving the report is non-empty and contains all required sections
+
+Accept when:
+
+- `research_output.md` exists at the repo root and contains all six sections
+- the report reads as research findings, not as a pipeline status dump
+- the materializer is wired as an npm command and can be re-run idempotently
+
 ---
 
 ## Development Policy
@@ -1122,15 +1146,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s17-s24-enhancement-closeout`
-- Why this commit exists: close the enhancement path in the living plan now that all `S17` through `S24` stages are complete and no enhancement-stage work remains in progress
-- Stages touched: `S17`, `S18`, `S19`, `S20`, `S21`, `S22`, `S23`, `S24`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `none; this is a plan closeout commit over already-produced enhancement artifacts`
-- Acceptance result: `complete; the living plan now records the full S17-S24 enhancement path as closed and fully executed`
-- Open risks after commit: `none inside the enhancement path; future work would require a new stage or an explicit plan amendment`
-- Next intended commit: `none`
-- Signoff status: `ready`
+- Commit scope: `s25-research-output-report`
+- Why this commit exists: add the consolidated research output materializer that produces a single human-readable `research_output.md` from all four publication surfaces, and make it the mandatory final pipeline step
+- Stages touched: `S25`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_research_output.py`, `tests/test_materialize_research_output.py`, `package.json`, `research_output.md`
+- Commands run:
+- Tests run:
+- Artifacts produced:
+- Acceptance result: `pending`
+- Open risks after commit: `S25 is the only remaining pending stage`
+- Next intended commit: `S25 consolidated research output materializer`
+- Signoff status: `draft`
 - Last updated: `2026-03-28`
