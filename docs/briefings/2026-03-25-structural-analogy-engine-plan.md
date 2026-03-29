@@ -988,6 +988,7 @@ Current status:
   - `near_miss_count`: `15`
   - `stranded_qfin_failure_count`: `3`
 - the stage is complete: all four publication surfaces are now non-empty and rematerialized from the expanded interpretation store under the `*-enhanced-20260328` run family
+- the full enhancement path is complete: `S17` through `S24` now form one closed extension path from transition-state discovery through enhanced publication rematerialization, with no remaining in-progress enhancement stages in this plan
 
 ---
 
@@ -1121,15 +1122,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s24-findings-and-throwaways-rematerialization`
-- Why this commit exists: rematerialize Findings and Throwaways from the expanded interpretation store so accepted survivors, checked-in rejections, and stranded failures all reflect the enhanced run family without losing the canonical near-miss operator sections
-- Stages touched: `S24`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_findings_and_throwaways.py`, `tests/test_materialize_findings_and_throwaways.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_findings_and_throwaways.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select operator_family, classification, count(*) from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' group by operator_family, classification order by operator_family, classification;"`, `cat data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_rejections.jsonl`, `npm run codecontext:py -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- tests/test_materialize_findings_and_throwaways.py`, `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run store:materialize-findings-and-throwaways -- --run-id findings-and-throwaways-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced --interpretation-rejections-path data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_rejections.jsonl --stranded-ledger-run-id stranded-result-ledger-enhanced-20260328`, `python3 - <<'PY' ... enhanced findings metrics and sections ... PY`, `npm run codecontext:diff -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:diff -- tests/test_materialize_findings_and_throwaways.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/findings-and-throwaways-enhanced-20260328/findings_and_throwaways_metrics.json`, `data/structural-analogy/runs/findings-and-throwaways-enhanced-20260328/findings_and_throwaways.jsonl`, `data/structural-analogy/runs/findings-and-throwaways-enhanced-20260328/findings_and_throwaways.md`
-- Acceptance result: `complete; the fourth S24 publication surface now rematerializes from enhanced interpretations and closes the full S24 publication run family with survivors, rejections, near misses, and stranded failures`
-- Open risks after commit: `none inside S24; future work is now about improving interpretation breadth or publication quality rather than finishing the enhanced rematerialization loop`
-- Next intended commit: `none; S24 is complete`
+- Commit scope: `s17-s24-enhancement-closeout`
+- Why this commit exists: close the enhancement path in the living plan now that all `S17` through `S24` stages are complete and no enhancement-stage work remains in progress
+- Stages touched: `S17`, `S18`, `S19`, `S20`, `S21`, `S22`, `S23`, `S24`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `none; this is a plan closeout commit over already-produced enhancement artifacts`
+- Acceptance result: `complete; the living plan now records the full S17-S24 enhancement path as closed and fully executed`
+- Open risks after commit: `none inside the enhancement path; future work would require a new stage or an explicit plan amendment`
+- Next intended commit: `none`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
