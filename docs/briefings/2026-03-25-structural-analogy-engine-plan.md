@@ -298,7 +298,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S21` | findings and throwaways materializer | `done` | `findings_and_throwaways.*` per-run report |
 | `S22` | transition-state microstructure ledger | `done` | `transition_state_ledger.*` publication surface |
 | `S23` | enhanced interpretation batch | `done` | expanded batch + enhanced interpretation ingestion |
-| `S24` | re-materialize all publication surfaces | `pending` | all four publication outputs from a single run |
+| `S24` | re-materialize all publication surfaces | `in_progress` | all four publication outputs from a single enhanced interpretation run |
 
 ## Completed Stages
 
@@ -940,16 +940,27 @@ Current status:
 
 Build:
 
-- re-run all four publication surfaces from the expanded interpretation:
+- re-run all four publication surfaces from the expanded interpretation in this canonical order:
   1. `unrealized_ideas_index.*`
   2. `stranded_result_ledger.*`
   3. `transition_state_ledger.*`
   4. `findings_and_throwaways.*`
+- each surface may advance in its own commit, but `S24` is not complete until all four surfaces are re-materialized from the expanded interpretation store under one coherent run family
 
 Accept when:
 
 - all four artifacts are non-empty and backed by the expanded interpretation run
 - the findings report covers survivors, rejections, and near-misses
+
+Current status:
+
+- `S24` is now explicitly split into ordered commit-sized sub-steps because the original all-at-once wording was too large for the repo's required one-commit advancement loop
+- the canonical sub-step order is:
+  1. rematerialize the Unrealized Ideas Index from `enhanced_interpretations`
+  2. rematerialize the Stranded Result Ledger from `enhanced_interpretations`
+  3. rematerialize the Transition-State Microstructure Ledger from `enhanced_interpretations`
+  4. rematerialize Findings and Throwaways so survivors, rejections, and near-misses all point at the expanded interpretation run
+- no S24 publication surface has been re-materialized yet; the active next step is still the first surface in that order
 
 ---
 
@@ -1083,15 +1094,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s23-enhanced-interpretation-ingestion`
-- Why this commit exists: add the canonical ingestion surface for the expanded S23 batch without weakening the shortlist-only `S12` interpretation contract
-- Stages touched: `S23`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `scripts/ingest_enhanced_interpretations.py`, `tests/test_ingest_enhanced_interpretations.py`, `tests/fixtures/enhanced_interpretation_responses.jsonl`, `package.json`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:scope -- scripts/ingest_selective_interpretations.py`, `npm run codecontext:scope -- scripts/materialize_enhanced_interpretation_batch.py`, `python3 - <<'PY' ... inspect enhanced batch item ids ... PY`, `npm run codecontext:py -- scripts/ingest_enhanced_interpretations.py`, `npm run codecontext:py -- tests/test_ingest_enhanced_interpretations.py`, `python3 -m unittest -v tests.test_ingest_enhanced_interpretations`, `npm run store:ingest-enhanced-interpretations -- --run-id enhanced-interpretation-ingestion-20260328 --responses-path tests/fixtures/enhanced_interpretation_responses.jsonl`, `python3 - <<'PY' ... enhanced ingestion metrics and counts ... PY`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select operator_family, classification, count(*) from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' group by operator_family, classification order by operator_family, classification;"`, `npm run codecontext:diff -- scripts/ingest_enhanced_interpretations.py`, `npm run codecontext:diff -- tests/test_ingest_enhanced_interpretations.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_ingest_enhanced_interpretations`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_ingestion_metrics.json`, `data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_rejections.jsonl`
-- Acceptance result: `complete; the expanded ingestion run accepted 8 rows and rejected 3, materially above the S12 pilot while preserving the strict schema and keeping shortlist-gated interpretations separate`
-- Open risks after commit: `expanded publication surfaces still read from shortlist-gated interpretations today, so S24 must explicitly re-materialize all four publication surfaces against the enhanced interpretation store`
-- Next intended commit: `S24 re-materialize all publication surfaces`
+- Commit scope: `s24-plan-split-for-commit-sized-rematerialization`
+- Why this commit exists: make `S24` executable under the required one-commit-at-a-time workflow by recording the fixed order for rematerializing the four publication surfaces
+- Stages touched: `S24`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sed -n '930,1115p' docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `none`
+- Acceptance result: `complete; S24 now has an explicit fixed sub-step order that preserves canonical stage order while making the publication re-materialization work commit-sized`
+- Open risks after commit: `all four publication scripts still point at shortlist-gated interpretations today, so the next S24 commit must start with the Unrealized Ideas Index rematerialization against enhanced interpretations`
+- Next intended commit: `S24 unrealized ideas index rematerialization`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
