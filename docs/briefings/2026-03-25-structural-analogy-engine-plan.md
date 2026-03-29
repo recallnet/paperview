@@ -314,6 +314,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S32` | shortlist-gated diamond interpretation | `done` | top-40 + per-lane interpretation with `TRANSITION_SEAM` class, strict JSON |
 | `S33` | six publication surfaces + diamond board | `done` | unrealized index, stranded ledger, transition ledger, early-market ledger, findings, diamond board all rematerialized from `diamond_interpretations` |
 | `S34` | empirical test memos v2 | `done` | queue x refill, auction handoff, maker-retreat memos now published in the v2 hypothesis/data/baseline/metric/fail-fast format |
+| `S35` | lane memo suite | `in_progress` | four focused lane memos: market-design delayed parity repair, settlement-lag timing, toxic-flow filters, state-graph repair timing |
 
 ## Completed Stages
 
@@ -1661,16 +1662,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `v2-plan-closeout`
-- Why this commit exists: finalize the living plan in an explicit terminal committed state after the full v2 execution path completed across `S28-S34` and `DS1-DS5`
-- Stages touched: `S28`, `S29`, `S30`, `S31`, `S32`, `S33`, `S34`, `DS1`, `DS2`, `DS3`, `DS4`, `DS5`
+- Commit scope: `s35-lane-memo-suite-foundation`
+- Why this commit exists: reopen the canonical plan after the v2 closeout and define a focused next workstream around four lane memos instead of more broad discovery
+- Stages touched: `S35`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
 - Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
 - Artifacts produced: `none`
-- Acceptance result: the stage table marks `S28-S34` and `DS1-DS5` done, the closeout block records the full v2 path as complete, and the next intended commit is explicitly `none`
-- Open risks after commit: future work should start from a new stage or plan revision rather than appending new execution claims onto this closed v2 block
-- Next intended commit: `none — S28-S34 and DS1-DS5 closed`
+- Acceptance result: `S35` is opened as a post-v2 memo stage with the fixed sub-order: `1.` market-design delayed parity repair `2.` settlement-lag / resolution-friction timing `3.` rule-sensitive toxic-flow filters `4.` state-graph repair timing monitor
+- Open risks after commit: these four memos must stay evidence-bound to the current `S33` publication surfaces and diamond-study reports; they should not quietly turn back into generic discovery or score-tuning work
+- Next intended commit: `S35 memo 1 — market-design delayed parity repair`
 - Signoff status: `committed`
 - Last updated: `2026-03-29`
 
@@ -1685,3 +1686,4 @@ Current status:
   - shortlist-gated diamond interpretation
   - six publication surfaces plus `diamond_board.md`
   - three empirical memo v2 outputs
+  - a new follow-on `S35` lane-memo stage aimed at focused writeups for the strongest non-generic early-market leads
