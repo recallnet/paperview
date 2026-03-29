@@ -55,6 +55,22 @@ def seed_unrealized_index_fixture(connection: sqlite3.Connection) -> None:
             ),
             (
                 "packet-run",
+                "bridge",
+                "composition-a",
+                "Composition Pair As Bridge",
+                "/tmp/bridge-composition-a.md",
+                '{"representative_papers":["source-bridge"]}',
+            ),
+            (
+                "packet-run",
+                "bridge",
+                "bridge-b",
+                "Bridge Without Validation",
+                "/tmp/bridge-b.md",
+                '{"representative_papers":["source-bridge"]}',
+            ),
+            (
+                "packet-run",
                 "composition",
                 "composition-a",
                 "Composition Packet",
@@ -92,6 +108,26 @@ def seed_unrealized_index_fixture(connection: sqlite3.Connection) -> None:
             ("interpret-run", "bridge:bridge-a", "TRANSLATION_CANDIDATE"),
             ("interpret-run", "paper:source-paper", "STRANDED_QFIN_RESULT"),
             ("interpret-run", "composition:composition-a", "NO_TRANSLATION"),
+        ],
+    )
+
+    connection.executemany(
+        """
+        INSERT INTO enhanced_interpretations (
+          run_id, batch_run_id, batch_item_id, operator_family, source_kind, source_run_id, source_ref,
+          family_rank, source_score, packet_title, classification, result_summary, first_step,
+          instrument_assumed, modern_equivalent, why_stranded_or_unrealized, gap_to_close,
+          confidence, raw_json
+        )
+        VALUES (
+          'enhanced-run', 'enhanced-batch-run', ?, 'bridge', 'review_packet', 'packet-run', ?, ?, ?, ?, ?, 'result', 'step',
+          'instrument', 'modern', 'why', 'gap', 'high', '{}'
+        )
+        """,
+        [
+            ("bridge:bridge-a", "bridge-a", 1, 2.4, "Bridge Packet", "TRANSLATION_CANDIDATE"),
+            ("bridge:composition-a", "composition-a", 2, 2.1, "Composition Pair As Bridge", "COMPOSITIONAL_CANDIDATE"),
+            ("bridge:bridge-b", "bridge-b", 3, 1.8, "Bridge Without Validation", "TRANSLATION_CANDIDATE"),
         ],
     )
 
@@ -173,6 +209,61 @@ class MaterializeUnrealizedIdeasIndexTest(unittest.TestCase):
             self.assertIn("# Unrealized Ideas Index", markdown)
             self.assertIn("Bridge Packet", markdown)
             self.assertIn("realized-market leakage: `0.0`", markdown)
+
+    def test_materializes_enhanced_bridge_rows_with_validation_linkage(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            db_path = tmp_path / "fixture.sqlite3"
+            output_dir = tmp_path / "run"
+
+            connection = sqlite3.connect(db_path)
+            seed_unrealized_index_fixture(connection)
+            connection.close()
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT_PATH),
+                    "--db-path",
+                    str(db_path),
+                    "--run-id",
+                    "enhanced-index-run",
+                    "--shortlist-run-id",
+                    "shortlist-run",
+                    "--interpretation-source",
+                    "enhanced_bridge",
+                    "--interpretation-run-id",
+                    "enhanced-run",
+                    "--validation-interpretation-run-id",
+                    "interpret-run",
+                    "--holdout-run-id",
+                    "echo-run",
+                    "--membership-run-id",
+                    "membership-run",
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            metrics = json.loads((output_dir / "unrealized_ideas_index_metrics.json").read_text(encoding="utf-8"))
+            self.assertEqual(metrics["entry_count"], 2)
+            self.assertEqual(metrics["top_ranked_publication_item_id"], "bridge:bridge-a")
+
+            rows = [
+                json.loads(line)
+                for line in (output_dir / "unrealized_ideas_index.jsonl").read_text(encoding="utf-8").strip().splitlines()
+            ]
+            self.assertEqual([row["publication_item_id"] for row in rows], ["bridge:bridge-a", "bridge:composition-a"])
+            self.assertEqual(rows[0]["publication_source_surface"], "enhanced_interpretation")
+            self.assertEqual(rows[0]["shortlist_id"], "bridge:bridge-a")
+            self.assertEqual(rows[1]["shortlist_id"], "composition:composition-a")
+            self.assertNotIn("bridge:bridge-b", [row["publication_item_id"] for row in rows])
+
+            markdown = (output_dir / "unrealized_ideas_index.md").read_text(encoding="utf-8")
+            self.assertIn("publication item id: `bridge:bridge-a`", markdown)
+            self.assertIn("publication source surface: `enhanced_interpretation`", markdown)
 
 
 if __name__ == "__main__":

@@ -960,7 +960,13 @@ Current status:
   2. rematerialize the Stranded Result Ledger from `enhanced_interpretations`
   3. rematerialize the Transition-State Microstructure Ledger from `enhanced_interpretations`
   4. rematerialize Findings and Throwaways so survivors, rejections, and near-misses all point at the expanded interpretation run
-- no S24 publication surface has been re-materialized yet; the active next step is still the first surface in that order
+- the first `S24` sub-step is now complete: `scripts/materialize_unrealized_ideas_index.py` can rematerialize the index from `enhanced_interpretations` in `enhanced_bridge` mode while preserving explicit linkage to the shortlist-backed holdout validation rows that still provide echo evidence
+- fixture coverage in `tests/test_materialize_unrealized_ideas_index.py` now proves both the original shortlist mode and the enhanced-bridge rematerialization path
+- the live rerun `npm run store:materialize-unrealized-ideas-index -- --run-id unrealized-ideas-index-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced_bridge --validation-interpretation-run-id selective-interpretation-ingestion-20260328` completed successfully with:
+  - `entry_count`: `1`
+  - `top_ranked_publication_item_id`: `bridge:queue_value_passive_quoting__refill_lag_local_shock`
+  - `COMPOSITIONAL_CANDIDATE`: `1`
+- the remaining S24 order is unchanged and the active next step is now the Stranded Result Ledger rematerialization from `enhanced_interpretations`
 
 ---
 
@@ -1094,15 +1100,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s24-plan-split-for-commit-sized-rematerialization`
-- Why this commit exists: make `S24` executable under the required one-commit-at-a-time workflow by recording the fixed order for rematerializing the four publication surfaces
+- Commit scope: `s24-unrealized-ideas-index-rematerialization`
+- Why this commit exists: rematerialize the Unrealized Ideas Index from the enhanced interpretation store while preserving explicit linkage to the shortlist-backed holdout validation rows that still provide echo evidence
 - Stages touched: `S24`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sed -n '930,1115p' docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `none`
-- Acceptance result: `complete; S24 now has an explicit fixed sub-step order that preserves canonical stage order while making the publication re-materialization work commit-sized`
-- Open risks after commit: `all four publication scripts still point at shortlist-gated interpretations today, so the next S24 commit must start with the Unrealized Ideas Index rematerialization against enhanced interpretations`
-- Next intended commit: `S24 unrealized ideas index rematerialization`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `scripts/materialize_unrealized_ideas_index.py`, `tests/test_materialize_unrealized_ideas_index.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:scope -- scripts/materialize_unrealized_ideas_index.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select shortlist_id, holdout_paper_id, echo_score, echo_rank from holdout_echoes where run_id='holdout-echo-materialization-20260328' order by shortlist_id, echo_rank;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select batch_item_id, operator_family, classification from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' order by batch_item_id;"`, `npm run codecontext:py -- scripts/materialize_unrealized_ideas_index.py`, `npm run codecontext:py -- tests/test_materialize_unrealized_ideas_index.py`, `python3 -m unittest -v tests.test_materialize_unrealized_ideas_index`, `npm run store:materialize-unrealized-ideas-index -- --run-id unrealized-ideas-index-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced_bridge --validation-interpretation-run-id selective-interpretation-ingestion-20260328`, `python3 - <<'PY' ... enhanced unrealized index metrics and rows ... PY`, `npm run codecontext:diff -- scripts/materialize_unrealized_ideas_index.py`, `npm run codecontext:diff -- tests/test_materialize_unrealized_ideas_index.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_unrealized_ideas_index`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/unrealized-ideas-index-enhanced-20260328/unrealized_ideas_index_metrics.json`, `data/structural-analogy/runs/unrealized-ideas-index-enhanced-20260328/unrealized_ideas_index.jsonl`, `data/structural-analogy/runs/unrealized-ideas-index-enhanced-20260328/unrealized_ideas_index.md`
+- Acceptance result: `complete; the first S24 publication surface now rematerializes from enhanced bridge interpretations, but only rows with pair-key linkage to the existing holdout validation surface survive publication`
+- Open risks after commit: `the remaining S24 publication surfaces still point at shortlist-gated interpretations today, and this first rematerialized index slice can only publish enhanced bridge rows that reuse existing holdout validation pairings`
+- Next intended commit: `S24 stranded result ledger rematerialization`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

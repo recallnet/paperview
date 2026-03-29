@@ -22,7 +22,9 @@ def parse_args():
     parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH))
     parser.add_argument("--run-id", default="unrealized-ideas-index-20260328")
     parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
+    parser.add_argument("--interpretation-source", choices=("selective", "enhanced_bridge"), default="selective")
     parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
+    parser.add_argument("--validation-interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--holdout-run-id", default="holdout-echo-materialization-20260328")
     parser.add_argument("--membership-run-id", default="corpus-membership-materialization-20260328")
     parser.add_argument("--max-realized-market-leakage", type=float, default=0.999999)
@@ -38,6 +40,61 @@ def log_run_event(connection: sqlite3.Connection, run_id: str, stage: str, event
         """,
         (run_id, stage, event_type, json.dumps(payload, sort_keys=True)),
     )
+
+
+def ensure_unrealized_idea_index_table(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS unrealized_idea_index (
+          run_id TEXT NOT NULL,
+          shortlist_run_id TEXT NOT NULL,
+          interpretation_run_id TEXT NOT NULL,
+          holdout_run_id TEXT NOT NULL,
+          shortlist_id TEXT NOT NULL,
+          publication_source_surface TEXT NOT NULL DEFAULT 'selective',
+          publication_interpretation_run_id TEXT,
+          publication_item_id TEXT,
+          item_type TEXT NOT NULL,
+          item_ref TEXT NOT NULL,
+          title TEXT NOT NULL,
+          classification TEXT NOT NULL,
+          index_rank INTEGER NOT NULL,
+          index_score REAL NOT NULL,
+          domain_far_score REAL NOT NULL,
+          holdout_echo_score REAL NOT NULL,
+          realized_market_leakage_score REAL NOT NULL,
+          rationale_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (run_id, shortlist_id),
+          FOREIGN KEY (shortlist_run_id, shortlist_id) REFERENCES shortlist_items(run_id, shortlist_id) ON DELETE CASCADE,
+          FOREIGN KEY (interpretation_run_id, shortlist_id) REFERENCES selective_interpretations(run_id, shortlist_id) ON DELETE CASCADE
+        )
+        """
+    )
+    columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(unrealized_idea_index)").fetchall()
+    }
+    if "publication_source_surface" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE unrealized_idea_index
+            ADD COLUMN publication_source_surface TEXT NOT NULL DEFAULT 'selective'
+            """
+        )
+    if "publication_interpretation_run_id" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE unrealized_idea_index
+            ADD COLUMN publication_interpretation_run_id TEXT
+            """
+        )
+    if "publication_item_id" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE unrealized_idea_index
+            ADD COLUMN publication_item_id TEXT
+            """
+        )
 
 
 def resolve_source_paper_ids(summary_json: str, echoes: list[sqlite3.Row], item_type: str, item_ref: str) -> list[str]:
@@ -117,6 +174,8 @@ def render_markdown(rows: list[dict]) -> str:
             [
                 f"## {row['index_rank']}. {row['title']}",
                 "",
+                f"- publication item id: `{row['publication_item_id']}`",
+                f"- publication source surface: `{row['publication_source_surface']}`",
                 f"- shortlist id: `{row['shortlist_id']}`",
                 f"- classification: `{row['classification']}`",
                 f"- item type: `{row['item_type']}`",
@@ -143,6 +202,111 @@ def render_markdown(rows: list[dict]) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def fetch_selective_source_rows(connection: sqlite3.Connection, interpretation_run_id: str, shortlist_run_id: str) -> list[sqlite3.Row]:
+    return connection.execute(
+        """
+        SELECT
+          si.shortlist_id,
+          si.item_type,
+          si.item_ref,
+          si.shortlist_rank,
+          si.score AS shortlist_score,
+          rp.title,
+          rp.summary_json,
+          interp.classification,
+          interp.result_summary,
+          interp.first_step,
+          interp.instrument_assumed,
+          interp.modern_equivalent,
+          interp.why_stranded_or_unrealized,
+          interp.gap_to_close,
+          interp.confidence
+        FROM selective_interpretations interp
+        JOIN shortlist_items si
+          ON si.run_id = interp.shortlist_run_id
+         AND si.shortlist_id = interp.shortlist_id
+        JOIN review_packets rp
+          ON rp.run_id = si.packet_run_id
+         AND rp.packet_kind = si.packet_kind
+         AND rp.item_ref = si.packet_item_ref
+        WHERE interp.run_id = ?
+          AND si.run_id = ?
+        ORDER BY si.shortlist_rank ASC, si.shortlist_id ASC
+        """,
+        (interpretation_run_id, shortlist_run_id),
+    ).fetchall()
+
+
+def fetch_enhanced_bridge_source_rows(connection: sqlite3.Connection, interpretation_run_id: str) -> list[sqlite3.Row]:
+    return connection.execute(
+        """
+        SELECT
+          ei.batch_item_id,
+          ei.source_ref AS pair_key,
+          ei.family_rank,
+          ei.source_score,
+          rp.title,
+          rp.summary_json,
+          ei.classification,
+          ei.result_summary,
+          ei.first_step,
+          ei.instrument_assumed,
+          ei.modern_equivalent,
+          ei.why_stranded_or_unrealized,
+          ei.gap_to_close,
+          ei.confidence
+        FROM enhanced_interpretations ei
+        JOIN review_packets rp
+          ON rp.run_id = ei.source_run_id
+         AND rp.packet_kind = 'bridge'
+         AND rp.item_ref = ei.source_ref
+        WHERE ei.run_id = ?
+          AND ei.operator_family = 'bridge'
+        ORDER BY ei.family_rank ASC, ei.batch_item_id ASC
+        """,
+        (interpretation_run_id,),
+    ).fetchall()
+
+
+def fetch_validation_echoes_by_pair(
+    connection: sqlite3.Connection,
+    shortlist_run_id: str,
+    validation_interpretation_run_id: str,
+    holdout_run_id: str,
+    pair_key: str,
+) -> tuple[sqlite3.Row | None, list[sqlite3.Row]]:
+    rows = connection.execute(
+        """
+        SELECT
+          si.shortlist_id,
+          si.shortlist_rank,
+          he.holdout_paper_id,
+          he.echo_score,
+          he.echo_rank,
+          he.source_paper_ids_json,
+          COALESCE(p.title, he.holdout_paper_id) AS holdout_title
+        FROM shortlist_items si
+        JOIN selective_interpretations interp
+          ON interp.shortlist_run_id = si.run_id
+         AND interp.shortlist_id = si.shortlist_id
+        JOIN holdout_echoes he
+          ON he.interpretation_run_id = interp.run_id
+         AND he.shortlist_id = interp.shortlist_id
+        JOIN papers p
+          ON p.paper_id = he.holdout_paper_id
+        WHERE si.run_id = ?
+          AND interp.run_id = ?
+          AND he.run_id = ?
+          AND si.packet_item_ref = ?
+        ORDER BY si.shortlist_rank ASC, he.echo_rank ASC, he.holdout_paper_id ASC
+        """,
+        (shortlist_run_id, validation_interpretation_run_id, holdout_run_id, pair_key),
+    ).fetchall()
+    if not rows:
+        return None, []
+    return rows[0], rows
+
+
 def main():
     args = parse_args()
     db_path = Path(args.db_path).resolve()
@@ -152,6 +316,7 @@ def main():
     connection = sqlite3.connect(str(db_path))
     connection.row_factory = sqlite3.Row
     try:
+        ensure_unrealized_idea_index_table(connection)
         log_run_event(
             connection,
             args.run_id,
@@ -159,118 +324,151 @@ def main():
             "started",
             {
                 "shortlist_run_id": args.shortlist_run_id,
+                "interpretation_source": args.interpretation_source,
                 "interpretation_run_id": args.interpretation_run_id,
+                "validation_interpretation_run_id": args.validation_interpretation_run_id,
                 "holdout_run_id": args.holdout_run_id,
                 "membership_run_id": args.membership_run_id,
                 "max_realized_market_leakage": args.max_realized_market_leakage,
             },
         )
 
-        source_rows = connection.execute(
-            """
-            SELECT
-              si.shortlist_id,
-              si.item_type,
-              si.item_ref,
-              si.shortlist_rank,
-              si.score AS shortlist_score,
-              rp.title,
-              rp.summary_json,
-              interp.classification,
-              interp.result_summary,
-              interp.first_step,
-              interp.instrument_assumed,
-              interp.modern_equivalent,
-              interp.why_stranded_or_unrealized,
-              interp.gap_to_close,
-              interp.confidence
-            FROM selective_interpretations interp
-            JOIN shortlist_items si
-              ON si.run_id = interp.shortlist_run_id
-             AND si.shortlist_id = interp.shortlist_id
-            JOIN review_packets rp
-              ON rp.run_id = si.packet_run_id
-             AND rp.packet_kind = si.packet_kind
-             AND rp.item_ref = si.packet_item_ref
-            WHERE interp.run_id = ?
-              AND si.run_id = ?
-            ORDER BY si.shortlist_rank ASC, si.shortlist_id ASC
-            """,
-            (args.interpretation_run_id, args.shortlist_run_id),
-        ).fetchall()
-
         ranked_rows = []
-        for row in source_rows:
-            classification = row["classification"]
-            if classification not in POSITIVE_CLASSIFICATIONS:
-                continue
-            echoes = connection.execute(
-                """
-                SELECT
-                  he.holdout_paper_id,
-                  he.echo_score,
-                  he.echo_rank,
-                  he.source_paper_ids_json,
-                  COALESCE(p.title, he.holdout_paper_id) AS holdout_title
-                FROM holdout_echoes he
-                JOIN papers p
-                  ON p.paper_id = he.holdout_paper_id
-                WHERE he.run_id = ?
-                  AND he.shortlist_id = ?
-                ORDER BY he.echo_rank ASC, he.holdout_paper_id ASC
-                """,
-                (args.holdout_run_id, row["shortlist_id"]),
-            ).fetchall()
-            if not echoes:
-                continue
+        if args.interpretation_source == "selective":
+            source_rows = fetch_selective_source_rows(connection, args.interpretation_run_id, args.shortlist_run_id)
+            for row in source_rows:
+                classification = row["classification"]
+                if classification not in POSITIVE_CLASSIFICATIONS:
+                    continue
+                validation_row, echoes = fetch_validation_echoes_by_pair(
+                    connection,
+                    args.shortlist_run_id,
+                    args.interpretation_run_id,
+                    args.holdout_run_id,
+                    row["item_ref"],
+                )
+                if not echoes:
+                    continue
 
-            source_paper_ids = resolve_source_paper_ids(row["summary_json"], echoes, row["item_type"], row["item_ref"])
-            leakage_score = realized_market_leakage(connection, args.membership_run_id, source_paper_ids)
-            domain_far_score = round(max(0.0, 1.0 - leakage_score), 6)
-            # @context risk -- Fully leaked rows are still useful upstream as canonical shortlist and
-            # interpretation evidence, but publishing them into the Unrealized Ideas Index would
-            # break the product contract: this surface is supposed to be mechanism-close and domain-far.
-            if leakage_score >= float(args.max_realized_market_leakage):
-                continue
-            top_holdout_echoes = [
-                {
-                    "paper_id": echo["holdout_paper_id"],
-                    "title": echo["holdout_title"],
-                    "echo_score": round(float(echo["echo_score"] or 0.0), 6),
-                }
-                for echo in echoes[:3]
-            ]
-            holdout_echo_score = round(
-                sum(float(item["echo_score"]) for item in top_holdout_echoes) / len(top_holdout_echoes),
-                6,
-            )
-            ranked_rows.append(
-                {
-                    "shortlist_id": row["shortlist_id"],
-                    "item_type": row["item_type"],
-                    "item_ref": row["item_ref"],
-                    "title": row["title"],
-                    "classification": classification,
-                    "shortlist_rank": int(row["shortlist_rank"]),
-                    "shortlist_score": round(float(row["shortlist_score"] or 0.0), 6),
-                    "holdout_echo_score": holdout_echo_score,
-                    "realized_market_leakage_score": leakage_score,
-                    "domain_far_score": domain_far_score,
-                    "result_summary": row["result_summary"],
-                    "first_step": row["first_step"],
-                    "instrument_assumed": row["instrument_assumed"],
-                    "modern_equivalent": row["modern_equivalent"],
-                    "why_stranded_or_unrealized": row["why_stranded_or_unrealized"],
-                    "gap_to_close": row["gap_to_close"],
-                    "confidence": row["confidence"],
-                    "rationale": {
-                        "shortlist_rank_score": shortlist_rank_score(int(row["shortlist_rank"])),
-                        "classification_bonus": POSITIVE_CLASSIFICATIONS[classification],
-                        "source_paper_ids": source_paper_ids,
-                        "top_holdout_echoes": top_holdout_echoes,
-                    },
-                }
-            )
+                source_paper_ids = resolve_source_paper_ids(row["summary_json"], echoes, row["item_type"], row["item_ref"])
+                leakage_score = realized_market_leakage(connection, args.membership_run_id, source_paper_ids)
+                domain_far_score = round(max(0.0, 1.0 - leakage_score), 6)
+                # @context risk -- Fully leaked rows are still useful upstream as canonical shortlist and
+                # interpretation evidence, but publishing them into the Unrealized Ideas Index would
+                # break the product contract: this surface is supposed to be mechanism-close and domain-far.
+                if leakage_score >= float(args.max_realized_market_leakage):
+                    continue
+                top_holdout_echoes = [
+                    {
+                        "paper_id": echo["holdout_paper_id"],
+                        "title": echo["holdout_title"],
+                        "echo_score": round(float(echo["echo_score"] or 0.0), 6),
+                    }
+                    for echo in echoes[:3]
+                ]
+                holdout_echo_score = round(
+                    sum(float(item["echo_score"]) for item in top_holdout_echoes) / len(top_holdout_echoes),
+                    6,
+                )
+                ranked_rows.append(
+                    {
+                        "publication_source_surface": "selective",
+                        "publication_interpretation_run_id": args.interpretation_run_id,
+                        "publication_item_id": row["shortlist_id"],
+                        "shortlist_id": row["shortlist_id"],
+                        "item_type": row["item_type"],
+                        "item_ref": row["item_ref"],
+                        "title": row["title"],
+                        "classification": classification,
+                        "shortlist_rank": int(row["shortlist_rank"]),
+                        "shortlist_score": round(float(row["shortlist_score"] or 0.0), 6),
+                        "holdout_echo_score": holdout_echo_score,
+                        "realized_market_leakage_score": leakage_score,
+                        "domain_far_score": domain_far_score,
+                        "result_summary": row["result_summary"],
+                        "first_step": row["first_step"],
+                        "instrument_assumed": row["instrument_assumed"],
+                        "modern_equivalent": row["modern_equivalent"],
+                        "why_stranded_or_unrealized": row["why_stranded_or_unrealized"],
+                        "gap_to_close": row["gap_to_close"],
+                        "confidence": row["confidence"],
+                        "rationale": {
+                            "validation_shortlist_id": validation_row["shortlist_id"] if validation_row else row["shortlist_id"],
+                            "shortlist_rank_score": shortlist_rank_score(int(row["shortlist_rank"])),
+                            "classification_bonus": POSITIVE_CLASSIFICATIONS[classification],
+                            "source_paper_ids": source_paper_ids,
+                            "top_holdout_echoes": top_holdout_echoes,
+                        },
+                    }
+                )
+        else:
+            source_rows = fetch_enhanced_bridge_source_rows(connection, args.interpretation_run_id)
+            for row in source_rows:
+                classification = row["classification"]
+                if classification not in POSITIVE_CLASSIFICATIONS:
+                    continue
+                validation_row, echoes = fetch_validation_echoes_by_pair(
+                    connection,
+                    args.shortlist_run_id,
+                    args.validation_interpretation_run_id,
+                    args.holdout_run_id,
+                    row["pair_key"],
+                )
+                if not echoes or validation_row is None:
+                    continue
+                # @context decision -- The first S24 rematerialized index slice publishes enhanced
+                # bridge interpretations only when they can still be tied back to the existing
+                # shortlist-backed holdout echo surface by shared pairing key. That keeps the new
+                # publication rows truthfully grounded in real validation evidence while S24
+                # incrementally upgrades the downstream publication surfaces.
+                source_paper_ids = resolve_source_paper_ids(row["summary_json"], echoes, "bridge", row["pair_key"])
+                leakage_score = realized_market_leakage(connection, args.membership_run_id, source_paper_ids)
+                domain_far_score = round(max(0.0, 1.0 - leakage_score), 6)
+                if leakage_score >= float(args.max_realized_market_leakage):
+                    continue
+                top_holdout_echoes = [
+                    {
+                        "paper_id": echo["holdout_paper_id"],
+                        "title": echo["holdout_title"],
+                        "echo_score": round(float(echo["echo_score"] or 0.0), 6),
+                    }
+                    for echo in echoes[:3]
+                ]
+                holdout_echo_score = round(
+                    sum(float(item["echo_score"]) for item in top_holdout_echoes) / len(top_holdout_echoes),
+                    6,
+                )
+                ranked_rows.append(
+                    {
+                        "publication_source_surface": "enhanced_interpretation",
+                        "publication_interpretation_run_id": args.interpretation_run_id,
+                        "publication_item_id": row["batch_item_id"],
+                        "shortlist_id": validation_row["shortlist_id"],
+                        "item_type": "bridge",
+                        "item_ref": row["pair_key"],
+                        "title": row["title"],
+                        "classification": classification,
+                        "shortlist_rank": int(row["family_rank"]),
+                        "shortlist_score": round(float(row["source_score"] or 0.0), 6),
+                        "holdout_echo_score": holdout_echo_score,
+                        "realized_market_leakage_score": leakage_score,
+                        "domain_far_score": domain_far_score,
+                        "result_summary": row["result_summary"],
+                        "first_step": row["first_step"],
+                        "instrument_assumed": row["instrument_assumed"],
+                        "modern_equivalent": row["modern_equivalent"],
+                        "why_stranded_or_unrealized": row["why_stranded_or_unrealized"],
+                        "gap_to_close": row["gap_to_close"],
+                        "confidence": row["confidence"],
+                        "rationale": {
+                            "validation_shortlist_id": validation_row["shortlist_id"],
+                            "shortlist_rank_score": shortlist_rank_score(int(row["family_rank"])),
+                            "classification_bonus": POSITIVE_CLASSIFICATIONS[classification],
+                            "source_paper_ids": source_paper_ids,
+                            "top_holdout_echoes": top_holdout_echoes,
+                        },
+                    }
+                )
 
         ranked_rows.sort(
             key=lambda item: (
@@ -305,6 +503,9 @@ def main():
                   interpretation_run_id,
                   holdout_run_id,
                   shortlist_id,
+                  publication_source_surface,
+                  publication_interpretation_run_id,
+                  publication_item_id,
                   item_type,
                   item_ref,
                   title,
@@ -316,14 +517,17 @@ def main():
                   realized_market_leakage_score,
                   rationale_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     args.run_id,
                     args.shortlist_run_id,
-                    args.interpretation_run_id,
+                    args.validation_interpretation_run_id if args.interpretation_source == "enhanced_bridge" else args.interpretation_run_id,
                     args.holdout_run_id,
                     item["shortlist_id"],
+                    item["publication_source_surface"],
+                    item["publication_interpretation_run_id"],
+                    item["publication_item_id"],
                     item["item_type"],
                     item["item_ref"],
                     item["title"],
@@ -350,6 +554,8 @@ def main():
             "run_id": args.run_id,
             "shortlist_run_id": args.shortlist_run_id,
             "interpretation_run_id": args.interpretation_run_id,
+            "interpretation_source": args.interpretation_source,
+            "validation_interpretation_run_id": args.validation_interpretation_run_id,
             "holdout_run_id": args.holdout_run_id,
             "max_realized_market_leakage": float(args.max_realized_market_leakage),
             "entry_count": len(jsonl_rows),
@@ -358,6 +564,7 @@ def main():
                 for classification in sorted(POSITIVE_CLASSIFICATIONS)
             },
             "top_ranked_shortlist_id": jsonl_rows[0]["shortlist_id"] if jsonl_rows else None,
+            "top_ranked_publication_item_id": jsonl_rows[0]["publication_item_id"] if jsonl_rows else None,
         }
         metrics_path = output_dir / "unrealized_ideas_index_metrics.json"
         metrics_path.write_text(json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8")
