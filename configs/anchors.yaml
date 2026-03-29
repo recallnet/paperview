@@ -1,0 +1,187 @@
+anchors:
+  - anchor_id: parity_propagation
+    label: Parity / propagation
+    anchor_type: positive
+    paper_ids: ["2002.02583", "0812.0913", "1902.04690", "1803.09432"]
+    keywords:
+      - triangular arbitrage
+      - cross-currency
+      - lead-lag
+      - fragmentation
+      - parity
+      - cross-market
+      - currency peg
+    allowed_categories: [q-fin, econ, physics, cond-mat]
+    min_keyword_hits: 2
+    notes: Repeated positive anchor around linked-market parity, propagation, and fragmentation.
+    tags: [parity, propagation, bridge]
+  - anchor_id: queue_value_passive_quoting
+    label: Queue value / passive quoting
+    anchor_type: positive
+    paper_ids: ["2502.18625", "2206.05410", "0711.3581", "2009.02808"]
+    keywords:
+      - fill probability
+      - post-fill
+      - market maker
+      - queue
+      - passive quoting
+      - inventory risk
+      - liquidity provider
+      - maker-taker
+      - queue value
+      - passive order
+    allowed_categories: [q-fin, econ, physics, cond-mat]
+    min_keyword_hits: 2
+    notes: Explicit transition-state anchor around fill quality, queue value, and passive quoting behavior.
+    tags: [queue, passive, microstructure, transition-state]
+  - anchor_id: refill_lag_resiliency
+    label: Refill lag / resiliency
+    anchor_type: positive
+    paper_ids: ["1602.00731", "1011.6402", "0809.0822"]
+    keywords:
+      - resiliency
+      - refill
+      - refill lag
+      - order book recovery
+      - liquidity replenishment
+      - local shock
+      - market impact
+      - price impact
+    allowed_categories: [q-fin, physics, cond-mat]
+    min_keyword_hits: 2
+    notes: Transition-state anchor for post-shock repair, refill speed, and book resiliency.
+    tags: [refill, resiliency, transition-state]
+  - anchor_id: refill_lag_local_shock
+    label: Refill lag / local shock
+    anchor_type: positive
+    paper_ids: ["0901.0495", "physics/0608032", "0711.3581"]
+    keywords:
+      - large price changes
+      - liquidity crises
+      - order book
+      - market impact
+      - limit order book
+      - gaps in the book
+      - extreme price changes
+    allowed_categories: [q-fin, physics, cond-mat]
+    min_keyword_hits: 2
+    notes: Recurring local-shock and refill-lag motif from prior passes.
+    tags: [refill, shock, orderbook]
+  - anchor_id: auction_handoff
+    label: Auction handoff / reopening seam
+    anchor_type: positive
+    paper_ids: ["2012.10145", "1807.00573", "1904.07583"]
+    keywords:
+      - closing auction
+      - opening auction
+      - call auction
+      - indicative price
+      - clearing price
+      - reopening
+      - handoff
+      - uncrossing
+    allowed_categories: [q-fin, econ, physics, cond-mat]
+    min_keyword_hits: 2
+    notes: Transition-state anchor for the handoff between discrete auction matching and continuous trading.
+    tags: [auction, handoff, transition-state]
+  - anchor_id: maker_stress_inventory_retreat
+    label: Maker stress / inventory retreat
+    anchor_type: positive
+    paper_ids: ["2206.05410", "2505.07761", "2008.00470"]
+    keywords:
+      - inventory management
+      - inventory risk
+      - defending a currency peg
+      - market makers
+      - inventory accumulation
+      - liquidity provision
+      - impermanent loss
+    allowed_categories: [q-fin, econ, physics]
+    min_keyword_hits: 2
+    notes: Positive anchor for maker-stress and inventory retreat dynamics.
+    tags: [maker-stress, inventory, retreat]
+  - anchor_id: maker_retreat_inventory_stress
+    label: Maker retreat / inventory stress
+    anchor_type: positive
+    paper_ids: ["2211.00496", "2307.01816", "2104.04036"]
+    keywords:
+      - market maker retreat
+      - inventory stress
+      - maker retreat
+      - liquidity withdrawal
+      - spread widening
+      - stressed inventory
+      - adverse selection
+      - market making
+    allowed_categories: [q-fin, econ, physics]
+    min_keyword_hits: 2
+    notes: Transition-state anchor for stressed maker withdrawal and inventory-driven liquidity retreat.
+    tags: [maker-retreat, inventory-stress, transition-state]
+  - anchor_id: amm_settlement_latency
+    label: AMM / settlement latency
+    anchor_type: positive
+    paper_ids: ["2205.14699"]
+    keywords:
+      - decentralized finance
+      - defi
+      - automated market maker
+      - constant function market maker
+      - amm
+      - liquidity pool
+      - uniswap
+      - sushiswap
+      - stablecoin
+      - settlement
+      - blockchain
+      - bridge
+      - cross-chain
+      - mev
+      - liquid staking
+    allowed_categories: [q-fin, cs, econ, eess]
+    min_keyword_hits: 2
+    notes: Likely non-q-fin seam for settlement latency and design-induced games.
+    tags: [amm, settlement, latency]
+  - anchor_id: auction_parimutuel_design
+    label: Auction / pari-mutuel / contingent-claim design
+    anchor_type: positive
+    paper_ids: ["0902.2429", "0905.0582", "nlin/0102016", "0905.4171"]
+    keywords:
+      - pari-mutuel
+      - auction
+      - prediction market
+      - call auction
+      - bid distributions
+      - contingent claim
+      - order matching
+      - parlay
+    allowed_categories: [q-fin, econ, cs, nlin, physics]
+    min_keyword_hits: 2
+    notes: Anchor for allocation, event-market design, and contingent-claim structure.
+    tags: [auction, design, contingent-claim]
+  - anchor_id: parity_propagation_delayed_repair
+    label: Parity propagation / delayed repair
+    anchor_type: positive
+    paper_ids: ["1307.5440", "1412.4503", "1706.04163"]
+    keywords:
+      - parity propagation
+      - delayed repair
+      - price impact
+      - cross-venue
+      - lead-lag
+      - fragmentation
+      - delayed adjustment
+      - supply and demand
+    allowed_categories: [q-fin, econ, physics, cond-mat]
+    min_keyword_hits: 2
+    notes: Transition-state anchor for delayed convergence and slow repair after cross-market dislocation.
+    tags: [parity, delayed-repair, transition-state]
+  - anchor_id: negative_anchor
+    label: Dead-end / theorem-only negative anchor
+    anchor_type: negative
+    family_patterns:
+      - research-dead-end-worth-excluding
+      - paper_describes_general_market_property_only
+      - paper_describes_theory_without_tradeable_monitorable_implication
+      - no_edge_hypothesis
+    notes: Negative anchor surface derived from repeated dead-end and theorem-only failures.
+    tags: [negative, dead-end, theorem-only]

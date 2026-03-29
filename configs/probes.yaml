@@ -1,0 +1,78 @@
+patterns:
+  - pattern_id: near_parity_far_dead_end
+    label: near parity, far dead-end
+    kind: contrast
+    include: [parity_propagation]
+    exclude: [negative_anchor]
+  - pattern_id: near_parity_auctions
+    label: near parity and auctions
+    kind: composition
+    include: [parity_propagation, auction_parimutuel_design]
+    exclude: [negative_anchor]
+  - pattern_id: near_parity_settlement
+    label: near parity and settlement
+    kind: composition
+    include: [parity_propagation, amm_settlement_latency]
+    exclude: [negative_anchor]
+  - pattern_id: near_queue_auctions
+    label: near queue-value and auctions
+    kind: composition
+    include: [queue_value_passive_quoting, auction_parimutuel_design]
+    exclude: [negative_anchor]
+  - pattern_id: near_queue_settlement
+    label: near queue-value and settlement
+    kind: composition
+    include: [queue_value_passive_quoting, amm_settlement_latency]
+    exclude: [negative_anchor]
+  - pattern_id: near_refill_maker_stress
+    label: near refill-lag and maker stress
+    kind: composition
+    include: [refill_lag_local_shock, maker_stress_inventory_retreat]
+    exclude: [negative_anchor]
+  - pattern_id: near_settlement_event_design
+    label: near settlement and event design
+    kind: composition
+    include: [amm_settlement_latency, auction_parimutuel_design]
+    exclude: [negative_anchor]
+  - pattern_id: near_maker_stress_far_dead_end
+    label: near maker stress, far dead-end
+    kind: contrast
+    include: [maker_stress_inventory_retreat]
+    exclude: [negative_anchor]
+  - pattern_id: near_auction_lexically_far
+    label: near auction design, lexically far
+    kind: contrast
+    include: [auction_parimutuel_design]
+    exclude: [negative_anchor]
+    lexical_far_from: [auction, pari, prediction]
+  - pattern_id: near_settlement_lexically_far
+    label: near settlement, lexically far
+    kind: contrast
+    include: [amm_settlement_latency]
+    exclude: [negative_anchor]
+    lexical_far_from: [defi, blockchain, settlement]
+  - pattern_id: near_transition_queue_refill
+    label: near queue value and refill resiliency
+    kind: composition
+    include: [queue_value_passive_quoting, refill_lag_resiliency]
+    exclude: [negative_anchor]
+  - pattern_id: near_transition_auction_refill
+    label: near auction handoff and refill resiliency
+    kind: composition
+    include: [auction_handoff, refill_lag_resiliency]
+    exclude: [negative_anchor]
+  - pattern_id: near_transition_auction_queue
+    label: near auction handoff and queue value
+    kind: composition
+    include: [auction_handoff, queue_value_passive_quoting]
+    exclude: [negative_anchor]
+  - pattern_id: near_transition_maker_queue
+    label: near maker retreat and queue value
+    kind: composition
+    include: [maker_retreat_inventory_stress, queue_value_passive_quoting]
+    exclude: [negative_anchor]
+  - pattern_id: near_transition_parity_repair
+    label: near parity repair and refill resiliency
+    kind: composition
+    include: [parity_propagation_delayed_repair, refill_lag_resiliency]
+    exclude: [negative_anchor]
