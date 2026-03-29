@@ -966,7 +966,14 @@ Current status:
   - `entry_count`: `1`
   - `top_ranked_publication_item_id`: `bridge:queue_value_passive_quoting__refill_lag_local_shock`
   - `COMPOSITIONAL_CANDIDATE`: `1`
-- the remaining S24 order is unchanged and the active next step is now the Stranded Result Ledger rematerialization from `enhanced_interpretations`
+- the second `S24` sub-step is now complete: `scripts/materialize_stranded_result_ledger.py` can rematerialize the ledger from `enhanced_interpretations` in `enhanced_stranded` mode while preserving the ledger's narrow practical q-fin contract
+- fixture coverage in `tests/test_materialize_stranded_result_ledger.py` now proves both the original shortlist mode and the enhanced stranded rematerialization path
+- the live rerun `npm run store:materialize-stranded-result-ledger -- --run-id stranded-result-ledger-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced_stranded` completed successfully with:
+  - `entry_count`: `2`
+  - `top_ranked_paper_id`: `2106.00581`
+  - `top_ranked_publication_item_id`: `stranded_qfin:2106.00581`
+  - `counts_by_priority_tier`: `p1=0`, `p2=2`, `p3=0`
+- the remaining S24 order is unchanged and the active next step is now the Transition-State Microstructure Ledger rematerialization from `enhanced_interpretations`
 
 ---
 
@@ -1100,15 +1107,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s24-unrealized-ideas-index-rematerialization`
-- Why this commit exists: rematerialize the Unrealized Ideas Index from the enhanced interpretation store while preserving explicit linkage to the shortlist-backed holdout validation rows that still provide echo evidence
+- Commit scope: `s24-stranded-result-ledger-rematerialization`
+- Why this commit exists: rematerialize the Stranded Result Ledger from enhanced stranded-q-fin interpretations while preserving the ledger's narrow practical contract and adding explicit publication provenance
 - Stages touched: `S24`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `scripts/materialize_unrealized_ideas_index.py`, `tests/test_materialize_unrealized_ideas_index.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:scope -- scripts/materialize_unrealized_ideas_index.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select shortlist_id, holdout_paper_id, echo_score, echo_rank from holdout_echoes where run_id='holdout-echo-materialization-20260328' order by shortlist_id, echo_rank;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select batch_item_id, operator_family, classification from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' order by batch_item_id;"`, `npm run codecontext:py -- scripts/materialize_unrealized_ideas_index.py`, `npm run codecontext:py -- tests/test_materialize_unrealized_ideas_index.py`, `python3 -m unittest -v tests.test_materialize_unrealized_ideas_index`, `npm run store:materialize-unrealized-ideas-index -- --run-id unrealized-ideas-index-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced_bridge --validation-interpretation-run-id selective-interpretation-ingestion-20260328`, `python3 - <<'PY' ... enhanced unrealized index metrics and rows ... PY`, `npm run codecontext:diff -- scripts/materialize_unrealized_ideas_index.py`, `npm run codecontext:diff -- tests/test_materialize_unrealized_ideas_index.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_unrealized_ideas_index`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/unrealized-ideas-index-enhanced-20260328/unrealized_ideas_index_metrics.json`, `data/structural-analogy/runs/unrealized-ideas-index-enhanced-20260328/unrealized_ideas_index.jsonl`, `data/structural-analogy/runs/unrealized-ideas-index-enhanced-20260328/unrealized_ideas_index.md`
-- Acceptance result: `complete; the first S24 publication surface now rematerializes from enhanced bridge interpretations, but only rows with pair-key linkage to the existing holdout validation surface survive publication`
-- Open risks after commit: `the remaining S24 publication surfaces still point at shortlist-gated interpretations today, and this first rematerialized index slice can only publish enhanced bridge rows that reuse existing holdout validation pairings`
-- Next intended commit: `S24 stranded result ledger rematerialization`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `scripts/materialize_stranded_result_ledger.py`, `tests/test_materialize_stranded_result_ledger.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:scope -- scripts/materialize_stranded_result_ledger.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select batch_item_id, source_ref, classification, family_rank from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' and operator_family='stranded_qfin' order by family_rank;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select paper_id, stranding_score from stranding_scores where run_id='stranding-score-materialization-20260328' and paper_id in ('2204.08581','2106.00581','1712.10105') order by stranding_score desc;"`, `npm run codecontext:py -- scripts/materialize_stranded_result_ledger.py`, `npm run codecontext:py -- tests/test_materialize_stranded_result_ledger.py`, `python3 -m unittest -v tests.test_materialize_stranded_result_ledger`, `npm run store:materialize-stranded-result-ledger -- --run-id stranded-result-ledger-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced_stranded`, `python3 - <<'PY' ... enhanced stranded ledger metrics and rows ... PY`, `npm run codecontext:diff -- scripts/materialize_stranded_result_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_stranded_result_ledger.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_stranded_result_ledger`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/stranded-result-ledger-enhanced-20260328/stranded_result_ledger_metrics.json`, `data/structural-analogy/runs/stranded-result-ledger-enhanced-20260328/stranded_result_ledger.jsonl`, `data/structural-analogy/runs/stranded-result-ledger-enhanced-20260328/stranded_result_ledger.md`
+- Acceptance result: `complete; the second S24 publication surface now rematerializes from enhanced stranded-q-fin interpretations and publishes two practical q-fin rows with explicit publication provenance`
+- Open risks after commit: `the remaining S24 publication surfaces still point at shortlist-gated interpretations today, and the transition-state rematerialization will need an explicit enhanced publication path without widening the ledger beyond its microstructure scope`
+- Next intended commit: `S24 transition-state ledger rematerialization`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

@@ -79,6 +79,52 @@ def seed_stranded_ledger_fixture(connection: sqlite3.Connection) -> None:
 
     connection.executemany(
         """
+        INSERT INTO enhanced_interpretations (
+          run_id, batch_run_id, batch_item_id, operator_family, source_kind, source_run_id, source_ref,
+          family_rank, source_score, packet_title, classification, result_summary, first_step,
+          instrument_assumed, modern_equivalent, why_stranded_or_unrealized, gap_to_close,
+          confidence, raw_json
+        )
+        VALUES (
+          'enhanced-run', 'enhanced-batch-run', ?, 'stranded_qfin', 'stranded_resurfacing_candidate', 'resurfacing-run', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '{}'
+        )
+        """,
+        [
+            (
+                "stranded_qfin:paper-a",
+                "paper-a",
+                1,
+                1.4,
+                "Paper A resurfaced",
+                "STRANDED_QFIN_RESULT",
+                "result-a-enhanced",
+                "test-a-enhanced",
+                "instrument-a-enhanced",
+                "modern-a-enhanced",
+                "why-a-enhanced",
+                "gap-a-enhanced",
+                "high",
+            ),
+            (
+                "stranded_qfin:paper-b",
+                "paper-b",
+                2,
+                1.2,
+                "Paper B resurfaced",
+                "NO_TRANSLATION",
+                "result-b-enhanced",
+                "test-b-enhanced",
+                "instrument-b-enhanced",
+                "modern-b-enhanced",
+                "why-b-enhanced",
+                "gap-b-enhanced",
+                "medium",
+            ),
+        ],
+    )
+
+    connection.executemany(
+        """
         INSERT INTO stranding_scores (
           run_id, paper_id, membership_run_id, score_version, stranding_score,
           instrument_gap_score, access_barrier_score, implementation_barrier_score,
@@ -146,6 +192,59 @@ class MaterializeStrandedResultLedgerTest(unittest.TestCase):
             self.assertIn("# Stranded Result Ledger", markdown)
             self.assertIn("paper-a", markdown)
             self.assertNotIn("paper-b", markdown)
+
+    def test_materializes_enhanced_stranded_rows(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            db_path = tmp_path / "fixture.sqlite3"
+            output_dir = tmp_path / "run"
+
+            connection = sqlite3.connect(db_path)
+            seed_stranded_ledger_fixture(connection)
+            connection.close()
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT_PATH),
+                    "--db-path",
+                    str(db_path),
+                    "--run-id",
+                    "enhanced-ledger-run",
+                    "--shortlist-run-id",
+                    "shortlist-run",
+                    "--interpretation-source",
+                    "enhanced_stranded",
+                    "--interpretation-run-id",
+                    "enhanced-run",
+                    "--stranding-run-id",
+                    "stranding-run",
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            metrics = json.loads((output_dir / "stranded_result_ledger_metrics.json").read_text(encoding="utf-8"))
+            self.assertEqual(metrics["entry_count"], 1)
+            self.assertEqual(metrics["top_ranked_paper_id"], "paper-a")
+            self.assertEqual(metrics["top_ranked_publication_item_id"], "stranded_qfin:paper-a")
+
+            rows = [
+                json.loads(line)
+                for line in (output_dir / "stranded_result_ledger.jsonl").read_text(encoding="utf-8").strip().splitlines()
+            ]
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["publication_item_id"], "stranded_qfin:paper-a")
+            self.assertEqual(rows[0]["publication_source_surface"], "enhanced_interpretation")
+            self.assertEqual(rows[0]["paper_id"], "paper-a")
+            self.assertEqual(rows[0]["result_summary"], "result-a-enhanced")
+            self.assertNotIn("stranded_qfin:paper-b", [row["publication_item_id"] for row in rows])
+
+            markdown = (output_dir / "stranded_result_ledger.md").read_text(encoding="utf-8")
+            self.assertIn("publication item id: `stranded_qfin:paper-a`", markdown)
+            self.assertIn("publication source surface: `enhanced_interpretation`", markdown)
 
 
 if __name__ == "__main__":

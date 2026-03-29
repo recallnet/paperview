@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH))
     parser.add_argument("--run-id", default="stranded-result-ledger-20260328")
     parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
+    parser.add_argument("--interpretation-source", choices=("selective", "enhanced_stranded"), default="selective")
     parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--stranding-run-id", default="stranding-score-materialization-20260328")
     parser.add_argument("--output-dir", default=None)
@@ -30,6 +31,64 @@ def log_run_event(connection: sqlite3.Connection, run_id: str, stage: str, event
         """,
         (run_id, stage, event_type, json.dumps(payload, sort_keys=True)),
     )
+
+
+def ensure_stranded_result_ledger_table(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS stranded_result_ledger (
+          run_id TEXT NOT NULL,
+          shortlist_run_id TEXT NOT NULL,
+          interpretation_run_id TEXT NOT NULL,
+          shortlist_id TEXT NOT NULL,
+          publication_source_surface TEXT NOT NULL DEFAULT 'selective',
+          publication_interpretation_run_id TEXT,
+          publication_item_id TEXT,
+          paper_id TEXT NOT NULL,
+          published_at TEXT NOT NULL,
+          home_domain TEXT NOT NULL,
+          result_summary TEXT NOT NULL,
+          why_stranded_or_unrealized TEXT NOT NULL,
+          instrument_assumed TEXT NOT NULL,
+          modern_equivalent TEXT NOT NULL,
+          first_test TEXT NOT NULL,
+          gap_to_close TEXT NOT NULL,
+          priority_tier TEXT NOT NULL,
+          relation_type TEXT NOT NULL,
+          ledger_rank INTEGER NOT NULL,
+          stranding_score REAL NOT NULL,
+          confidence TEXT NOT NULL,
+          rationale_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (run_id, shortlist_id),
+          FOREIGN KEY (shortlist_run_id, shortlist_id) REFERENCES shortlist_items(run_id, shortlist_id) ON DELETE CASCADE,
+          FOREIGN KEY (interpretation_run_id, shortlist_id) REFERENCES selective_interpretations(run_id, shortlist_id) ON DELETE CASCADE,
+          FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+        )
+        """
+    )
+    columns = {row["name"] for row in connection.execute("PRAGMA table_info(stranded_result_ledger)").fetchall()}
+    if "publication_source_surface" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE stranded_result_ledger
+            ADD COLUMN publication_source_surface TEXT NOT NULL DEFAULT 'selective'
+            """
+        )
+    if "publication_interpretation_run_id" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE stranded_result_ledger
+            ADD COLUMN publication_interpretation_run_id TEXT
+            """
+        )
+    if "publication_item_id" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE stranded_result_ledger
+            ADD COLUMN publication_item_id TEXT
+            """
+        )
 
 
 def priority_tier(stranding_score: float, confidence: str) -> str:
@@ -62,6 +121,8 @@ def render_markdown(rows: list[dict]) -> str:
             [
                 f"## {row['ledger_rank']}. {row['paper_id']}",
                 "",
+                f"- publication item id: `{row['publication_item_id']}`",
+                f"- publication source surface: `{row['publication_source_surface']}`",
                 f"- date: `{row['published_at']}`",
                 f"- home domain: `{row['home_domain']}`",
                 f"- priority tier: `{row['priority_tier']}`",
@@ -86,6 +147,75 @@ def render_markdown(rows: list[dict]) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def fetch_selective_source_rows(connection: sqlite3.Connection, interpretation_run_id: str, shortlist_run_id: str, stranding_run_id: str) -> list[sqlite3.Row]:
+    return connection.execute(
+        """
+        SELECT
+          si.shortlist_id,
+          si.item_ref,
+          interp.classification,
+          interp.result_summary,
+          interp.first_step,
+          interp.instrument_assumed,
+          interp.modern_equivalent,
+          interp.why_stranded_or_unrealized,
+          interp.gap_to_close,
+          interp.confidence,
+          COALESCE(p.published_at, 'unknown') AS published_at,
+          COALESCE(p.primary_category, 'unknown') AS home_domain,
+          COALESCE(ss.stranding_score, 0.0) AS stranding_score
+        FROM selective_interpretations interp
+        JOIN shortlist_items si
+          ON si.run_id = interp.shortlist_run_id
+         AND si.shortlist_id = interp.shortlist_id
+        JOIN papers p
+          ON p.paper_id = si.item_ref
+        LEFT JOIN stranding_scores ss
+          ON ss.run_id = ?
+         AND ss.paper_id = si.item_ref
+        WHERE interp.run_id = ?
+          AND si.run_id = ?
+          AND interp.classification = 'STRANDED_QFIN_RESULT'
+          AND si.item_type = 'paper'
+        ORDER BY ss.stranding_score DESC, p.published_at ASC, si.item_ref ASC
+        """,
+        (stranding_run_id, interpretation_run_id, shortlist_run_id),
+    ).fetchall()
+
+
+def fetch_enhanced_source_rows(connection: sqlite3.Connection, interpretation_run_id: str, stranding_run_id: str) -> list[sqlite3.Row]:
+    return connection.execute(
+        """
+        SELECT
+          ei.batch_item_id,
+          ei.source_ref AS paper_id,
+          ei.family_rank,
+          ei.classification,
+          ei.result_summary,
+          ei.first_step,
+          ei.instrument_assumed,
+          ei.modern_equivalent,
+          ei.why_stranded_or_unrealized,
+          ei.gap_to_close,
+          ei.confidence,
+          COALESCE(p.published_at, 'unknown') AS published_at,
+          COALESCE(p.primary_category, 'unknown') AS home_domain,
+          COALESCE(ss.stranding_score, 0.0) AS stranding_score
+        FROM enhanced_interpretations ei
+        JOIN papers p
+          ON p.paper_id = ei.source_ref
+        LEFT JOIN stranding_scores ss
+          ON ss.run_id = ?
+         AND ss.paper_id = ei.source_ref
+        WHERE ei.run_id = ?
+          AND ei.operator_family = 'stranded_qfin'
+          AND ei.classification = 'STRANDED_QFIN_RESULT'
+        ORDER BY ss.stranding_score DESC, ei.family_rank ASC, ei.source_ref ASC
+        """,
+        (stranding_run_id, interpretation_run_id),
+    ).fetchall()
+
+
 def main():
     args = parse_args()
     db_path = Path(args.db_path).resolve()
@@ -95,6 +225,7 @@ def main():
     connection = sqlite3.connect(str(db_path))
     connection.row_factory = sqlite3.Row
     try:
+        ensure_stranded_result_ledger_table(connection)
         log_run_event(
             connection,
             args.run_id,
@@ -102,44 +233,17 @@ def main():
             "started",
             {
                 "shortlist_run_id": args.shortlist_run_id,
+                "interpretation_source": args.interpretation_source,
                 "interpretation_run_id": args.interpretation_run_id,
                 "stranding_run_id": args.stranding_run_id,
             },
         )
-
-        source_rows = connection.execute(
-            """
-            SELECT
-              si.shortlist_id,
-              si.item_ref,
-              interp.classification,
-              interp.result_summary,
-              interp.first_step,
-              interp.instrument_assumed,
-              interp.modern_equivalent,
-              interp.why_stranded_or_unrealized,
-              interp.gap_to_close,
-              interp.confidence,
-              COALESCE(p.published_at, 'unknown') AS published_at,
-              COALESCE(p.primary_category, 'unknown') AS home_domain,
-              COALESCE(ss.stranding_score, 0.0) AS stranding_score
-            FROM selective_interpretations interp
-            JOIN shortlist_items si
-              ON si.run_id = interp.shortlist_run_id
-             AND si.shortlist_id = interp.shortlist_id
-            JOIN papers p
-              ON p.paper_id = si.item_ref
-            LEFT JOIN stranding_scores ss
-              ON ss.run_id = ?
-             AND ss.paper_id = si.item_ref
-            WHERE interp.run_id = ?
-              AND si.run_id = ?
-              AND interp.classification = 'STRANDED_QFIN_RESULT'
-              AND si.item_type = 'paper'
-            ORDER BY ss.stranding_score DESC, p.published_at ASC, si.item_ref ASC
-            """,
-            (args.stranding_run_id, args.interpretation_run_id, args.shortlist_run_id),
-        ).fetchall()
+        if args.interpretation_source == "selective":
+            source_rows = fetch_selective_source_rows(
+                connection, args.interpretation_run_id, args.shortlist_run_id, args.stranding_run_id
+            )
+        else:
+            source_rows = fetch_enhanced_source_rows(connection, args.interpretation_run_id, args.stranding_run_id)
 
         # @context decision -- The ledger is intentionally narrower than the broader index: it only
         # publishes interpreted stranded q-fin paper rows. That preserves the ledger as a practical
@@ -149,8 +253,11 @@ def main():
         rows = []
         for rank, row in enumerate(source_rows, start=1):
             ledger_row = {
-                "shortlist_id": row["shortlist_id"],
-                "paper_id": row["item_ref"],
+                "publication_source_surface": "selective" if args.interpretation_source == "selective" else "enhanced_interpretation",
+                "publication_interpretation_run_id": args.interpretation_run_id,
+                "publication_item_id": row["shortlist_id"] if args.interpretation_source == "selective" else row["batch_item_id"],
+                "shortlist_id": row["shortlist_id"] if args.interpretation_source == "selective" else row["batch_item_id"],
+                "paper_id": row["item_ref"] if args.interpretation_source == "selective" else row["paper_id"],
                 "published_at": row["published_at"],
                 "home_domain": row["home_domain"],
                 "result_summary": row["result_summary"],
@@ -166,7 +273,7 @@ def main():
                 "confidence": row["confidence"],
                 "rationale": {
                     "classification": row["classification"],
-                    "shortlist_id": row["shortlist_id"],
+                    "publication_item_id": row["shortlist_id"] if args.interpretation_source == "selective" else row["batch_item_id"],
                 },
             }
             connection.execute(
@@ -176,6 +283,9 @@ def main():
                   shortlist_run_id,
                   interpretation_run_id,
                   shortlist_id,
+                  publication_source_surface,
+                  publication_interpretation_run_id,
+                  publication_item_id,
                   paper_id,
                   published_at,
                   home_domain,
@@ -192,13 +302,16 @@ def main():
                   confidence,
                   rationale_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     args.run_id,
                     args.shortlist_run_id,
                     args.interpretation_run_id,
                     ledger_row["shortlist_id"],
+                    ledger_row["publication_source_surface"],
+                    ledger_row["publication_interpretation_run_id"],
+                    ledger_row["publication_item_id"],
                     ledger_row["paper_id"],
                     ledger_row["published_at"],
                     ledger_row["home_domain"],
@@ -229,6 +342,7 @@ def main():
         metrics = {
             "run_id": args.run_id,
             "shortlist_run_id": args.shortlist_run_id,
+            "interpretation_source": args.interpretation_source,
             "interpretation_run_id": args.interpretation_run_id,
             "stranding_run_id": args.stranding_run_id,
             "entry_count": len(rows),
@@ -237,6 +351,7 @@ def main():
                 for tier in ("p1", "p2", "p3")
             },
             "top_ranked_paper_id": rows[0]["paper_id"] if rows else None,
+            "top_ranked_publication_item_id": rows[0]["publication_item_id"] if rows else None,
         }
         metrics_path = output_dir / "stranded_result_ledger_metrics.json"
         metrics_path.write_text(json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8")
