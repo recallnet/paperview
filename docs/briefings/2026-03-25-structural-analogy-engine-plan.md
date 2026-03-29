@@ -762,14 +762,14 @@ Current status:
 ## Active Signoff Block
 
 - Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by removing tracked `corpus:*` package commands that point at untracked scripts and are not part of the canonical staged pipeline
+- Why this commit exists: continue the cleanup pass by removing noncanonical `pilot:create` and `extract:*` package commands that advertise extraction-era workflows outside the canonical map-first pipeline
 - Stages touched: `S16`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"corpus:(status|inventory|readiness)\"' package.json`, `git status --short package.json scripts/corpus_status.py scripts/corpus_inventory.py scripts/corpus_readiness_report.py`, `npm run docs:lint`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"pilot:create\"|\"extract:(prepare|ingest|run-mlx|sections-for-run|review-quality|gate-and-ingest)\"' package.json`, `git status --short package.json scripts/create_pilot_batch.py scripts/create_extraction_run.py scripts/ingest_extraction_responses.py scripts/run_local_mlx_extraction.py scripts/prepare_sections_for_extraction_run.py scripts/review_extraction_quality.py scripts/review_and_ingest_extractions.py`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
 - Artifacts produced: `none`
-- Acceptance result: `the active package surface is smaller: corpus:status, corpus:inventory, and corpus:readiness are removed because they pointed at untracked helper scripts and were not part of the canonical staged pipeline`
-- Open risks after commit: `dirty extraction-era files still prevent a broader archive move, so this slice only removes tracked package entrypoints that point at untracked helper scripts`
+- Acceptance result: `the active package surface is smaller: pilot:create and the extraction-era extract:* commands are removed because they advertise noncanonical extraction-first workflows while the legacy scripts remain in place for later archival`
+- Open risks after commit: `dirty extraction-era files still prevent a broader archive move, so this slice only removes the tracked package entrypoints for pilot and extraction-first workflows while leaving the scripts themselves in place for later archival`
 - Next intended commit: `S16 active/archive cleanup foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
