@@ -292,7 +292,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S15` | Stranded Result Ledger | `done` | human-facing ledger |
 | `S16` | active / archive cleanup | `done` | clean active pipeline surface |
 | `S17` | transition-state anchor and probe config | `done` | transition-state anchors, probes, and probe hits |
-| `S18` | transition-state score materializer | `pending` | `transition_state_scores` table + metrics |
+| `S18` | transition-state score materializer | `done` | `transition_state_scores` table + metrics |
 | `S19` | transition-state operator | `pending` | `transition_state_candidates` table + artifacts |
 | `S20` | stranded q-fin resurfacing operator | `pending` | `stranded_resurfacing_candidates` table + artifacts |
 | `S21` | findings and throwaways materializer | `pending` | `findings_and_throwaways.*` per-run report |
@@ -757,6 +757,24 @@ Accept when:
 - transition-state scores exist in canonical outputs
 - scores are continuous, not binary
 
+Current status:
+
+- the `S18` commit adds the canonical score surface in `scripts/materialize_transition_state_scores.py`
+- the score stage is paper-level and discovery-scoped, using transition-state anchor keyword evidence plus normalized probe-hit proximity from the completed `S17` run
+- the canonical table surface is `transition_state_scores`, with family-level subscores and auditable `feature_json` provenance
+- fixture coverage in `tests/test_materialize_transition_state_scores.py` proves that the stage writes continuous scores instead of binary flags
+- the live rerun `npm run store:materialize-transition-state-scores -- --run-id transition-state-score-materialization-20260328` completed successfully with:
+  - `scored_papers`: `17,323`
+  - `positive_score_papers`: `805`
+  - `top_score`: `0.5390968411673467`
+- family-level positive paper counts are now live in canonical outputs:
+  - `queue_value_score`: `281`
+  - `refill_resiliency_score`: `384`
+  - `auction_handoff_score`: `66`
+  - `maker_retreat_score`: `102`
+  - `parity_repair_score`: `361`
+- the stage is complete: transition-state scores now exist in canonical outputs and remain continuous rather than binary
+
 ### `S19` Transition-State Operator
 
 Build:
@@ -964,15 +982,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s17-transition-probe-live-materialization`
-- Why this commit exists: remove the live probe-stage stall and complete canonical `S17` with a successful transition-state probe materialization over the existing embedding space
-- Stages touched: `S17`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_probes.py`, `tests/test_materialize_probes.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_probes.py`, `npm run codecontext:py -- scripts/materialize_probes.py`, `npm run codecontext:py -- tests/test_materialize_probes.py`, `python3 -m unittest -v tests.test_materialize_probes`, `npm run store:materialize-probes -- --run-id probe-materialization-20260328-transition-state`, `python3 - <<'PY' ... probe hit counts by transition-state pattern ... PY`, `npm run codecontext:diff -- scripts/materialize_probes.py`, `npm run codecontext:diff -- tests/test_materialize_probes.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_probes`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/probe-materialization-20260328-transition-state/probe_metrics.json`
-- Acceptance result: `passed; transition-state anchors are queryable in the canonical store and all five new transition-state patterns now have live probe hits`
-- Open risks after commit: `probe hits are now live, but the next stage still needs to score and operatorize these regions before they appear in publication surfaces`
-- Next intended commit: `S18 transition-state score materializer`
+- Commit scope: `s18-transition-state-score-materializer`
+- Why this commit exists: add the canonical transition-state score table and staged materializer so the new `S17` probe regions become a reusable paper-level prior for later operator and publication stages
+- Stages touched: `S18`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_transition_state_scores.py`, `tests/test_materialize_transition_state_scores.py`, `package.json`, `sql/paperview_schema.sql`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_stranding_scores.py`, `sed -n '1,260p' scripts/materialize_stranding_scores.py`, `sed -n '1,260p' scripts/materialize_shortlist.py`, `git show HEAD:sql/paperview_schema.sql | sed -n '1,260p'`, `npm run codecontext:py -- scripts/materialize_transition_state_scores.py`, `npm run codecontext:py -- tests/test_materialize_transition_state_scores.py`, `python3 -m unittest -v tests.test_materialize_transition_state_scores`, `npm run store:materialize-transition-state-scores -- --run-id transition-state-score-materialization-20260328`, `python3 - <<'PY' ... transition-state score metrics and family counts ... PY`, `npm run codecontext:diff -- scripts/materialize_transition_state_scores.py`, `npm run codecontext:diff -- tests/test_materialize_transition_state_scores.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_transition_state_scores`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/transition-state-score-materialization-20260328/transition_state_score_metrics.json`, `data/structural-analogy/runs/transition-state-score-materialization-20260328/transition_state_score_top.jsonl`
+- Acceptance result: `passed; transition-state scores now exist in canonical outputs for the full discovery slice and remain continuous rather than binary`
+- Open risks after commit: `the score surface is live, but S19 still has to turn these paper-level priors into a dedicated transition-state candidate operator`
+- Next intended commit: `S19 transition-state operator`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

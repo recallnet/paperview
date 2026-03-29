@@ -438,6 +438,35 @@ CREATE TABLE IF NOT EXISTS stranding_scores (
 CREATE INDEX IF NOT EXISTS idx_stranding_scores_run_score ON stranding_scores(run_id, stranding_score DESC);
 CREATE INDEX IF NOT EXISTS idx_stranding_scores_run_paper ON stranding_scores(run_id, paper_id);
 
+-- @context decision -- Transition-state scores are the canonical paper-level bridge between S17
+-- probe hits and later operator/publication stages. Persisting them in the main store keeps the
+-- microstructure-transition prior queryable without depending on run-local probe JSON or vec-side
+-- recomputation.
+CREATE TABLE IF NOT EXISTS transition_state_scores (
+  run_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  membership_run_id TEXT NOT NULL,
+  probe_run_id TEXT NOT NULL,
+  score_version TEXT NOT NULL,
+  transition_state_score REAL NOT NULL,
+  queue_value_score REAL NOT NULL,
+  refill_resiliency_score REAL NOT NULL,
+  auction_handoff_score REAL NOT NULL,
+  maker_retreat_score REAL NOT NULL,
+  parity_repair_score REAL NOT NULL,
+  sparse_component_score REAL NOT NULL,
+  proximity_component_score REAL NOT NULL,
+  family_count INTEGER NOT NULL,
+  feature_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, paper_id),
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_transition_state_scores_run_score
+ON transition_state_scores(run_id, transition_state_score DESC);
+CREATE INDEX IF NOT EXISTS idx_transition_state_scores_run_paper
+ON transition_state_scores(run_id, paper_id);
 
 CREATE TABLE IF NOT EXISTS extraction_runs (
   run_id TEXT PRIMARY KEY,
