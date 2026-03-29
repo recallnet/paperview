@@ -38,6 +38,7 @@
     "store:materialize-run-summary": "python3 scripts/materialize_run_summary.py",
     "store:materialize-test-memos": "python3 scripts/materialize_test_memos.py",
     "study:ds1-translation-gap": "uv run --with pyyaml python3 scripts/materialize_ds1_translation_gap.py",
+    "study:ds2-bridge-zones": "python3 scripts/materialize_ds2_bridge_zones.py",
     "store:materialize-enhanced-interpretation-batch": "python3 scripts/materialize_enhanced_interpretation_batch.py",
     "score:materialize-stranding": "uv run --with pyyaml python3 scripts/materialize_stranding_scores.py",
     "test:unit": "python3 -m unittest discover -s tests -p 'test_*.py' -v",

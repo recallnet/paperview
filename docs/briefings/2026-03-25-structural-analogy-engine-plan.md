@@ -304,7 +304,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S27` | early-market failure-mode broadening pass | `done` | broader anchor, probe, operator, interpretation, and publication surfaces for thin, early, and weakly arbitraged markets |
 | `S28` | stabilize truth — canonical run summary | `done` | `run_summary.json`, `run_summary.md`, root findings surface, reconciled counts across all surfaces |
 | `DS1` | translation-gap search | `done` | top 100 translation-gap candidates; live run hit 21 outside obvious q-fin / trading discourse with five candidate families |
-| `DS2` | bridge-zone mining | `pending` | top bridge zones with thesis and translation questions; success: 5+ zones beyond queue/refill |
+| `DS2` | bridge-zone mining | `done` | five forced bridge zones materialized with live top-10 paper sets; all five are beyond queue/refill |
 | `DS3` | early-market failure mode ledger | `pending` | top 50 early-market entries; success: 15+ not transition-state microstructure |
 | `DS4` | stranded q-fin rescue with forced translation | `pending` | 15+ stranded ledger entries; success: 5+ read as modern executable research tasks |
 | `DS5` | holdout-echo validation | `pending` | holdout echo report; success: 10+ pre-2024 candidates with meaningful 2024+ echoes |
@@ -1351,6 +1351,45 @@ Current status:
   - `speculative`: `38`
 - the strongest non-obvious top-ranked papers came from `cs.GT`, `cond-mat.stat-mech`, and `physics.soc-ph`, which confirms the study is surfacing cross-domain translation gaps rather than only reordering mature q-fin microstructure papers
 
+### `DS2` Bridge-Zone Mining
+
+Build:
+
+- a concrete bridge-zone study over the current broadened operator state
+- forced bridge families at minimum:
+  - auction / pari-mutuel x refill / shock-recovery
+  - settlement / async-repair x parity / consistency
+  - participant-pathology x market-design
+  - queue-value x overloaded / service-discipline
+  - DeFi / bridge / liquidation x immature-market-repair
+- root study outputs:
+  - `reports/ds2-bridge-zones.jsonl`
+  - `reports/ds2-bridge-zones-report.md`
+
+Accept when:
+
+- each bridge family includes a top-10 paper list, a bridge thesis paragraph, a `why_neither_side_alone` explanation, and `3` candidate translation questions
+- at least `5` bridge zones are materially different from the queue x refill seam
+- candidate-family diversity is reported explicitly rather than hidden in intermediate operator artifacts
+
+Current status:
+
+- `DS2` is complete for the current broadened run
+- live `ds2-bridge-zone-mining` materialized all five forced bridge zones with `10` papers each, so the study cleared its stop/go bar of at least five bridge zones beyond queue/refill
+- current bridge-zone diversity is:
+  - `auction_handoff_recovery`: `10`
+  - `settlement_parity_repair`: `10`
+  - `participant_design_pathologies`: `10`
+  - `queue_service_discipline`: `10`
+  - `defi_immature_repair`: `10`
+- the leading live papers show the system is not just reshuffling the queue/refill seam:
+  - auction / handoff recovery: `2301.05677` `Price impact in equity auctions: zero, then linear`
+  - settlement / parity repair: `1811.08038` `Arbitrage Opportunities in CDS Term Structure: Theory and Implications for OTC Derivatives`
+  - participant / design pathologies: `0908.0202` `Market impact and trading profile of large trading orders in stock markets`
+  - queue / service discipline: `1007.2352` `Automated Liquidity Provision and the Demise of Traditional Market Making`
+  - DeFi / immature repair: `2103.08842` `The Adoption of Blockchain-based Decentralized Exchanges`
+- every zone now carries a bridge thesis paragraph, `why_neither_side_alone`, and `3` translation questions in the root report pair, so the evidence is no longer trapped only in operator tables
+
 ---
 
 ## Development Policy
@@ -1494,15 +1533,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `ds1-translation-gap-search`
-- Why this commit exists: run the first concrete diamond study — find papers mechanistically close to challenge capsules but far from pre-2024 realized market discourse
-- Stages touched: `DS1`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/challenge_capsules.yaml`, `scripts/materialize_ds1_translation_gap.py`, `tests/test_materialize_ds1_translation_gap.py`, `package.json`, `reports/ds1-translation-gap-candidates.jsonl`, `reports/ds1-translation-gap-report.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:py -- scripts/materialize_ds1_translation_gap.py`, `npm run codecontext:py -- tests/test_materialize_ds1_translation_gap.py`, `python3 -m unittest -v tests.test_materialize_ds1_translation_gap`, `npm run study:ds1-translation-gap`, `npm run codecontext:diff -- scripts/materialize_ds1_translation_gap.py`, `npm run codecontext:diff -- tests/test_materialize_ds1_translation_gap.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_ds1_translation_gap`, `npm run docs:lint`
-- Artifacts produced: `reports/ds1-translation-gap-candidates.jsonl`, `reports/ds1-translation-gap-report.md`
-- Acceptance result: `ready` — live top `100` includes `21` candidates outside obvious q-fin / trading discourse, and the candidate-family mix is led by `settlement_async_repair`, `participant_design_failure`, and `thin_market_professionalization` rather than queue/refill alone
-- Open risks after commit: `DS2-DS5 diamond studies and S29-S34 platform stages are still pending; DS1 top results are still q-fin-heavy overall even though the stop/go bar passed`
-- Next intended commit: `DS2 bridge-zone mining`
+- Commit scope: `ds2-bridge-zone-mining`
+- Why this commit exists: run the second concrete diamond study — force specific bridge families and expose why the bridge matters, not just which pair scored highest
+- Stages touched: `DS2`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_ds2_bridge_zones.py`, `tests/test_materialize_ds2_bridge_zones.py`, `package.json`, `reports/ds2-bridge-zones.jsonl`, `reports/ds2-bridge-zones-report.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_ds2_bridge_zones.py`, `npm run codecontext:py -- tests/test_materialize_ds2_bridge_zones.py`, `python3 -m unittest -v tests.test_materialize_ds2_bridge_zones`, `npm run study:ds2-bridge-zones`, `npm run codecontext:diff -- scripts/materialize_ds2_bridge_zones.py`, `npm run codecontext:diff -- tests/test_materialize_ds2_bridge_zones.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_ds2_bridge_zones`, `npm run docs:lint`
+- Artifacts produced: `reports/ds2-bridge-zones.jsonl`, `reports/ds2-bridge-zones-report.md`
+- Acceptance result: `ready` — all `5` forced bridge zones materialized with live top-10 paper sets, and all `5` are materially different from queue/refill
+- Open risks after commit: `DS3-DS5 diamond studies and S29-S34 platform stages are still pending; the queue-service-discipline zone is currently the closest to mature-book microstructure and should stay secondary to the broader settlement, design, and DeFi seams`
+- Next intended commit: `DS3 early-market failure mode ledger`
 - Signoff status: `ready`
 - Last updated: `2026-03-29`
