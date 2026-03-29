@@ -38,6 +38,7 @@
     "store:materialize-run-summary": "python3 scripts/materialize_run_summary.py",
     "store:materialize-test-memos": "python3 scripts/materialize_test_memos.py",
     "score:materialize-diamond-lane-scores": "uv run --with pyyaml python3 scripts/materialize_diamond_lane_scores.py",
+    "score:materialize-diamond-scores": "uv run --with pyyaml python3 scripts/materialize_diamond_scores.py",
     "study:ds1-translation-gap": "uv run --with pyyaml python3 scripts/materialize_ds1_translation_gap.py",
     "study:ds2-bridge-zones": "python3 scripts/materialize_ds2_bridge_zones.py",
     "study:ds3-early-market-ledger": "python3 scripts/materialize_ds3_early_market_ledger.py",

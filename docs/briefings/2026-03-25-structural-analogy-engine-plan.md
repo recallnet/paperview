@@ -309,7 +309,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `DS4` | stranded q-fin rescue with forced translation | `done` | 15 rescued entries live; 8 read as executable modern research tasks |
 | `DS5` | holdout-echo validation | `done` | 51 pre-2024 candidates evaluated; 26 have meaningful 2024+ echoes |
 | `S29` | six-lane discovery expansion | `done` | canonical `diamond_lane_scores` surface live for 6 lanes; lifecycle remains auxiliary and the top 20 spans 4 lanes with transition-state at 20% |
-| `S30` | diamond score and representation redesign | `pending` | unified `diamond_score`, problem/mechanism/regime/stranding views, challenge capsules |
+| `S30` | diamond score and representation redesign | `done` | canonical `diamond_scores` surface live with unified scoring and problem/mechanism/regime/stranding views; top 20 still spans 4 lanes but market-design remains absent from the top band |
 | `S31` | eight-operator materialization | `pending` | bridge, composition, contrast, negative-space, transition-state, state-graph, participant-pathology, stranded-qfin operators |
 | `S32` | shortlist-gated diamond interpretation | `pending` | top-40 + per-lane interpretation with `TRANSITION_SEAM` class, strict JSON |
 | `S33` | six publication surfaces + diamond board | `pending` | unrealized index, stranded ledger, transition ledger, early-market ledger, findings, diamond board |
@@ -1576,6 +1576,7 @@ Current status:
 - `npm run store:materialize-run-summary`
 - `npm run score:materialize-stranding`
 - `npm run score:materialize-diamond-lane-scores`
+- `npm run score:materialize-diamond-scores`
 
 ## Current Canonical Config Inputs
 
@@ -1655,15 +1656,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s29-six-lane-lane-scores`
-- Why this commit exists: establish a canonical six-lane scoring surface over the broadened anchors, probes, and DS1-DS5 evidence so later diamond ranking and publication stages do not depend on ad hoc study reports alone
-- Stages touched: `S29`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_diamond_lane_scores.py`, `tests/test_materialize_diamond_lane_scores.py`, `package.json`, `sql/paperview_schema.sql`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_diamond_lane_scores.py`, `npm run codecontext:py -- tests/test_materialize_diamond_lane_scores.py`, `python3 -m unittest -v tests.test_materialize_diamond_lane_scores`, `npm run score:materialize-diamond-lane-scores -- --run-id lane-score-materialization-20260329`, `npm run codecontext:diff -- scripts/materialize_diamond_lane_scores.py`, `npm run codecontext:diff -- tests/test_materialize_diamond_lane_scores.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_diamond_lane_scores`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/lane-score-materialization-20260329/diamond_lane_score_metrics.json`, `data/structural-analogy/runs/lane-score-materialization-20260329/diamond_lane_score_top.jsonl`
-- Acceptance result: `ready` — live `diamond_lane_scores` now cover all 6 canonical lanes across `17,323` discovery papers; the top 20 spans `4` lanes and transition-state contributes `20%`, so the stage no longer collapses back to queue/refill-only ranking
-- Open risks after commit: `market_design` is the weakest live lane (`10` positive papers and only `2` top-lane papers above threshold), so S30 must preserve the broadened evidence base while improving unified ranking rather than letting participant-pathology and settlement lanes dominate by default
-- Next intended commit: `S30 diamond score and representation redesign`
+- Commit scope: `s30-diamond-score-redesign`
+- Why this commit exists: unify the six-lane score surface into one canonical `diamond_score` contract and expose explicit problem, mechanism, regime, and stranding views so later shortlist, interpretation, and publication stages operate on one auditable ranking surface
+- Stages touched: `S30`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_diamond_scores.py`, `tests/test_materialize_diamond_scores.py`, `package.json`, `sql/paperview_schema.sql`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:py -- scripts/materialize_diamond_scores.py`, `npm run codecontext:py -- tests/test_materialize_diamond_scores.py`, `python3 -m unittest -v tests.test_materialize_diamond_scores`, `npm run score:materialize-diamond-scores -- --run-id diamond-score-materialization-20260329`, `npm run codecontext:diff -- scripts/materialize_diamond_scores.py`, `npm run codecontext:diff -- tests/test_materialize_diamond_scores.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_diamond_scores`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/diamond-score-materialization-20260329/diamond_score_metrics.json`, `data/structural-analogy/runs/diamond-score-materialization-20260329/diamond_score_top.jsonl`
+- Acceptance result: `ready` — live `diamond_scores` now rank all `17,323` discovery papers under one canonical score with explicit problem/mechanism/regime/stranding views; the top 20 still spans `4` lanes and transition-state contributes `25%`
+- Open risks after commit: `market_design` still has `0` top-20 rows under the unified score, so S31 must broaden operator evidence rather than relying on score tuning alone to lift that lane`
+- Next intended commit: `S31 eight-operator materialization`
 - Signoff status: `ready`
 - Last updated: `2026-03-29`

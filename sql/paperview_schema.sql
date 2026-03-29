@@ -627,6 +627,49 @@ ON diamond_lane_scores(run_id, top_lane_score DESC, paper_id);
 CREATE INDEX IF NOT EXISTS idx_diamond_lane_scores_run_lane
 ON diamond_lane_scores(run_id, top_lane);
 
+-- @context decision -- S30 turns the lane-scoring surface into one canonical ranking contract.
+-- Downstream shortlist, interpretation, and publication stages should consume this table instead
+-- of recombining DS reports or lane metrics ad hoc, and the representation views here make the
+-- hidden DS evidence explicit on every ranked paper.
+CREATE TABLE IF NOT EXISTS diamond_scores (
+  run_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  lane_score_run_id TEXT NOT NULL,
+  membership_run_id TEXT NOT NULL,
+  score_version TEXT NOT NULL,
+  diamond_score REAL NOT NULL,
+  top_lane TEXT NOT NULL,
+  top_lane_score REAL NOT NULL,
+  primary_capsule_id TEXT,
+  challenge_affinity_score REAL NOT NULL,
+  positive_anchor_affinity_score REAL NOT NULL,
+  negative_anchor_affinity_score REAL NOT NULL,
+  translation_gap_score REAL NOT NULL,
+  stranding_score REAL NOT NULL,
+  bridge_score REAL NOT NULL,
+  composition_score REAL NOT NULL,
+  holdout_echo_score REAL NOT NULL,
+  transition_state_score REAL NOT NULL,
+  genericity_penalty_score REAL NOT NULL,
+  realized_market_leakage_penalty_score REAL NOT NULL,
+  lane_rarity_bonus REAL NOT NULL,
+  positive_lane_count INTEGER NOT NULL,
+  problem_view TEXT NOT NULL,
+  mechanism_view TEXT NOT NULL,
+  regime_view TEXT NOT NULL,
+  stranding_view TEXT NOT NULL,
+  feature_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, paper_id),
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_diamond_scores_run_rank
+ON diamond_scores(run_id, diamond_score DESC, paper_id);
+
+CREATE INDEX IF NOT EXISTS idx_diamond_scores_run_lane
+ON diamond_scores(run_id, top_lane);
+
 CREATE TABLE IF NOT EXISTS extraction_runs (
   run_id TEXT PRIMARY KEY,
   run_kind TEXT NOT NULL,
