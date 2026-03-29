@@ -591,6 +591,42 @@ CREATE TABLE IF NOT EXISTS stranded_resurfacing_candidates (
 CREATE INDEX IF NOT EXISTS idx_stranded_resurfacing_candidates_run_rank
 ON stranded_resurfacing_candidates(run_id, resurfacing_rank);
 
+-- @context decision -- S29 needs one canonical paper-level surface for the six v2 discovery
+-- lanes so later diamond ranking and publication do not depend on ad hoc DS-study report files.
+-- Lifecycle / professionalization remains an auxiliary early-market boost here instead of a
+-- seventh lane because the user-defined v2 objective is explicitly six-lane.
+CREATE TABLE IF NOT EXISTS diamond_lane_scores (
+  run_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  membership_run_id TEXT NOT NULL,
+  probe_run_id TEXT NOT NULL,
+  bridge_run_id TEXT NOT NULL,
+  composition_run_id TEXT NOT NULL,
+  transition_score_run_id TEXT NOT NULL,
+  stranded_run_id TEXT NOT NULL,
+  score_version TEXT NOT NULL,
+  transition_state_score REAL NOT NULL,
+  market_design_score REAL NOT NULL,
+  settlement_resolution_score REAL NOT NULL,
+  participant_pathologies_score REAL NOT NULL,
+  state_graph_score REAL NOT NULL,
+  stranded_qfin_score REAL NOT NULL,
+  lifecycle_aux_score REAL NOT NULL DEFAULT 0,
+  top_lane TEXT NOT NULL,
+  top_lane_score REAL NOT NULL,
+  positive_lane_count INTEGER NOT NULL,
+  feature_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, paper_id),
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_diamond_lane_scores_run_rank
+ON diamond_lane_scores(run_id, top_lane_score DESC, paper_id);
+
+CREATE INDEX IF NOT EXISTS idx_diamond_lane_scores_run_lane
+ON diamond_lane_scores(run_id, top_lane);
+
 CREATE TABLE IF NOT EXISTS extraction_runs (
   run_id TEXT PRIMARY KEY,
   run_kind TEXT NOT NULL,
