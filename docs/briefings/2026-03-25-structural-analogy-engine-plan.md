@@ -1112,7 +1112,37 @@ Current status:
   - `near_participant_pathology_far_realized`: `25` hits, top paper `1511.00740` (`Learning Unfair Trading: a Market Manipulation Analysis From the Reinforcement Learning Perspective`)
   - `near_state_graph_far_realized`: `25` hits, top paper `cond-mat/0202391` (`Triangular arbitrage as an interaction among foreign exchange rates`)
   - `near_lifecycle_far_realized`: `25` hits, top paper `1311.4160` (`Simulating the Synchronizing Behavior of High-Frequency Trading in Multiple Markets`)
-- the stage remains in progress because only `STEP 1` through `STEP 3` are complete; the next canonical `S27` commit is the broadened operator rerun
+- the fourth `S27` commit reruns the canonical bridge, composition, and transition-state candidate stages under broadened run ids:
+  - `bridge-materialization-20260328-broadened`
+  - `composition-materialization-20260328-broadened`
+  - `transition-state-candidate-materialization-20260328-broadened`
+- the broadened bridge rerun completed successfully after one failed concurrent attempt that hit `sqlite3.OperationalError: database is locked`; rerunning sequentially succeeded and the plan keeps that failure mode explicit
+- the live broadened bridge rerun produced:
+  - `positive_anchor_count`: `15`
+  - `anchor_pair_count`: `105`
+  - `pairs_with_candidates`: `105`
+  - `bridge_candidate_count`: `2100`
+  - `top_score`: `2.683382`
+- the live broadened composition rerun produced:
+  - `positive_anchor_count`: `15`
+  - `anchor_pair_count`: `105`
+  - `pairs_with_candidates`: `105`
+  - `composition_candidate_count`: `2100`
+  - `top_score`: `3.492283`
+- the broadened operator output now contains real new cross-lane candidate seams that were not present in the original six-anchor run, including:
+  - bridge `market_design_seams` × `refill_lag_local_shock` with top paper `1602.00731` (`Limit-order book resiliency after effective market orders: Spread, depth and intensity`)
+  - bridge `market_design_seams` × `parity_propagation_delayed_repair` with top paper `1609.04620` (`Price impact without order book: A study of the OTC credit index market`)
+  - bridge `market_design_seams` × `participant_pathologies` with live candidate rows in the broadened run
+  - composition `market_design_seams` × `refill_lag_resiliency` with top paper `1403.0842` (`The adaptive nature of liquidity taking in limit order books`)
+  - composition `lifecycle_professionalization` × `market_design_seams` with live candidate rows in the broadened run
+- the transition-state candidate rerun also completed successfully, but it did not broaden yet by design because it still points at the original transition-state-specific probe and score surfaces:
+  - `probe_run_id`: `probe-materialization-20260328-transition-state`
+  - `score_run_id`: `transition-state-score-materialization-20260328`
+  - `transition_pattern_count`: `5`
+  - `patterns_with_candidates`: `5`
+  - `transition_candidate_count`: `95`
+  - `top_score`: `0.702172`
+- the stage remains in progress because `STEP 5` through `STEP 7` are still pending; the next canonical `S27` commit is expanded review packet generation over the broadened operator outputs
 
 ---
 
@@ -1251,15 +1281,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s27-live-probe-rerun`
-- Why this commit exists: rematerialize probe hits with the broadened anchor and contrast-pattern surface so the new early-market lanes become live candidate regions instead of config-only definitions
+- Commit scope: `s27-operator-reruns`
+- Why this commit exists: rerun the canonical bridge, composition, and transition-state operator surfaces after the broadened anchors and probes so the new lanes become real candidates instead of only probe hits
 - Stages touched: `S27`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `data/structural-analogy/runs/*probe*`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_probes.py`, `npm run store:materialize-probes -- --run-id probe-materialization-20260328-broadened`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `data/structural-analogy/runs/*bridge*`, `data/structural-analogy/runs/*composition*`, `data/structural-analogy/runs/*transition-state-candidate*`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_bridges.py`, `npm run codecontext:scope -- scripts/materialize_compositions.py`, `npm run codecontext:scope -- scripts/materialize_transition_state_candidates.py`, `npm run store:materialize-bridges -- --run-id bridge-materialization-20260328-broadened`, `npm run store:materialize-compositions -- --run-id composition-materialization-20260328-broadened`, `npm run store:materialize-transition-state-candidates -- --run-id transition-state-candidate-materialization-20260328-broadened`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/probe-materialization-20260328-broadened/probe_metrics.json`; live hits verified in canonical SQLite `probe_hits`
-- Acceptance result: `complete for S27 step 3; the broadened probe run completed successfully and all five new lane patterns produced live probe hits in canonical state`
-- Open risks after commit: `the broadened patterns are live but may still lean too close to mature q-fin discourse until the broadened operator reruns expose which lanes actually survive downstream`
-- Next intended commit: `S27 step 4 operator reruns on broadened anchor set`
+- Artifacts produced: `bridge_metrics.json`, `bridges.jsonl`, `composition_metrics.json`, `compositions.jsonl`, `transition_state_candidate_metrics.json`, `transition_state_candidates.jsonl`
+- Acceptance result: `complete; the broadened bridge and composition reruns expanded from 15 anchor pairs / 300 candidates to 105 anchor pairs / 2100 candidates each, and the live outputs now contain new cross-lane seams led by market-design pairings rather than only the original transition-state cluster`
+- Open risks after commit: `the transition-state candidate stage did not broaden yet because it still reads the original transition-state-specific probe and score runs, and the first concurrent bridge attempt hit a SQLite write lock before the successful sequential rerun`
+- Next intended commit: `S27 step 5 expanded review packets`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
