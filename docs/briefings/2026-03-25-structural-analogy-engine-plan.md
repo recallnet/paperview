@@ -973,7 +973,14 @@ Current status:
   - `top_ranked_paper_id`: `2106.00581`
   - `top_ranked_publication_item_id`: `stranded_qfin:2106.00581`
   - `counts_by_priority_tier`: `p1=0`, `p2=2`, `p3=0`
-- the remaining S24 order is unchanged and the active next step is now the Transition-State Microstructure Ledger rematerialization from `enhanced_interpretations`
+- the third `S24` sub-step is now complete: `scripts/materialize_transition_state_ledger.py` can rematerialize the ledger from `enhanced_interpretations` in `enhanced_transition` mode while preserving the ledger's microstructure scope and explicit representative-paper linkage to the live `S19` candidate surface
+- fixture coverage in `tests/test_materialize_transition_state_ledger.py` now proves both the original shortlist-backed mode and the enhanced transition rematerialization path
+- the live rerun `npm run store:materialize-transition-state-ledger -- --run-id transition-state-ledger-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced_transition` completed successfully with:
+  - `entry_count`: `2`
+  - `top_ranked_pattern_id`: `near_transition_auction_queue`
+  - `top_ranked_publication_item_id`: `transition_state:near_transition_auction_queue:2101.03086`
+  - `counts_by_priority_tier`: `p1=2`, `p2=0`, `p3=0`
+- the remaining S24 order is unchanged and the active next step is now Findings and Throwaways rematerialization from the expanded interpretation store
 
 ---
 
@@ -1107,15 +1114,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s24-stranded-result-ledger-rematerialization`
-- Why this commit exists: rematerialize the Stranded Result Ledger from enhanced stranded-q-fin interpretations while preserving the ledger's narrow practical contract and adding explicit publication provenance
+- Commit scope: `s24-transition-state-ledger-rematerialization`
+- Why this commit exists: rematerialize the Transition-State Microstructure Ledger from enhanced transition-state interpretations while preserving the ledger's microstructure scope and adding explicit publication provenance
 - Stages touched: `S24`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `scripts/materialize_stranded_result_ledger.py`, `tests/test_materialize_stranded_result_ledger.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:scope -- scripts/materialize_stranded_result_ledger.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select batch_item_id, source_ref, classification, family_rank from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' and operator_family='stranded_qfin' order by family_rank;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select paper_id, stranding_score from stranding_scores where run_id='stranding-score-materialization-20260328' and paper_id in ('2204.08581','2106.00581','1712.10105') order by stranding_score desc;"`, `npm run codecontext:py -- scripts/materialize_stranded_result_ledger.py`, `npm run codecontext:py -- tests/test_materialize_stranded_result_ledger.py`, `python3 -m unittest -v tests.test_materialize_stranded_result_ledger`, `npm run store:materialize-stranded-result-ledger -- --run-id stranded-result-ledger-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced_stranded`, `python3 - <<'PY' ... enhanced stranded ledger metrics and rows ... PY`, `npm run codecontext:diff -- scripts/materialize_stranded_result_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_stranded_result_ledger.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_stranded_result_ledger`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/stranded-result-ledger-enhanced-20260328/stranded_result_ledger_metrics.json`, `data/structural-analogy/runs/stranded-result-ledger-enhanced-20260328/stranded_result_ledger.jsonl`, `data/structural-analogy/runs/stranded-result-ledger-enhanced-20260328/stranded_result_ledger.md`
-- Acceptance result: `complete; the second S24 publication surface now rematerializes from enhanced stranded-q-fin interpretations and publishes two practical q-fin rows with explicit publication provenance`
-- Open risks after commit: `the remaining S24 publication surfaces still point at shortlist-gated interpretations today, and the transition-state rematerialization will need an explicit enhanced publication path without widening the ledger beyond its microstructure scope`
-- Next intended commit: `S24 transition-state ledger rematerialization`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `scripts/materialize_transition_state_ledger.py`, `tests/test_materialize_transition_state_ledger.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:scope -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:scope -- scripts/materialize_enhanced_interpretation_batch.py`, `npm run codecontext:scope -- scripts/ingest_enhanced_interpretations.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select batch_item_id, operator_family, source_ref, classification, family_rank from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' and operator_family='transition_state' order by family_rank, batch_item_id;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select pattern_id, paper_id, transition_state_candidate_score, transition_state_rank from transition_state_candidates where run_id='transition-state-candidate-materialization-20260328' order by transition_state_rank asc, transition_state_candidate_score desc limit 15;"`, `npm run codecontext:py -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:py -- tests/test_materialize_transition_state_ledger.py`, `python3 -m unittest -v tests.test_materialize_transition_state_ledger`, `npm run store:materialize-transition-state-ledger -- --run-id transition-state-ledger-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced_transition`, `python3 - <<'PY' ... enhanced transition-state ledger metrics and rows ... PY`, `npm run codecontext:diff -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_transition_state_ledger.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_transition_state_ledger`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/transition-state-ledger-enhanced-20260328/transition_state_ledger_metrics.json`, `data/structural-analogy/runs/transition-state-ledger-enhanced-20260328/transition_state_ledger.jsonl`, `data/structural-analogy/runs/transition-state-ledger-enhanced-20260328/transition_state_ledger.md`
+- Acceptance result: `complete; the third S24 publication surface now rematerializes from enhanced transition-state interpretations and publishes two p1 microstructure rows with explicit publication provenance`
+- Open risks after commit: `the remaining S24 publication surface still points at mixed interpretation inputs today, and the findings-and-throwaways rematerialization must surface enhanced survivors, rejections, and near-misses without collapsing the old shortlist-backed evidence trail`
+- Next intended commit: `S24 findings-and-throwaways rematerialization`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

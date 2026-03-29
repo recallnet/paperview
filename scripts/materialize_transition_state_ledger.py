@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument("--run-id", default="transition-state-ledger-20260328")
     parser.add_argument("--candidate-run-id", default="transition-state-candidate-materialization-20260328")
     parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
+    parser.add_argument("--interpretation-source", choices=("selective", "enhanced_transition"), default="selective")
     parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--output-dir", default=None)
     return parser.parse_args()
@@ -55,6 +56,9 @@ def ensure_transition_state_ledger_table(connection: sqlite3.Connection) -> None
           interpretation_run_id TEXT NOT NULL,
           pattern_id TEXT NOT NULL,
           shortlist_id TEXT NOT NULL,
+          publication_source_surface TEXT NOT NULL DEFAULT 'selective',
+          publication_interpretation_run_id TEXT,
+          publication_item_id TEXT,
           paper_id TEXT NOT NULL,
           published_at TEXT NOT NULL,
           home_domain TEXT NOT NULL,
@@ -79,6 +83,30 @@ def ensure_transition_state_ledger_table(connection: sqlite3.Connection) -> None
         )
         """
     )
+    columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(transition_state_ledger)").fetchall()
+    }
+    if "publication_source_surface" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE transition_state_ledger
+            ADD COLUMN publication_source_surface TEXT NOT NULL DEFAULT 'selective'
+            """
+        )
+    if "publication_interpretation_run_id" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE transition_state_ledger
+            ADD COLUMN publication_interpretation_run_id TEXT
+            """
+        )
+    if "publication_item_id" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE transition_state_ledger
+            ADD COLUMN publication_item_id TEXT
+            """
+        )
     connection.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_transition_state_ledger_run_rank
@@ -108,6 +136,8 @@ def render_markdown(rows: list[dict]) -> str:
             [
                 f"## {row['ledger_rank']}. {row['pattern_label']}",
                 "",
+                f"- publication item id: `{row['publication_item_id']}`",
+                f"- publication source surface: `{row['publication_source_surface']}`",
                 f"- shortlist id: `{row['shortlist_id']}`",
                 f"- representative paper: `{row['paper_id']}`",
                 f"- date: `{row['published_at']}`",
@@ -171,6 +201,39 @@ def fetch_best_interpretation_by_pair(connection: sqlite3.Connection, shortlist_
     return best_by_pair
 
 
+def fetch_best_enhanced_transition_by_pattern(connection: sqlite3.Connection, interpretation_run_id: str) -> dict[str, sqlite3.Row]:
+    rows = connection.execute(
+        """
+        SELECT
+          batch_item_id,
+          source_ref,
+          family_rank,
+          classification,
+          result_summary,
+          first_step,
+          instrument_assumed,
+          modern_equivalent,
+          why_stranded_or_unrealized,
+          gap_to_close,
+          confidence
+        FROM enhanced_interpretations
+        WHERE run_id = ?
+          AND operator_family = 'transition_state'
+        ORDER BY family_rank ASC, batch_item_id ASC
+        """,
+        (interpretation_run_id,),
+    ).fetchall()
+    best_by_pattern: dict[str, sqlite3.Row] = {}
+    for row in rows:
+        if row["classification"] not in POSITIVE_CLASSIFICATIONS:
+            continue
+        pattern_id = row["source_ref"]
+        current = best_by_pattern.get(pattern_id)
+        if current is None or int(row["family_rank"]) < int(current["family_rank"]):
+            best_by_pattern[pattern_id] = row
+    return best_by_pattern
+
+
 def main():
     args = parse_args()
     db_path = Path(args.db_path).resolve()
@@ -189,11 +252,17 @@ def main():
             {
                 "candidate_run_id": args.candidate_run_id,
                 "shortlist_run_id": args.shortlist_run_id,
+                "interpretation_source": args.interpretation_source,
                 "interpretation_run_id": args.interpretation_run_id,
             },
         )
 
-        best_by_pair = fetch_best_interpretation_by_pair(connection, args.shortlist_run_id, args.interpretation_run_id)
+        if args.interpretation_source == "selective":
+            best_by_pair = fetch_best_interpretation_by_pair(connection, args.shortlist_run_id, args.interpretation_run_id)
+            best_by_pattern = {}
+        else:
+            best_by_pair = {}
+            best_by_pattern = fetch_best_enhanced_transition_by_pattern(connection, args.interpretation_run_id)
         connection.execute("DELETE FROM transition_state_ledger WHERE run_id = ?", (args.run_id,))
 
         rows = connection.execute(
@@ -221,23 +290,51 @@ def main():
 
         ledger_rows = []
         for row in rows:
-            pair_key = PATTERN_TO_PAIR_KEY.get(row["pattern_id"])
-            if not pair_key:
-                continue
-            interpretation = best_by_pair.get(pair_key)
-            if interpretation is None:
-                continue
             rationale = json.loads(row["rationale_json"] or "{}")
-            # @context decision -- S22 binds transition-state publication to two canonical surfaces:
-            # the live S19 transition candidates provide the representative paper and score, while
-            # the already-accepted shortlist interpretation for the same pairing key provides the
-            # analyst-facing trade thesis. Without both, the ledger would either duplicate S19's raw
-            # queue or invent a new interpretation path ahead of S23.
+            if args.interpretation_source == "selective":
+                pair_key = PATTERN_TO_PAIR_KEY.get(row["pattern_id"])
+                if not pair_key:
+                    continue
+                interpretation = best_by_pair.get(pair_key)
+                if interpretation is None:
+                    continue
+                publication_source_surface = "selective"
+                publication_item_id = interpretation["shortlist_id"]
+                shortlist_id = interpretation["shortlist_id"]
+                rationale_keys = {
+                    "classification": interpretation["classification"],
+                    "packet_kind": interpretation["packet_kind"],
+                    "pair_key": pair_key,
+                }
+            else:
+                interpretation = best_by_pattern.get(row["pattern_id"])
+                if interpretation is None:
+                    continue
+                publication_source_surface = "enhanced_interpretation"
+                publication_item_id = interpretation["batch_item_id"]
+                shortlist_id = interpretation["batch_item_id"]
+                # @context decision -- The S24 rematerialized transition ledger stays narrower than
+                # the full S19 candidate queue: it only publishes patterns that already survived the
+                # explicit S23 enhanced transition interpretation path. This preserves the ledger as
+                # a publication surface over accepted transition-state theses rather than silently
+                # promoting raw candidate rows.
+                rationale_keys = {
+                    "classification": interpretation["classification"],
+                    "operator_family": "transition_state",
+                    "pattern_id": row["pattern_id"],
+                }
+            # @context decision -- Transition-state publication always binds accepted interpretation
+            # text to the live S19 representative-paper score for the same pattern. The publication
+            # row is invalid if either side is missing, because otherwise the ledger would drift away
+            # from the canonical operator evidence that selected the paper in the first place.
             ledger_rows.append(
                 {
                     "pattern_id": row["pattern_id"],
                     "pattern_label": row["pattern_label"],
-                    "shortlist_id": interpretation["shortlist_id"],
+                    "publication_source_surface": publication_source_surface,
+                    "publication_interpretation_run_id": args.interpretation_run_id,
+                    "publication_item_id": publication_item_id,
+                    "shortlist_id": shortlist_id,
                     "paper_id": row["paper_id"],
                     "published_at": row["published_at"] or "unknown",
                     "home_domain": row["primary_category"] or "unknown",
@@ -252,9 +349,8 @@ def main():
                     "transition_state_score": round(float(row["transition_state_candidate_score"] or 0.0), 6),
                     "confidence": interpretation["confidence"],
                     "rationale": {
-                        "classification": interpretation["classification"],
-                        "packet_kind": interpretation["packet_kind"],
-                        "pair_key": pair_key,
+                        **rationale_keys,
+                        "publication_item_id": publication_item_id,
                         "transition_state_rank": int(row["transition_state_rank"]),
                         "pattern_label": row["pattern_label"],
                         "feature_snapshot": rationale,
@@ -275,6 +371,9 @@ def main():
                   interpretation_run_id,
                   pattern_id,
                   shortlist_id,
+                  publication_source_surface,
+                  publication_interpretation_run_id,
+                  publication_item_id,
                   paper_id,
                   published_at,
                   home_domain,
@@ -291,7 +390,7 @@ def main():
                   confidence,
                   rationale_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     args.run_id,
@@ -300,6 +399,9 @@ def main():
                     args.interpretation_run_id,
                     row["pattern_id"],
                     row["shortlist_id"],
+                    row["publication_source_surface"],
+                    row["publication_interpretation_run_id"],
+                    row["publication_item_id"],
                     row["paper_id"],
                     row["published_at"],
                     row["home_domain"],
@@ -330,6 +432,7 @@ def main():
             "run_id": args.run_id,
             "candidate_run_id": args.candidate_run_id,
             "shortlist_run_id": args.shortlist_run_id,
+            "interpretation_source": args.interpretation_source,
             "interpretation_run_id": args.interpretation_run_id,
             "entry_count": len(ledger_rows),
             "counts_by_priority_tier": {
@@ -337,6 +440,7 @@ def main():
                 for tier in ("p1", "p2", "p3")
             },
             "top_ranked_pattern_id": ledger_rows[0]["pattern_id"] if ledger_rows else None,
+            "top_ranked_publication_item_id": ledger_rows[0]["publication_item_id"] if ledger_rows else None,
         }
         metrics_path = output_dir / "transition_state_ledger_metrics.json"
         metrics_path.write_text(json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8")
