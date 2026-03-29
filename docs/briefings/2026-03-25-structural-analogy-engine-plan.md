@@ -1166,7 +1166,42 @@ Current status:
   - `transition_state__near-transition-maker-queue.md`
   - `transition_state__near-transition-parity-repair.md`
   - `transition_state__near-transition-queue-refill.md`
-- the stage remains in progress because `STEP 6` and `STEP 7` are still pending; the next canonical `S27` commit is the expanded enhanced interpretation batch over the broadened packet surface
+- the sixth `S27` commit broadens the enhanced interpretation batch so lane coverage is sourced directly from the broadened bridge and composition operator tables instead of depending on the narrower review-packet top-k alone
+- fixture coverage in `tests/test_materialize_enhanced_interpretation_batch.py` now proves the batch can emit one slice for each new lane plus stranded and transition-state families, and `tests/test_ingest_enhanced_interpretations.py` now proves lane provenance survives ingestion
+- the live broadened enhanced batch `enhanced-interpretation-batch-20260328-broadened` completed successfully against:
+  - `review-packet-materialization-20260328-broadened`
+  - `bridge-materialization-20260328-broadened`
+  - `composition-materialization-20260328-broadened`
+  - `transition-state-candidate-materialization-20260328-broadened`
+- the live broadened batch counts are:
+  - `market_design`: `10`
+  - `settlement_resolution`: `10`
+  - `participant_pathologies`: `10`
+  - `state_graph`: `10`
+  - `lifecycle`: `10`
+  - `stranded_qfin`: `10`
+  - `transition_state`: `10`
+  - `prepared_count`: `70`
+- the checked-in sample response fixture `tests/fixtures/enhanced_interpretation_responses.jsonl` now targets real broadened batch ids across all five new lanes plus stranded and transition-state coverage
+- the live broadened ingestion `enhanced-interpretation-ingestion-20260328-broadened` completed successfully with:
+  - `accepted_count`: `9`
+  - `rejected_count`: `2`
+  - accepted operator-family coverage:
+    - `market_design`: `1`
+    - `settlement_resolution`: `1`
+    - `participant_pathologies`: `1`
+    - `state_graph`: `1`
+    - `lifecycle`: `1`
+    - `stranded_qfin`: `2`
+    - `transition_state`: `2`
+  - accepted classification coverage:
+    - `TRANSLATION_CANDIDATE`: `5`
+    - `COMPOSITIONAL_CANDIDATE`: `2`
+    - `STRANDED_QFIN_RESULT`: `2`
+- the rejection artifact is now informative rather than synthetic:
+  - one schema failure: `invalid_enum:classification:BAD_CLASS`
+  - one unknown batch id: `unknown_batch_item_id`
+- the stage remains in progress because `STEP 7` is still pending; the next canonical `S27` commit is broadened publication rematerialization
 
 ---
 
@@ -1305,15 +1340,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s27-review-packets`
-- Why this commit exists: materialize broadened review packets from the widened bridge, composition, and transition-state outputs so the new early-market seams become human-reviewable packet surfaces
+- Commit scope: `s27-enhanced-interpretation-broadening`
+- Why this commit exists: expand the enhanced interpretation batch to cover the five new early-market lanes plus stranded and transition-state families, then ingest checked-in sample responses against that broadened batch
 - Stages touched: `S27`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_review_packets.py`, `tests/test_materialize_review_packets.py`, `data/structural-analogy/runs/review-packet-materialization-20260328-broadened/*`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_review_packets.py`, `npm run codecontext:scope -- tests/test_materialize_review_packets.py`, `npm run codecontext:py -- scripts/materialize_review_packets.py`, `npm run codecontext:py -- tests/test_materialize_review_packets.py`, `python3 -m unittest -v tests.test_materialize_review_packets`, `python3 scripts/materialize_review_packets.py --run-id review-packet-materialization-20260328-broadened --bridge-run-id bridge-materialization-20260328-broadened --composition-run-id composition-materialization-20260328-broadened --transition-run-id transition-state-candidate-materialization-20260328-broadened`, `npm run codecontext:diff -- scripts/materialize_review_packets.py`, `npm run codecontext:diff -- tests/test_materialize_review_packets.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_review_packets`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/review-packet-materialization-20260328-broadened/review_packets/*`, `data/structural-analogy/runs/review-packet-materialization-20260328-broadened/review_packet_metrics.json`
-- Acceptance result: `complete; the broadened review-packet rerun wrote 29 live packets across cluster, bridge, composition, stranded_qfin, and transition_state packet kinds, including new market-design packet seams from the broadened operator surface`
-- Open risks after commit: `broadened packet selection is still dominated by market-design paired with legacy microstructure seams, so later shortlist and interpretation stages may need explicit lane-balancing pressure to keep settlement and state-graph lanes visible`
-- Next intended commit: `S27 step 6 expanded enhanced interpretation batch`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_enhanced_interpretation_batch.py`, `scripts/ingest_enhanced_interpretations.py`, `tests/test_materialize_enhanced_interpretation_batch.py`, `tests/test_ingest_enhanced_interpretations.py`, `tests/fixtures/enhanced_interpretation_responses.jsonl`, `data/structural-analogy/runs/enhanced-interpretation-batch-20260328-broadened/*`, `data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328-broadened/*`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_enhanced_interpretation_batch.py`, `npm run codecontext:scope -- scripts/ingest_enhanced_interpretations.py`, `npm run codecontext:scope -- tests/test_materialize_enhanced_interpretation_batch.py`, `npm run codecontext:scope -- tests/test_ingest_enhanced_interpretations.py`, `npm run codecontext:py -- scripts/materialize_enhanced_interpretation_batch.py`, `npm run codecontext:py -- scripts/ingest_enhanced_interpretations.py`, `npm run codecontext:py -- tests/test_materialize_enhanced_interpretation_batch.py`, `npm run codecontext:py -- tests/test_ingest_enhanced_interpretations.py`, `python3 -m unittest -v tests.test_materialize_enhanced_interpretation_batch tests.test_ingest_enhanced_interpretations`, `python3 scripts/materialize_enhanced_interpretation_batch.py --run-id enhanced-interpretation-batch-20260328-broadened --packet-run-id review-packet-materialization-20260328-broadened --bridge-run-id bridge-materialization-20260328-broadened --composition-run-id composition-materialization-20260328-broadened --transition-run-id transition-state-candidate-materialization-20260328-broadened --lane-limit 10 --stranded-limit 10 --transition-per-pattern 2`, `python3 scripts/ingest_enhanced_interpretations.py --run-id enhanced-interpretation-ingestion-20260328-broadened --batch-run-id enhanced-interpretation-batch-20260328-broadened --responses-path tests/fixtures/enhanced_interpretation_responses.jsonl`, `npm run codecontext:diff -- scripts/materialize_enhanced_interpretation_batch.py`, `npm run codecontext:diff -- scripts/ingest_enhanced_interpretations.py`, `npm run codecontext:diff -- tests/test_materialize_enhanced_interpretation_batch.py`, `npm run codecontext:diff -- tests/test_ingest_enhanced_interpretations.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_enhanced_interpretation_batch tests.test_ingest_enhanced_interpretations`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/enhanced-interpretation-batch-20260328-broadened/enhanced_interpretation_batch.jsonl`, `data/structural-analogy/runs/enhanced-interpretation-batch-20260328-broadened/enhanced_interpretation_batch_metrics.json`, `data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328-broadened/enhanced_interpretation_ingestion_metrics.json`, `data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328-broadened/enhanced_interpretation_rejections.jsonl`
+- Acceptance result: `complete; the broadened batch now contains 70 items with 10 from each new lane plus 10 stranded and 10 transition-state items, and the checked-in sample responses ingest successfully with 9 accepted rows and 2 truthful rejection rows`
+- Open risks after commit: `the broadened interpretation evidence is still sample-fixture-based rather than a full live interpretation pass, so the next publication rerun will widen coverage but not yet reflect exhaustive human or model review across all 70 broadened items`
+- Next intended commit: `S27 step 7 broadened publication rematerialization`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

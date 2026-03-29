@@ -33,18 +33,20 @@ class IngestEnhancedInterpretationsTest(unittest.TestCase):
 
             batch_rows = [
                 {
-                    "batch_item_id": "bridge:bridge-a",
-                    "operator_family": "bridge",
-                    "source_kind": "review_packet",
+                    "batch_item_id": "market_design:bridge:market_design_seams__refill_lag_local_shock",
+                    "operator_family": "market_design",
+                    "lane_family": "market_design",
+                    "source_kind": "review_packet_bridge",
                     "source_run_id": "batch-run",
-                    "source_ref": "bridge-a",
+                    "source_ref": "market_design_seams__refill_lag_local_shock",
                     "family_rank": 1,
                     "score": 2.2,
-                    "packet_title": "Bridge A",
+                    "packet_title": "Market Design A",
                 },
                 {
                     "batch_item_id": "stranded_qfin:paper-a",
                     "operator_family": "stranded_qfin",
+                    "lane_family": "stranded_qfin",
                     "source_kind": "stranded_resurfacing_candidate",
                     "source_run_id": "batch-run",
                     "source_ref": "paper-a",
@@ -60,7 +62,7 @@ class IngestEnhancedInterpretationsTest(unittest.TestCase):
 
             responses = [
                 {
-                    "batch_item_id": "bridge:bridge-a",
+                    "batch_item_id": "market_design:bridge:market_design_seams__refill_lag_local_shock",
                     "interpretation": {
                         "classification": "TRANSLATION_CANDIDATE",
                         "result_summary": "Bridge idea summary",
@@ -86,7 +88,7 @@ class IngestEnhancedInterpretationsTest(unittest.TestCase):
                     },
                 },
                 {
-                    "batch_item_id": "bridge:bridge-a",
+                    "batch_item_id": "market_design:bridge:market_design_seams__refill_lag_local_shock",
                     "interpretation": {
                         "classification": "BAD_CLASS",
                         "result_summary": "bad",
@@ -144,7 +146,7 @@ class IngestEnhancedInterpretationsTest(unittest.TestCase):
             connection.row_factory = sqlite3.Row
             rows = connection.execute(
                 """
-                SELECT batch_item_id, operator_family, classification
+                SELECT batch_item_id, operator_family, lane_family, classification
                 FROM enhanced_interpretations
                 WHERE run_id = 'ingest-run'
                 ORDER BY batch_item_id
@@ -152,10 +154,23 @@ class IngestEnhancedInterpretationsTest(unittest.TestCase):
             ).fetchall()
             self.assertEqual(len(rows), 2)
             self.assertEqual(
-                [(row["batch_item_id"], row["operator_family"], row["classification"]) for row in rows],
                 [
-                    ("bridge:bridge-a", "bridge", "TRANSLATION_CANDIDATE"),
-                    ("stranded_qfin:paper-a", "stranded_qfin", "NO_TRANSLATION"),
+                    (
+                        row["batch_item_id"],
+                        row["operator_family"],
+                        row["lane_family"],
+                        row["classification"],
+                    )
+                    for row in rows
+                ],
+                [
+                    (
+                        "market_design:bridge:market_design_seams__refill_lag_local_shock",
+                        "market_design",
+                        "market_design",
+                        "TRANSLATION_CANDIDATE",
+                    ),
+                    ("stranded_qfin:paper-a", "stranded_qfin", "stranded_qfin", "NO_TRANSLATION"),
                 ],
             )
 
@@ -163,7 +178,7 @@ class IngestEnhancedInterpretationsTest(unittest.TestCase):
             self.assertEqual(metrics["accepted_count"], 2)
             self.assertEqual(metrics["rejected_count"], 2)
             self.assertEqual(metrics["counts_by_classification"]["NO_TRANSLATION"], 1)
-            self.assertEqual(metrics["counts_by_operator_family"]["bridge"], 1)
+            self.assertEqual(metrics["counts_by_operator_family"]["market_design"], 1)
             self.assertEqual(metrics["counts_by_operator_family"]["stranded_qfin"], 1)
 
             rejection_lines = (output_dir / "enhanced_interpretation_rejections.jsonl").read_text(encoding="utf-8").strip().splitlines()

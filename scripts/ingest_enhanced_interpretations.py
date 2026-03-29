@@ -42,6 +42,7 @@ def ensure_enhanced_interpretations_table(connection: sqlite3.Connection) -> Non
           batch_run_id TEXT NOT NULL,
           batch_item_id TEXT NOT NULL,
           operator_family TEXT NOT NULL,
+          lane_family TEXT NOT NULL DEFAULT '',
           source_kind TEXT NOT NULL,
           source_run_id TEXT NOT NULL,
           source_ref TEXT NOT NULL,
@@ -62,6 +63,17 @@ def ensure_enhanced_interpretations_table(connection: sqlite3.Connection) -> Non
         )
         """
     )
+    columns = {
+        row[1]
+        for row in connection.execute("PRAGMA table_info(enhanced_interpretations)").fetchall()
+    }
+    if "lane_family" not in columns:
+        connection.execute(
+            """
+            ALTER TABLE enhanced_interpretations
+            ADD COLUMN lane_family TEXT NOT NULL DEFAULT ''
+            """
+        )
     connection.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_enhanced_interpretations_run_classification
@@ -241,6 +253,7 @@ def main():
                       batch_run_id,
                       batch_item_id,
                       operator_family,
+                      lane_family,
                       source_kind,
                       source_run_id,
                       source_ref,
@@ -257,13 +270,14 @@ def main():
                       confidence,
                       raw_json
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         args.run_id,
                         args.batch_run_id,
                         batch_item_id,
                         operator_family,
+                        str(batch_item.get("lane_family", operator_family)),
                         str(batch_item["source_kind"]),
                         str(batch_item["source_run_id"]),
                         str(batch_item["source_ref"]),
