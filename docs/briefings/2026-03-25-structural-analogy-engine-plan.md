@@ -1100,7 +1100,19 @@ Current status:
   - `near_lifecycle_far_realized`
 - those patterns now explicitly push away from standard realized-market q-fin discourse through `lexical_far_from` guards instead of merely reusing the new anchor families as local-similarity probes
 - fixture coverage in `tests/test_materialize_probes.py` now guards both the broadened anchor ids and the broadened pattern ids directly
-- the stage remains in progress because only `STEP 1` and `STEP 2` are complete; the next canonical `S27` commit is the live probe rematerialization with the expanded config
+- the third `S27` commit reruns the canonical probe stage with the broadened config under `probe-materialization-20260328-broadened`
+- the live broadened probe rerun completed successfully with:
+  - `anchor_count`: `16`
+  - `pattern_count`: `20`
+  - `probe_hit_count`: `500`
+  - `top_k`: `25`
+- each new early-market lane produced live hits in canonical `probe_hits` for the broadened run:
+  - `near_market_design_far_realized`: `25` hits, top paper `2202.00127` (`On Market Design and Latency Arbitrage`)
+  - `near_settlement_resolution_far_realized`: `25` hits, top paper `1604.00254` (`Systemic Risks in CCP Networks`)
+  - `near_participant_pathology_far_realized`: `25` hits, top paper `1511.00740` (`Learning Unfair Trading: a Market Manipulation Analysis From the Reinforcement Learning Perspective`)
+  - `near_state_graph_far_realized`: `25` hits, top paper `cond-mat/0202391` (`Triangular arbitrage as an interaction among foreign exchange rates`)
+  - `near_lifecycle_far_realized`: `25` hits, top paper `1311.4160` (`Simulating the Synchronizing Behavior of High-Frequency Trading in Multiple Markets`)
+- the stage remains in progress because only `STEP 1` through `STEP 3` are complete; the next canonical `S27` commit is the broadened operator rerun
 
 ---
 
@@ -1243,11 +1255,11 @@ Current status:
 - Why this commit exists: rematerialize probe hits with the broadened anchor and contrast-pattern surface so the new early-market lanes become live candidate regions instead of config-only definitions
 - Stages touched: `S27`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `data/structural-analogy/runs/*probe*`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run store:materialize-probes -- --run-id <new-s27-probe-run>`, `npm run docs:lint`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_probes.py`, `npm run store:materialize-probes -- --run-id probe-materialization-20260328-broadened`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `probe_metrics.json`, `probe_hits.jsonl`
-- Acceptance result: `pending; complete when the broadened patterns produce live probe hits and the new lanes show up in the canonical probe artifact family`
-- Open risks after commit: `the broadened patterns may still over-collapse into mature q-fin discourse or produce sparse hits until thresholds are tuned`
+- Artifacts produced: `data/structural-analogy/runs/probe-materialization-20260328-broadened/probe_metrics.json`; live hits verified in canonical SQLite `probe_hits`
+- Acceptance result: `complete for S27 step 3; the broadened probe run completed successfully and all five new lane patterns produced live probe hits in canonical state`
+- Open risks after commit: `the broadened patterns are live but may still lean too close to mature q-fin discourse until the broadened operator reruns expose which lanes actually survive downstream`
 - Next intended commit: `S27 step 4 operator reruns on broadened anchor set`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
