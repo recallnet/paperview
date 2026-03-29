@@ -297,7 +297,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S20` | stranded q-fin resurfacing operator | `done` | `stranded_resurfacing_candidates` table + artifacts |
 | `S21` | findings and throwaways materializer | `done` | `findings_and_throwaways.*` per-run report |
 | `S22` | transition-state microstructure ledger | `done` | `transition_state_ledger.*` publication surface |
-| `S23` | enhanced interpretation batch | `pending` | expanded top-10-20 per operator family interpretation |
+| `S23` | enhanced interpretation batch | `draft` | expanded top-10-20 per operator family interpretation |
 | `S24` | re-materialize all publication surfaces | `pending` | all four publication outputs from a single run |
 
 ## Completed Stages
@@ -913,6 +913,21 @@ Accept when:
 - interpretation batch covers all three operator families
 - accepted/rejected counts are meaningfully larger than the S12 pilot
 
+Current status:
+
+- the `S23` foundation commit adds the canonical batch-prep stage in `scripts/materialize_enhanced_interpretation_batch.py`
+- the batch now expands interpretation preparation across three operator families while reusing the exact S12 prompt and schema contract:
+  - top bridge packets from `review_packets`
+  - top stranded resurfacing rows from `stranded_resurfacing_candidates`
+  - top transition-state rows from `transition_state_candidates`
+- fixture coverage in `tests/test_materialize_enhanced_interpretation_batch.py` proves that the output covers all three operator families and preserves prompt/schema references in every row
+- the live rerun `npm run store:materialize-enhanced-interpretation-batch -- --run-id enhanced-interpretation-batch-20260328` completed successfully with:
+  - `prepared_count`: `33`
+  - `bridge`: `6`
+  - `stranded_qfin`: `12`
+  - `transition_state`: `15`
+- the stage is still in progress: the expanded batch now covers all three operator families, but the downstream accepted/rejected-count acceptance bar still depends on a larger real ingestion run
+
 ### `S24` Re-Materialize All Publication Surfaces
 
 Build:
@@ -1052,15 +1067,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s22-transition-state-microstructure-ledger`
-- Why this commit exists: publish the live transition-state pairings into a dedicated ledger surface instead of leaving them only as candidate queues and findings-report near-misses
-- Stages touched: `S22`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_transition_state_ledger.py`, `tests/test_materialize_transition_state_ledger.py`, `package.json`, `sql/paperview_schema.sql`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_transition_state_candidates.py`, `npm run codecontext:scope -- scripts/materialize_stranded_result_ledger.py`, `rg -n "transition_state_ledger|transition_state" sql/paperview_schema.sql package.json tests scripts/materialize_selective_interpretation_batch.py tests/test_materialize_selective_interpretation_batch.py scripts/materialize_shortlist.py tests/test_materialize_shortlist.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select item_type, count(*) from shortlist_items where run_id='shortlist-materialization-20260328' group by item_type order by item_type;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select shortlist_id, item_type, packet_kind from shortlist_items where run_id='shortlist-materialization-20260328' order by shortlist_rank limit 24;"`, `sed -n '320,430p' sql/paperview_schema.sql`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select shortlist_id, classification, modern_equivalent, result_summary, first_step, why_stranded_or_unrealized, confidence from selective_interpretations where run_id='selective-interpretation-ingestion-20260328' order by shortlist_id;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select item_ref, title, summary_json from review_packets where run_id='review-packet-materialization-20260328' and packet_kind in ('bridge','composition') and item_ref in ('queue_value_passive_quoting__refill_lag_local_shock','auction_parimutuel_design__refill_lag_local_shock','auction_parimutuel_design__queue_value_passive_quoting','maker_stress_inventory_retreat__queue_value_passive_quoting','parity_propagation__refill_lag_local_shock');"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select pattern_id, paper_id, transition_state_rank, transition_state_candidate_score from transition_state_candidates where run_id='transition-state-candidate-materialization-20260328' and transition_state_rank<=3 order by pattern_id, transition_state_rank;"`, `npm run codecontext:py -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:py -- tests/test_materialize_transition_state_ledger.py`, `python3 -m unittest -v tests.test_materialize_transition_state_ledger`, `npm run store:materialize-transition-state-ledger -- --run-id transition-state-ledger-20260328`, `python3 - <<'PY' ... transition-state ledger metrics and top rows ... PY`, `npm run codecontext:diff -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_transition_state_ledger.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_transition_state_ledger`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/transition-state-ledger-20260328/transition_state_ledger.md`, `data/structural-analogy/runs/transition-state-ledger-20260328/transition_state_ledger.jsonl`, `data/structural-analogy/runs/transition-state-ledger-20260328/transition_state_ledger_metrics.json`
-- Acceptance result: `passed; transition-state publication rows now exist as a dedicated ledger tied to both live transition candidates and positive accepted interpretations`
-- Open risks after commit: `the current ledger will still be sparse until S23 expands interpretation coverage across all transition-state pairings`
-- Next intended commit: `S23 enhanced interpretation batch`
+- Commit scope: `s23-enhanced-interpretation-batch-foundation`
+- Why this commit exists: expand the interpretation preparation surface beyond the shortlist pilot so the next ingestion pass can cover bridge, stranded q-fin, and transition-state families under one strict contract
+- Stages touched: `S23`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_enhanced_interpretation_batch.py`, `tests/test_materialize_enhanced_interpretation_batch.py`, `package.json`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_selective_interpretation_batch.py`, `npm run codecontext:scope -- scripts/materialize_transition_state_ledger.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select packet_kind, count(*) from review_packets where run_id='review-packet-materialization-20260328' group by packet_kind order by packet_kind;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select count(*) from stranded_resurfacing_candidates where run_id='stranded-resurfacing-materialization-20260328';"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select count(*) from transition_state_candidates where run_id='transition-state-candidate-materialization-20260328' and transition_state_rank <= 20;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select count(*) from transition_state_ledger where run_id='transition-state-ledger-20260328';"`, `npm run codecontext:py -- scripts/materialize_enhanced_interpretation_batch.py`, `npm run codecontext:py -- tests/test_materialize_enhanced_interpretation_batch.py`, `python3 -m unittest -v tests.test_materialize_enhanced_interpretation_batch`, `npm run store:materialize-enhanced-interpretation-batch -- --run-id enhanced-interpretation-batch-20260328`, `python3 - <<'PY' ... enhanced batch metrics and family counts ... PY`, `npm run codecontext:diff -- scripts/materialize_enhanced_interpretation_batch.py`, `npm run codecontext:diff -- tests/test_materialize_enhanced_interpretation_batch.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_enhanced_interpretation_batch`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/enhanced-interpretation-batch-20260328/enhanced_interpretation_batch.jsonl`, `data/structural-analogy/runs/enhanced-interpretation-batch-20260328/enhanced_interpretation_batch_metrics.json`
+- Acceptance result: `partial; the expanded batch now covers all three operator families with 33 prepared items, but the stage remains in progress until a larger ingestion run produces materially larger accepted/rejected counts than the S12 pilot`
+- Open risks after commit: `this foundation expands batch coverage, but S23 remains incomplete until a larger real interpretation ingestion run produces materially larger accepted/rejected counts than the S12 pilot`
+- Next intended commit: `S23 expanded interpretation ingestion`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
