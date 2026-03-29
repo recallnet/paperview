@@ -1661,17 +1661,17 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s34-empirical-test-memos-v2`
-- Why this commit exists: upgrade the three canonical empirical memos to the v2 research-program format with explicit hypothesis, data, baseline, metric, and fail-fast sections, then close out the full S28-S34 and DS1-DS5 execution path
-- Stages touched: `S34`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_test_memos.py`, `tests/test_materialize_test_memos.py`, `reports/test-memo-queue-refill.md`, `reports/test-memo-auction-handoff.md`, `reports/test-memo-maker-retreat.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_test_memos.py`, `npm run codecontext:py -- scripts/materialize_test_memos.py`, `npm run codecontext:py -- tests/test_materialize_test_memos.py`, `python3 -m unittest -v tests.test_materialize_test_memos`, `npm run store:materialize-test-memos -- --run-id test-memos-v2-20260329 --unrealized-run-id unrealized-ideas-index-diamond-20260329 --stranded-run-id stranded-result-ledger-diamond-20260329 --transition-run-id transition-state-ledger-diamond-20260329 --findings-run-id findings-and-throwaways-diamond-20260329`, `npm run codecontext:diff -- scripts/materialize_test_memos.py`, `npm run codecontext:diff -- tests/test_materialize_test_memos.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_test_memos`, `npm run docs:lint`
-- Artifacts produced: `reports/test-memo-queue-refill.md`, `reports/test-memo-auction-handoff.md`, `reports/test-memo-maker-retreat.md`
-- Acceptance result: `S34` passed. The three canonical reports were regenerated from the live `S33` publication state and now expose explicit `Hypothesis`, `Data`, `Baseline`, `Metric`, and `Fail-Fast` sections, while preserving the queue/refill, auction-handoff, and maker-retreat workstreams as executable research programs grounded in the broadened diamond evidence base.
-- Open risks after commit: the memo generator no longer pins itself to one exact `research_output.md` thesis string or one exact transition-state publication label, because the broadened system now surfaces auction-handoff evidence partly through findings and near-miss artifacts rather than a single published transition row. Future memo work should keep validating against the live evidence base but avoid brittle exact-string guards.
+- Commit scope: `v2-plan-closeout`
+- Why this commit exists: finalize the living plan in an explicit terminal committed state after the full v2 execution path completed across `S28-S34` and `DS1-DS5`
+- Stages touched: `S28`, `S29`, `S30`, `S31`, `S32`, `S33`, `S34`, `DS1`, `DS2`, `DS3`, `DS4`, `DS5`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `none`
+- Acceptance result: the stage table marks `S28-S34` and `DS1-DS5` done, the closeout block records the full v2 path as complete, and the next intended commit is explicitly `none`
+- Open risks after commit: future work should start from a new stage or plan revision rather than appending new execution claims onto this closed v2 block
 - Next intended commit: `none — S28-S34 and DS1-DS5 closed`
-- Signoff status: `ready`
+- Signoff status: `committed`
 - Last updated: `2026-03-29`
 
 ## Closeout Status
