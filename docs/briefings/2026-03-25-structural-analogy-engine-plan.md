@@ -762,14 +762,14 @@ Current status:
 ## Active Signoff Block
 
 - Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by removing noncanonical ranking and queryless package commands that sit outside the canonical staged pipeline
+- Why this commit exists: continue the cleanup pass by removing noncanonical downstream publication and gate-review package commands that sit outside the canonical staged pipeline
 - Stages touched: `S16`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"(score:exposure|retrieve:build|mine:queryless|labels:bootstrap-queryless|adjudicate:analyst|rank:candidates)\"' package.json docs scripts tests`, `git status --short package.json scripts/score_mechanism_exposure.py scripts/build_retrieval_stack.py scripts/mine_queryless_candidates.py scripts/bootstrap_queryless_labels.py scripts/run_analyst_adjudication.py scripts/build_candidate_family_ranking.py`, `npm run docs:lint`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"(briefs:generate|live:materialize-downstream|queue:assess-live|gatec:prepare|gatec:review)\"' package.json docs scripts tests`, `git ls-files scripts/generate_strategy_briefs.py scripts/materialize_live_downstream_run.py scripts/assess_live_brief_queue.py scripts/prepare_gate_c_review.py scripts/review_gate_c.py`, `git status --short package.json scripts/generate_strategy_briefs.py scripts/materialize_live_downstream_run.py scripts/assess_live_brief_queue.py scripts/prepare_gate_c_review.py scripts/review_gate_c.py`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
 - Artifacts produced: `none`
-- Acceptance result: `the active package surface is smaller: the old ranking and queryless commands are removed because they sit outside the canonical staged pipeline while the dirty legacy scripts remain in place for later archival`
-- Open risks after commit: `dirty ranking-era scripts still prevent a broader archive move, so this slice only removes the tracked package entrypoints for the old queryless and ranking workflow while leaving the scripts themselves in place for later archival`
+- Acceptance result: `the active package surface is smaller: downstream publication and gate-review commands are removed because they sit outside the canonical staged pipeline while the tracked scripts remain in place for a later archive decision`
+- Open risks after commit: `tracked downstream publication and gate-review scripts still remain in the active root, so this slice only removes their package entrypoints while leaving later archive decisions for follow-up commits`
 - Next intended commit: `S16 active/archive cleanup foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
