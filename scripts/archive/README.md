@@ -6,6 +6,11 @@ but are no longer part of the canonical staged pipeline described in
 
 Current archive groups:
 
+- `noncanonical-corpus-helpers/`
+  Corpus status, inventory, and readiness helpers from the earlier launch and
+  failure-recovery workflow. These are preserved for history but are not part
+  of the canonical staged command surface.
+
 - `noncanonical-benchmarks/`
   Benchmark utilities that were useful for one-off retrieval evaluation but
   are not part of the canonical staged command surface.

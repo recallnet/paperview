@@ -630,12 +630,17 @@ Current status:
 - third archived slice moved to `scripts/archive/noncanonical-research-packs/`:
   - `materialize_research_finding_pack.py`
   - `export_cluster_cartography.py`
+- fourth archived slice moved to `scripts/archive/noncanonical-corpus-helpers/`:
+  - `corpus_status.py`
+  - `corpus_inventory.py`
+  - `corpus_readiness_report.py`
 - this first slice is intentionally narrow: it archives tracked pilot utilities that are not part of the canonical staged command set and do not have active package-script entrypoints
 - the benchmark cleanup pass removed `retrieve:benchmark` from `package.json`, so that archived script no longer competes with the canonical staged commands
 - the research-pack cleanup pass removed `research:materialize-findings` from `package.json`, and the archived runner now points at the archived export helper instead of reaching back into the active root
+- the corpus-helper cleanup pass removed the old `corpus:*` helper entrypoints from `package.json` and moved the untracked helper files into the archive, so those root-level status utilities no longer compete with the canonical stages
 - historical docs still reference `materialize_mixed_family_pilot.py`, which is acceptable for `S16` because the archive preserves the file while removing it from the active script surface
 - historical docs still reference `research:materialize-findings`, which is acceptable for `S16` because the archive preserves the implementation while the active package surface is reduced
-- the stage remains in progress because extraction-era package commands and other superseded utilities still need later cleanup passes
+- the stage remains in progress because additional noncanonical scripts still sit in the active root even though most competing package entrypoints are now gone
 
 ---
 
@@ -762,14 +767,14 @@ Current status:
 ## Active Signoff Block
 
 - Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by removing the noncanonical `schemas:validate` package command, which is not part of the canonical staged command set
+- Why this commit exists: continue the cleanup pass by moving the untracked corpus helper scripts into `scripts/archive/` now that their package entrypoints have already been removed
 - Stages touched: `S16`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"schemas:validate\"' package.json docs scripts tests`, `git ls-files scripts/validate_schema_examples.py`, `git status --short package.json scripts/validate_schema_examples.py`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/archive/README.md`, `scripts/archive/noncanonical-corpus-helpers/corpus_status.py`, `scripts/archive/noncanonical-corpus-helpers/corpus_inventory.py`, `scripts/archive/noncanonical-corpus-helpers/corpus_readiness_report.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `rg -n 'corpus_status.py|corpus_inventory.py|corpus_readiness_report.py' package.json docs scripts tests`, `git status --short scripts/corpus_status.py scripts/corpus_inventory.py scripts/corpus_readiness_report.py scripts/archive/README.md`, `find scripts/archive -maxdepth 2 -type f | sort`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `none`
-- Acceptance result: `the active package surface is smaller: schemas:validate is removed because it is not part of the canonical staged command set while the tracked helper script remains in place for a later archive decision`
-- Open risks after commit: `tracked noncanonical scripts still remain in the active root, so this slice only removes the schema-validation package entrypoint while leaving broader archival decisions for follow-up commits`
+- Artifacts produced: `scripts/archive/noncanonical-corpus-helpers/`
+- Acceptance result: `the corpus status, inventory, and readiness helpers are now preserved under scripts/archive instead of competing from the active root`
+- Open risks after commit: `an older noncanonical corpus pipeline script still references the former helper path, and other noncanonical scripts still remain in the active root for later archival decisions`
 - Next intended commit: `S16 active/archive cleanup foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
