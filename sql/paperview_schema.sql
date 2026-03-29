@@ -468,6 +468,28 @@ ON transition_state_scores(run_id, transition_state_score DESC);
 CREATE INDEX IF NOT EXISTS idx_transition_state_scores_run_paper
 ON transition_state_scores(run_id, paper_id);
 
+-- @context decision -- Transition-state candidates are the canonical operator output built from
+-- the live S17 probe regions plus the S18 paper-level prior. Persisting them separately from raw
+-- probe hits keeps later packet, shortlist, and publication stages grounded in a stable operator
+-- surface rather than rerunning pattern aggregation ad hoc.
+CREATE TABLE IF NOT EXISTS transition_state_candidates (
+  run_id TEXT NOT NULL,
+  pattern_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  representative_view_id INTEGER,
+  transition_state_candidate_score REAL NOT NULL,
+  transition_state_rank INTEGER NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, pattern_id, paper_id),
+  FOREIGN KEY (pattern_id) REFERENCES agitator_patterns(pattern_id) ON DELETE CASCADE,
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE,
+  FOREIGN KEY (representative_view_id) REFERENCES text_views(view_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_transition_state_candidates_run_pattern_rank
+ON transition_state_candidates(run_id, pattern_id, transition_state_rank);
+
 CREATE TABLE IF NOT EXISTS extraction_runs (
   run_id TEXT PRIMARY KEY,
   run_kind TEXT NOT NULL,

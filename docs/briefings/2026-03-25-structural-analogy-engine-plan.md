@@ -293,7 +293,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S16` | active / archive cleanup | `done` | clean active pipeline surface |
 | `S17` | transition-state anchor and probe config | `done` | transition-state anchors, probes, and probe hits |
 | `S18` | transition-state score materializer | `done` | `transition_state_scores` table + metrics |
-| `S19` | transition-state operator | `pending` | `transition_state_candidates` table + artifacts |
+| `S19` | transition-state operator | `done` | `transition_state_candidates` table + artifacts |
 | `S20` | stranded q-fin resurfacing operator | `pending` | `stranded_resurfacing_candidates` table + artifacts |
 | `S21` | findings and throwaways materializer | `pending` | `findings_and_throwaways.*` per-run report |
 | `S22` | transition-state microstructure ledger | `pending` | `transition_state_ledger.*` publication surface |
@@ -787,6 +787,25 @@ Accept when:
 - transition-state candidates exist in the main store
 - candidates come from embedding proximity to transition-state anchors, not just keyword matching
 
+Current status:
+
+- the `S19` commit adds the canonical operator in `scripts/materialize_transition_state_candidates.py`
+- the operator is pattern-scoped and paper-level, consuming only the completed `S17` probe hits plus the completed `S18` transition-state score surface
+- the canonical table surface is `transition_state_candidates`, with representative probe views and rationale payloads for later review-packet and publication stages
+- fixture coverage in `tests/test_materialize_transition_state_candidates.py` proves the operator ranks probe-supported papers rather than falling back to a keyword-only path
+- the live rerun `npm run store:materialize-transition-state-candidates -- --run-id transition-state-candidate-materialization-20260328` completed successfully with:
+  - `transition_pattern_count`: `5`
+  - `transition_candidate_count`: `95`
+  - `patterns_with_candidates`: `5`
+  - `top_score`: `0.702172`
+- live pattern coverage is now canonical:
+  - `near_transition_queue_refill`: `20`
+  - `near_transition_auction_refill`: `20`
+  - `near_transition_auction_queue`: `20`
+  - `near_transition_maker_queue`: `15`
+  - `near_transition_parity_repair`: `20`
+- the stage is complete: transition-state candidates now exist in the main store and they are derived from live probe proximity plus the canonical `S18` paper-level prior rather than keyword matching alone
+
 ### `S20` Stranded Q-Fin Resurfacing Operator
 
 Build:
@@ -982,15 +1001,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s18-transition-state-score-materializer`
-- Why this commit exists: add the canonical transition-state score table and staged materializer so the new `S17` probe regions become a reusable paper-level prior for later operator and publication stages
-- Stages touched: `S18`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_transition_state_scores.py`, `tests/test_materialize_transition_state_scores.py`, `package.json`, `sql/paperview_schema.sql`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_stranding_scores.py`, `sed -n '1,260p' scripts/materialize_stranding_scores.py`, `sed -n '1,260p' scripts/materialize_shortlist.py`, `git show HEAD:sql/paperview_schema.sql | sed -n '1,260p'`, `npm run codecontext:py -- scripts/materialize_transition_state_scores.py`, `npm run codecontext:py -- tests/test_materialize_transition_state_scores.py`, `python3 -m unittest -v tests.test_materialize_transition_state_scores`, `npm run store:materialize-transition-state-scores -- --run-id transition-state-score-materialization-20260328`, `python3 - <<'PY' ... transition-state score metrics and family counts ... PY`, `npm run codecontext:diff -- scripts/materialize_transition_state_scores.py`, `npm run codecontext:diff -- tests/test_materialize_transition_state_scores.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_transition_state_scores`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/transition-state-score-materialization-20260328/transition_state_score_metrics.json`, `data/structural-analogy/runs/transition-state-score-materialization-20260328/transition_state_score_top.jsonl`
-- Acceptance result: `passed; transition-state scores now exist in canonical outputs for the full discovery slice and remain continuous rather than binary`
-- Open risks after commit: `the score surface is live, but S19 still has to turn these paper-level priors into a dedicated transition-state candidate operator`
-- Next intended commit: `S19 transition-state operator`
+- Commit scope: `s19-transition-state-operator`
+- Why this commit exists: turn the live `S18` paper-level transition-state prior into a dedicated canonical candidate operator for shock recovery, handoff, queue reformation, and delayed-repair regions
+- Stages touched: `S19`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_transition_state_candidates.py`, `tests/test_materialize_transition_state_candidates.py`, `package.json`, `sql/paperview_schema.sql`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_compositions.py`, `sed -n '1,260p' scripts/materialize_compositions.py`, `sed -n '1,260p' scripts/materialize_contrasts.py`, `sed -n '1,260p' tests/test_materialize_compositions.py`, `npm run codecontext:py -- scripts/materialize_transition_state_candidates.py`, `npm run codecontext:py -- tests/test_materialize_transition_state_candidates.py`, `python3 -m unittest -v tests.test_materialize_transition_state_candidates`, `npm run store:materialize-transition-state-candidates -- --run-id transition-state-candidate-materialization-20260328`, `python3 - <<'PY' ... transition-state candidate metrics and top rows ... PY`, `npm run codecontext:diff -- scripts/materialize_transition_state_candidates.py`, `npm run codecontext:diff -- tests/test_materialize_transition_state_candidates.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_transition_state_candidates`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/transition-state-candidate-materialization-20260328/transition_state_candidate_metrics.json`, `data/structural-analogy/runs/transition-state-candidate-materialization-20260328/transition_state_candidates.jsonl`
+- Acceptance result: `passed; transition-state candidates now exist in the main store and remain grounded in probe proximity rather than a keyword-only retrieval path`
+- Open risks after commit: `the operator surface is live, but S20 and S21 still have to expose the stranded-q-fin resurfacing path and the findings/throwaways report the user actually wants to read`
+- Next intended commit: `S20 stranded q-fin resurfacing operator`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
