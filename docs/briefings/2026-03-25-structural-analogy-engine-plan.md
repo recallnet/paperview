@@ -307,7 +307,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `DS2` | bridge-zone mining | `done` | five forced bridge zones materialized with live top-10 paper sets; all five are beyond queue/refill |
 | `DS3` | early-market failure mode ledger | `done` | top 50 early-market entries; live run has 48 non-transition rows across 7 lane families |
 | `DS4` | stranded q-fin rescue with forced translation | `done` | 15 rescued entries live; 8 read as executable modern research tasks |
-| `DS5` | holdout-echo validation | `pending` | holdout echo report; success: 10+ pre-2024 candidates with meaningful 2024+ echoes |
+| `DS5` | holdout-echo validation | `done` | 51 pre-2024 candidates evaluated; 26 have meaningful 2024+ echoes |
 | `S29` | six-lane discovery expansion | `pending` | 6 lanes with anchors, probes, and lane-specific scoring |
 | `S30` | diamond score and representation redesign | `pending` | unified `diamond_score`, problem/mechanism/regime/stranding views, challenge capsules |
 | `S31` | eight-operator materialization | `pending` | bridge, composition, contrast, negative-space, transition-state, state-graph, participant-pathology, stranded-qfin operators |
@@ -1472,6 +1472,45 @@ Current status:
   - `1910.12130` -> liquidity-stress contagion monitor
 - the root stranded rescue pair now exposes `result_plain`, `instrument_assumed`, `why_stranded_then`, `modern_equivalent_now`, `first_implementation_test`, `gap_to_close`, and `why_not_just_theory` directly, so the rescue translation is no longer hidden inside the two-row publication ledger or intermediate interpretation artifacts
 
+### `DS5` Holdout-Echo Validation
+
+Build:
+
+- a concrete holdout-echo study over the top pre-2024 candidates surfaced by `DS1`, `DS3`, and `DS4`
+- direct candidate-to-holdout echo scoring against the `2024+` holdout corpus
+- root study outputs:
+  - `reports/ds5-holdout-echo-report.jsonl`
+  - `reports/ds5-holdout-echo-report.md`
+
+Accept when:
+
+- each row exposes the pre-2024 candidate, the top `2024+` echo papers, echo score, and verdict `validation` / `partial` / `unrelated`
+- at least `10` pre-2024 candidates have meaningful `2024+` echoes
+- candidate-family diversity is reported explicitly rather than hidden inside the old shortlist-only holdout stage
+
+Current status:
+
+- `DS5` is complete for the current broadened diamond-study stack
+- live `ds5-holdout-echo-validation` evaluated `51` pre-2024 candidates and found `26` meaningful `2024+` echoes (`5` `validation`, `21` `partial`), so the study cleared its stop/go bar of at least `10`
+- current family diversity across the validated candidate pool is broad rather than queue/refill-only:
+  - `settlement_async_repair`: `12`
+  - `state_graph`: `8`
+  - `lifecycle`: `6`
+  - `settlement_resolution`: `4`
+  - `portfolio_control`: `3`
+  - `queue_refill_repair`: `3`
+  - `execution_control`: `2`
+  - `general_qfin`: `2`
+  - `derivatives_surface`: `2`
+  - `calibration_speedup`: `2`
+- the strongest full validations now include:
+  - `2105.13822` -> `2410.19107` on DEX liquidity provision
+  - `1212.4770` -> `2501.17096` on metaorder-impact estimation
+  - `1910.12130` -> `2311.05977` on price-mediated contagion
+  - `2304.08819` -> `2504.17468` on reinsurance contract design
+  - `2106.06185` -> `2311.02690` on mean-field / relative-arbitrage structure
+- DS5 now validates the DS study outputs directly instead of only the older shortlist-bound holdout table, so later evidence is no longer siloed away from the broadened diamond candidates
+
 ---
 
 ## Development Policy
@@ -1615,15 +1654,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `ds4-stranded-qfin-rescue`
-- Why this commit exists: run the fourth concrete diamond study — force top stranded q-fin rows into explicit modern implementation paths instead of leaving them as math-finance resurfacing candidates
-- Stages touched: `DS4`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_ds4_stranded_ledger.py`, `tests/test_materialize_ds4_stranded_ledger.py`, `package.json`, `reports/ds4-stranded-ledger.jsonl`, `reports/ds4-stranded-ledger.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_ds4_stranded_ledger.py`, `npm run codecontext:py -- tests/test_materialize_ds4_stranded_ledger.py`, `python3 -m unittest -v tests.test_materialize_ds4_stranded_ledger`, `npm run study:ds4-stranded-ledger`, `npm run codecontext:diff -- scripts/materialize_ds4_stranded_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_ds4_stranded_ledger.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_ds4_stranded_ledger`, `npm run docs:lint`
-- Artifacts produced: `reports/ds4-stranded-ledger.jsonl`, `reports/ds4-stranded-ledger.md`
-- Acceptance result: `ready` — live rescue ledger has `15` rows and `8` executable-looking implementation tasks, which is above the required `5`
-- Open risks after commit: `DS5 and S29-S34 platform stages are still pending; several DS4 rows remain monitors or diagnostics rather than direct strategies, so DS5 should validate which rescues echo in later market-adjacent work`
-- Next intended commit: `DS5 holdout-echo validation`
+- Commit scope: `ds5-holdout-echo-validation`
+- Why this commit exists: run the fifth concrete diamond study — validate top pre-2024 candidates from the DS study stack against later `2024+` market-adjacent echoes instead of relying only on the older shortlist-bound holdout stage
+- Stages touched: `DS5`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_ds5_holdout_echo_report.py`, `tests/test_materialize_ds5_holdout_echo_report.py`, `package.json`, `reports/ds5-holdout-echo-report.jsonl`, `reports/ds5-holdout-echo-report.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_ds5_holdout_echo_report.py`, `npm run codecontext:py -- tests/test_materialize_ds5_holdout_echo_report.py`, `python3 -m unittest -v tests.test_materialize_ds5_holdout_echo_report`, `npm run study:ds5-holdout-echo-report`, `npm run codecontext:diff -- scripts/materialize_ds5_holdout_echo_report.py`, `npm run codecontext:diff -- tests/test_materialize_ds5_holdout_echo_report.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_ds5_holdout_echo_report`, `npm run docs:lint`
+- Artifacts produced: `reports/ds5-holdout-echo-report.jsonl`, `reports/ds5-holdout-echo-report.md`
+- Acceptance result: `ready` — live holdout-echo validation found `26` meaningful `2024+` echoes across `51` pre-2024 candidates, which is well above the required `10`
+- Open risks after commit: `S29-S34 platform stages are still pending; DS5 shows a large partial-echo tier, so later platform work should preserve candidate-family diversity rather than collapsing back to a small number of fully validated seams`
+- Next intended commit: `S29 six-lane discovery expansion`
 - Signoff status: `ready`
 - Last updated: `2026-03-29`

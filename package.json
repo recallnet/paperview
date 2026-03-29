@@ -41,6 +41,7 @@
     "study:ds2-bridge-zones": "python3 scripts/materialize_ds2_bridge_zones.py",
     "study:ds3-early-market-ledger": "python3 scripts/materialize_ds3_early_market_ledger.py",
     "study:ds4-stranded-ledger": "python3 scripts/materialize_ds4_stranded_ledger.py",
+    "study:ds5-holdout-echo-report": "python3 scripts/materialize_ds5_holdout_echo_report.py",
     "store:materialize-enhanced-interpretation-batch": "python3 scripts/materialize_enhanced_interpretation_batch.py",
     "score:materialize-stranding": "uv run --with pyyaml python3 scripts/materialize_stranding_scores.py",
     "test:unit": "python3 -m unittest discover -s tests -p 'test_*.py' -v",
