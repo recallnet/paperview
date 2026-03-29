@@ -30,11 +30,17 @@ class MaterializeResearchOutputTests(unittest.TestCase):
             )
 
             (runs_root / "unrealized-run" / "unrealized_ideas_index.jsonl").write_text(
-                '{"publication_item_id":"bridge:test","classification":"COMPOSITIONAL_CANDIDATE","confidence":"medium","title":"Bridge packet: queue x refill","result_summary":"Idea result","modern_equivalent":"Modern clue","first_step":"Run the first test","why_stranded_or_unrealized":"No one combined the ideas","rationale":{"top_holdout_echoes":[{"paper_id":"p1","title":"Echo One","echo_score":0.8}]}}\n',
+                "\n".join(
+                    [
+                        '{"publication_item_id":"market_design:test","classification":"TRANSLATION_CANDIDATE","confidence":"medium","title":"Composition packet: market design x refill resiliency","item_type":"market_design","result_summary":"Market design lead","modern_equivalent":"Rule-conditioned refill dislocation","first_step":"Test venue-rule changes","why_stranded_or_unrealized":"The literature left rule-induced refill seams implicit.","rationale":{"top_holdout_echoes":[]}}',
+                        '{"publication_item_id":"settlement:test","classification":"TRANSLATION_CANDIDATE","confidence":"medium","title":"Composition packet: settlement latency x resolution seam","item_type":"settlement_resolution","result_summary":"Settlement timing lead","modern_equivalent":"Settlement-lag arbitrage","first_step":"Measure resolution timing","why_stranded_or_unrealized":"Execution and settlement were treated separately.","rationale":{"top_holdout_echoes":[]}}',
+                    ]
+                )
+                + "\n",
                 encoding="utf-8",
             )
             (runs_root / "unrealized-run" / "unrealized_ideas_index_metrics.json").write_text(
-                '{"entry_count":1}\n',
+                '{"entry_count":2}\n',
                 encoding="utf-8",
             )
 
@@ -71,8 +77,13 @@ class MaterializeResearchOutputTests(unittest.TestCase):
             (runs_root / "findings-run" / "findings_and_throwaways.jsonl").write_text(
                 "\n".join(
                     [
-                        '{"section":"accepted","operator_family":"bridge","shortlist_id":"bridge:test","classification":"COMPOSITIONAL_CANDIDATE"}',
-                        '{"section":"accepted","operator_family":"bridge","shortlist_id":"bridge:maker_stress_inventory_retreat__queue_value_passive_quoting","classification":"TRANSLATION_CANDIDATE","result_summary":"Displayed depth can lose protective value when makers retreat under stress, changing what queue position is worth.","first_step":"Backtest queue survival during maker withdrawal."}',
+                        '{"section":"accepted","operator_family":"market_design","shortlist_id":"market_design:test","classification":"TRANSLATION_CANDIDATE","result_summary":"Market design lead"}',
+                        '{"section":"accepted","operator_family":"settlement_resolution","shortlist_id":"settlement:test","classification":"TRANSLATION_CANDIDATE","result_summary":"Settlement timing lead"}',
+                        '{"section":"accepted","operator_family":"participant_pathologies","shortlist_id":"participant:test","classification":"TRANSLATION_CANDIDATE","result_summary":"Participant pathology lead"}',
+                        '{"section":"accepted","operator_family":"state_graph","shortlist_id":"state_graph:test","classification":"COMPOSITIONAL_CANDIDATE","result_summary":"State graph lead"}',
+                        '{"section":"accepted","operator_family":"lifecycle","shortlist_id":"lifecycle:test","classification":"TRANSLATION_CANDIDATE","result_summary":"Lifecycle lead"}',
+                        '{"section":"accepted","operator_family":"stranded_qfin","shortlist_id":"stranded:test","classification":"STRANDED_QFIN_RESULT","result_summary":"Stranded execution lead"}',
+                        '{"section":"accepted","operator_family":"transition_state","shortlist_id":"transition:test","classification":"TRANSLATION_CANDIDATE","result_summary":"Transition seam lead"}',
                         '{"section":"rejected","operator_family":"unknown","shortlist_id":"bridge:bad","reason":"invalid_enum:classification:BAD_CLASS","title":"Rejected packet"}',
                         '{"section":"near_miss","operator_family":"bridge","paper_id":"paper-c","title":"Near Miss","score":1.2,"operator_label":"queue x refill"}',
                         '{"section":"near_miss","operator_family":"bridge","paper_id":"2009.02808","title":"Queue Near Miss","score":1.2,"operator_label":"queue x refill"}',
@@ -87,7 +98,7 @@ class MaterializeResearchOutputTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (runs_root / "findings-run" / "findings_and_throwaways_metrics.json").write_text(
-                '{"accepted_count":1,"rejected_count":1,"near_miss_count":1,"stranded_qfin_failure_count":1}\n',
+                '{"accepted_count":7,"rejected_count":1,"near_miss_count":6,"stranded_qfin_failure_count":1}\n',
                 encoding="utf-8",
             )
             (runs_root / "stranding-score-materialization-20260328" / "stranding_score_metrics.json").write_text(
@@ -99,7 +110,7 @@ class MaterializeResearchOutputTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (runs_root / "enhanced-run" / "enhanced_interpretation_ingestion_metrics.json").write_text(
-                '{"accepted_count":8}\n',
+                '{"accepted_count":9}\n',
                 encoding="utf-8",
             )
 
@@ -136,16 +147,19 @@ class MaterializeResearchOutputTests(unittest.TestCase):
             report = output_path.read_text(encoding="utf-8")
             self.assertIn("# Research Memo", report)
             self.assertIn(
-                "There may be executable edge in modeling passive quote value immediately after shocks, auctions, or maker withdrawals, especially when refill timing and queue dynamics diverge from naive displayed-depth assumptions.",
+                "The broadened run suggests exploitable edge is not confined to mature electronic-book transition states",
                 report,
             )
-            self.assertIn("## Three Best Practical Leads", report)
+            self.assertIn("## Broadest Surviving Leads", report)
+            self.assertIn("## Lane Coverage", report)
             self.assertIn("## The Stranded Results That Came Back", report)
-            self.assertIn("## The Transition-State Seam Map", report)
+            self.assertIn("## Transition-State Seams Still Matter", report)
             self.assertIn("## The Conversion Funnel", report)
             self.assertIn("## What To Do Next", report)
-            self.assertIn("## The Near-Misses That Matter", report)
-            self.assertIn("Idea result", report)
+            self.assertIn("## Papers Worth a Second Look", report)
+            self.assertIn("Market design lead", report)
+            self.assertIn("Settlement timing lead", report)
+            self.assertIn("Participant pathology lead", report)
             self.assertIn("Stranded result one", report)
             self.assertIn("Transition result one", report)
             self.assertNotIn("publication id", report.lower())

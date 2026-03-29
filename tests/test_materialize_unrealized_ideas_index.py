@@ -22,6 +22,7 @@ def seed_unrealized_index_fixture(connection: sqlite3.Connection) -> None:
         """,
         [
             ("source-bridge", "Source Bridge", "2023-01-01"),
+            ("source-market-design", "Source Market Design", "2023-01-03"),
             ("source-paper", "Source Paper", "2023-01-02"),
             ("holdout-a", "Holdout A", "2024-01-15"),
             ("holdout-b", "Holdout B", "2024-01-16"),
@@ -120,15 +121,45 @@ def seed_unrealized_index_fixture(connection: sqlite3.Connection) -> None:
           confidence, raw_json
         )
         VALUES (
-          'enhanced-run', 'enhanced-batch-run', ?, 'bridge', 'review_packet', 'packet-run', ?, ?, ?, ?, ?, 'result', 'step',
+          'enhanced-run', 'enhanced-batch-run', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'result', 'step',
           'instrument', 'modern', 'why', 'gap', 'high', '{}'
         )
         """,
         [
-            ("bridge:bridge-a", "bridge-a", 1, 2.4, "Bridge Packet", "TRANSLATION_CANDIDATE"),
-            ("bridge:composition-a", "composition-a", 2, 2.1, "Composition Pair As Bridge", "COMPOSITIONAL_CANDIDATE"),
-            ("bridge:bridge-b", "bridge-b", 3, 1.8, "Bridge Without Validation", "TRANSLATION_CANDIDATE"),
+            ("bridge:bridge-a", "bridge", "review_packet", "packet-run", "bridge-a", 1, 2.4, "Bridge Packet", "TRANSLATION_CANDIDATE"),
+            ("bridge:composition-a", "bridge", "review_packet", "packet-run", "composition-a", 2, 2.1, "Composition Pair As Bridge", "COMPOSITIONAL_CANDIDATE"),
+            ("bridge:bridge-b", "bridge", "review_packet", "packet-run", "bridge-b", 3, 1.8, "Bridge Without Validation", "TRANSLATION_CANDIDATE"),
+            (
+                "market_design:composition:market_design_seams__refill_lag_resiliency",
+                "market_design",
+                "composition_candidate_pair",
+                "composition-broadened-run",
+                "market_design_seams__refill_lag_resiliency",
+                1,
+                2.7,
+                "Composition packet: market_design_seams x refill_lag_resiliency",
+                "TRANSLATION_CANDIDATE",
+            ),
         ],
+    )
+
+    connection.executemany(
+        """
+        INSERT INTO anchors (anchor_id, label, anchor_type, tags_json)
+        VALUES (?, ?, 'positive', '[]')
+        """,
+        [
+            ("market_design_seams", "Market Design"),
+            ("refill_lag_resiliency", "Refill Resiliency"),
+        ],
+    )
+    connection.execute(
+        """
+        INSERT INTO composition_candidates (
+          run_id, source_anchor_id, target_anchor_id, paper_id, composition_score, composition_rank, rationale_json
+        )
+        VALUES ('composition-broadened-run', 'market_design_seams', 'refill_lag_resiliency', 'source-market-design', 3.4, 1, '{}')
+        """
     )
 
     connection.executemany(
@@ -264,6 +295,62 @@ class MaterializeUnrealizedIdeasIndexTest(unittest.TestCase):
             markdown = (output_dir / "unrealized_ideas_index.md").read_text(encoding="utf-8")
             self.assertIn("publication item id: `bridge:bridge-a`", markdown)
             self.assertIn("publication source surface: `enhanced_interpretation`", markdown)
+
+    def test_materializes_broadened_lane_rows_without_shortlist_validation(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            db_path = tmp_path / "fixture.sqlite3"
+            output_dir = tmp_path / "run"
+
+            connection = sqlite3.connect(db_path)
+            seed_unrealized_index_fixture(connection)
+            connection.close()
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT_PATH),
+                    "--db-path",
+                    str(db_path),
+                    "--run-id",
+                    "broadened-index-run",
+                    "--shortlist-run-id",
+                    "shortlist-run",
+                    "--interpretation-source",
+                    "enhanced_broadened",
+                    "--interpretation-run-id",
+                    "enhanced-run",
+                    "--validation-interpretation-run-id",
+                    "interpret-run",
+                    "--holdout-run-id",
+                    "echo-run",
+                    "--membership-run-id",
+                    "membership-run",
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            metrics = json.loads((output_dir / "unrealized_ideas_index_metrics.json").read_text(encoding="utf-8"))
+            self.assertEqual(metrics["entry_count"], 4)
+            rows = [
+                json.loads(line)
+                for line in (output_dir / "unrealized_ideas_index.jsonl").read_text(encoding="utf-8").strip().splitlines()
+            ]
+            broadened = next(row for row in rows if row["publication_item_id"] == "market_design:composition:market_design_seams__refill_lag_resiliency")
+            self.assertEqual(broadened["item_type"], "market_design")
+            self.assertEqual(broadened["holdout_echo_score"], 0.0)
+            self.assertEqual(broadened["realized_market_leakage_score"], 0.0)
+            self.assertEqual(broadened["publication_source_surface"], "enhanced_interpretation")
+            self.assertEqual(
+                broadened["rationale"]["source_paper_ids"],
+                ["source-market-design"],
+            )
+
+            markdown = (output_dir / "unrealized_ideas_index.md").read_text(encoding="utf-8")
+            self.assertIn("Composition packet: market_design_seams x refill_lag_resiliency", markdown)
 
 
 if __name__ == "__main__":

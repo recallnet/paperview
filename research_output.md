@@ -1,77 +1,111 @@
 # Research Memo
 
-There may be executable edge in modeling passive quote value immediately after shocks, auctions, or maker withdrawals, especially when refill timing and queue dynamics diverge from naive displayed-depth assumptions.
+The broadened run suggests exploitable edge is not confined to mature electronic-book transition states: the strongest surviving ideas cluster where market design, settlement timing, participant pathology, state-graph inconsistency, and market maturation interact with execution microstructure.
 
-## Three Best Practical Leads
+## Broadest Surviving Leads
 
-### 1. Post-shock passive quoting via queue value plus refill lag
+### 1. Composition packet: market_design_seams x refill_lag_resiliency
 
-What it is: Passive quote value after a shock appears to depend on both queue priority and liquidity refill lag rather than on spread alone.
-Why the system surfaced it: the queue/refill pairing is the only cross-domain idea that survived all the way to publication, and the same motif kept recurring across bridge, composition, and transition-state evidence instead of appearing as a one-off packet.
-What papers back it: `1902.10743` (From Glosten-Milgrom to the whole limit order book and applications to financial regulation), `2408.03181` (Correlation emergence in two coupled simulated limit order books), `2406.04969` (An Algebraic Framework for the Modeling of Limit Order Books), `2009.02808` (Limit Order Book (LOB) shape modeling in presence of heterogeneously informed market participants), `1005.0182` (A Multi Agent Model for the Limit Order Book Dynamics).
-First test: Measure queue-position edge after volatility shocks with refill-time controls on recent LOB data.
-Gap remaining: The literature isolates queue value and resiliency separately and stops short of an execution rule that combines them. The missing piece is a live rule that ties shock state, queue position, and refill timing into one quoting policy.
+Lane: market design.
+What it is: Market-design choices appear to shape how quickly depth refills after shocks, making the same microstructure seam stronger in some rule sets than others.
+Why it survived: The literature treats market design and resiliency as separate topics instead of framing rule-induced refill lag as an execution seam.
+First test: Compare venue-rule changes against post-shock refill behavior to see whether specific matching and priority rules amplify resiliency gaps.
+Modern equivalent: market-structure-conditioned refill dislocations
 
-### 2. Auction-to-continuous-book transition seam
+### 2. Composition packet: amm_settlement_latency x settlement_resolution_seams
 
-What it is: Auction price formation may hand off into a temporarily underfilled book where liquidity refill lags price discovery. Queue value appears to change abruptly at the auction-to-continuous transition, suggesting a distinct post-uncrossing quoting regime.
-Why the system surfaced it: the auction seam survived twice as a transition-state publication surface and separately as an accepted bridge lead, which means the handoff signal appears both in direct microstructure papers and in cross-domain recombination.
-What papers back it: `2101.03086` (Market Making with Stochastic Liquidity Demand: Simultaneous Order Arrival and Price Change Forecasts), `1011.6402` (The Price Impact of Order Book Events), `cond-mat/0210475` (Statistical theory of the continuous double auction).
-First test: Measure whether queue priority gained immediately after auction uncrossing predicts short-horizon adverse selection. Then test whether refill-speed asymmetry in the same post-uncrossing window adds incremental signal beyond queue priority alone.
-Gap remaining: Need a venue-by-venue definition of the auction-to-book state boundary. The seam still needs a venue-specific definition of when auction logic hands off to continuous-book logic.
+Lane: settlement resolution.
+What it is: Execution opportunities may persist when trades clear economically before they settle legally or operationally, creating exploitable timing gaps.
+Why it survived: The underlying papers frame the problem as settlement architecture or AMM latency rather than as a tradable seam between execution and final resolution.
+First test: Test whether settlement-cycle latency and margin timing create predictable basis or inventory pressure around execution and unwind windows.
+Modern equivalent: settlement-lag arbitrage and resolution-friction timing
 
-### 3. Maker-retreat regime switch for queue-based quoting
+### 3. Composition packet: lifecycle_professionalization x market_design_seams
 
-What it is: Displayed depth can lose protective value when makers retreat under stress, changing what queue position is worth.
-Why the system surfaced it: the accepted bridge says displayed depth stops being reliable protection when makers back away, and the same queue-centric microstructure papers keep reappearing in the near-miss set, which points to a regime switch rather than a generic liquidity story.
-What papers back it: `1005.0182` (A Multi Agent Model for the Limit Order Book Dynamics), `2009.02808` (Limit Order Book (LOB) shape modeling in presence of heterogeneously informed market participants), `2101.03086` (Market Making with Stochastic Liquidity Demand: Simultaneous Order Arrival and Price Change Forecasts).
-First test: Backtest queue survival and fill quality when maker inventory stress indicators spike.
-Gap remaining: the lead still lacks a dedicated transition-state ledger entry, so the maker-withdrawal regime has an accepted interpretation but not yet a publication-grade representative seam or canonical representative paper.
+Lane: lifecycle.
+What it is: Rules that look efficient in mature books may create larger gaps in earlier or less professionalized market regimes.
+Why it survived: The maturation literature describes changing market quality but rarely turns that into a search program for early-market executable seams.
+First test: Compare early and mature market regimes to test whether the same venue rules produce different failure modes before and after professionalization.
+Modern equivalent: pre-professionalization market-structure seams
+
+### 4. Composition packet: market_design_seams x participant_pathologies
+
+Lane: participant pathologies.
+What it is: Participant pathologies such as toxic or manipulative flow may become more predictable when they interact with specific market-design rules.
+Why it survived: The source literature studies bad actors and venue rules separately, leaving the repeated rule-by-participant seam implicit.
+First test: Segment order flow by participant-toxicity proxies and test whether rule-sensitive adverse-selection patterns repeat around specific venue states.
+Modern equivalent: rule-sensitive toxic-flow filters
+
+### 5. Composition packet: market_design_seams x state_graph_inconsistencies
+
+Lane: state graph.
+What it is: Cross-market inconsistencies may persist longer when the connected venues enforce different trading or protection rules.
+Why it survived: State-graph inconsistency papers and market-design papers have not been combined into a concrete convergence-timing workflow.
+First test: Monitor related markets for temporary state disagreement and test whether venue-rule differences explain delayed convergence.
+Modern equivalent: venue-shaped delayed parity repair
+
+## Lane Coverage
+
+The broadened discovery set now has surviving accepted interpretations in all five new early-market lanes, plus the existing stranded-q-fin and transition-state paths.
+
+- market design: Market-design choices appear to shape how quickly depth refills after shocks, making the same microstructure seam stronger in some rule sets than others.
+- settlement resolution: Execution opportunities may persist when trades clear economically before they settle legally or operationally, creating exploitable timing gaps.
+- participant pathologies: Participant pathologies such as toxic or manipulative flow may become more predictable when they interact with specific market-design rules.
+- state graph: Cross-market inconsistencies may persist longer when the connected venues enforce different trading or protection rules.
+- lifecycle: Rules that look efficient in mature books may create larger gaps in earlier or less professionalized market regimes.
+- stranded qfin: Machine-learning surrogates can speed the search for near-optimal execution schedules under parametric impact models.
+- transition state: Queue value appears to change abruptly at the auction-to-continuous transition, suggesting a distinct post-uncrossing quoting regime.
 
 ## The Stranded Results That Came Back
 
-### 1. 2106.00581 — $N$-player and Mean-field Games in Itô-diffusion Markets with Competitive or Homophilous Interaction (2021-06-14)
+### 2106.00581 — $N$-player and Mean-field Games in Itô-diffusion Markets with Competitive or Homophilous Interaction (2021-06-14)
 
 What it is in plain language: The paper offers a concrete illiquidity-aware execution control that still looks testable on modern data.
-What changed since publication: modern depth feeds, cheaper intraday calibration, and queue-aware backtesting infrastructure make an impact-aware control law much easier to test now than it was in 2021.
-Why it matters now: the old result reads like math-finance control theory, but today it can be treated as a concrete adaptive execution policy for fragmented electronic books. Modern equivalent: adaptive execution with impact-aware control
+Why it matters now: It reads like mathematical finance rather than a practitioner-ready execution template, so the result never surfaced as a live strategy clue.
+Modern equivalent: adaptive execution with impact-aware control
 First test: Re-estimate the proposed impact-aware control on current intraday data and compare it to simpler adaptive execution baselines.
 Gap remaining: Need evidence that the control law survives modern queue dynamics and hidden-liquidity behavior.
 
-### 2. 2204.08581 — On Parametric Optimal Execution and Machine Learning Surrogates (2023-10-29)
+### 2204.08581 — On Parametric Optimal Execution and Machine Learning Surrogates (2023-10-29)
 
 What it is in plain language: Machine-learning surrogates can speed the search for near-optimal execution schedules under parametric impact models.
-What changed since publication: surrogate-model tooling, GPU inference, and broader venue-fragmented execution data make fast policy search much more operationally plausible now than when the paper first appeared.
-Why it matters now: the original result sat inside calibration language, but today it looks like a practical execution-research workflow for searching policy space quickly. Modern equivalent: execution policy search with fast surrogates
+Why it matters now: The result is practical but remained stranded inside execution-model calibration language instead of being promoted as a deployable trading workflow.
+Modern equivalent: execution policy search with fast surrogates
 First test: Replicate the surrogate-assisted execution policy on newer fragmented limit-order-book data with realistic fees.
 Gap remaining: Need to show that the surrogate remains stable under venue fragmentation and regime shifts.
 
-## The Transition-State Seam Map
+## Transition-State Seams Still Matter
 
-- queue x refill: evidenced. Passive quote value after a shock appears to depend on both queue priority and liquidity refill lag rather than on spread alone. This seam has the strongest support because it is already a published cross-domain idea and keeps reappearing in the near-miss set.
-- auction x refill: evidenced. Liquidity refill after auction uncrossing may lag the new price enough to create a brief execution edge. The seam is grounded by `1011.6402` (The Price Impact of Order Book Events) and the accepted auction/refill bridge.
-- auction x queue: evidenced. Queue value appears to change abruptly at the auction-to-continuous transition, suggesting a distinct post-uncrossing quoting regime. The seam is grounded by `2101.03086` (Market Making with Stochastic Liquidity Demand: Simultaneous Order Arrival and Price Change Forecasts) and reinforced by the older auction microstructure backdrop in `cond-mat/0210475` (Statistical theory of the continuous double auction).
-- maker-stress x queue: provisional evidence. Displayed depth can lose protective value when makers retreat under stress, changing what queue position is worth. It has an accepted interpretation but not yet a dedicated ledger entry.
-- parity x refill: speculative. The seam still shows up in transition and bridge evidence, but the current run preserves it only as a rejection (`invalid_enum:classification:BAD_CLASS`) plus the recurring near miss around `1011.6402` (The Price Impact of Order Book Events).
+The broadened run no longer treats transition-state microstructure as the only center of gravity, but the venue-level auction and queue seams remain the clearest microstructure benchmark.
+
+- near auction handoff and queue value: Queue value appears to change abruptly at the auction-to-continuous transition, suggesting a distinct post-uncrossing quoting regime. First test: Measure whether queue priority gained immediately after auction uncrossing predicts short-horizon adverse selection.
+- near auction handoff and refill resiliency: Liquidity refill after auction uncrossing may lag the new price enough to create a brief execution edge. First test: Test refill-speed asymmetry immediately after auction uncrossing against naive post-auction mean-reversion signals.
 
 ## The Conversion Funnel
 
-The system is strong at discovery and weak at synthesis.
-
-The search started with 17,323 scored discovery papers, narrowed to 24 shortlist items, then to 8 accepted interpretations, and finally to 1 published unrealized cross-domain idea, 2 stranded q-fin results, and 2 transition-state entries.
-What this means: discovery is working. The system is repeatedly finding the same microstructure motif across bridge, composition, transition, and stranded-q-fin paths. What is still weak is synthesis and ledger translation: too many good packets stop at interpretation or remain one step away from a publishable test memo.
+The search started with 17,323 scored discovery papers, narrowed to 24 shortlist items, then to 9 accepted broadened interpretations, and finally to 5 unrealized cross-domain entries, 2 stranded q-fin results, and 2 transition-state entries.
+What this means: discovery is now broader than the original microstructure loop, but publication is still selective. The system can find multi-lane seams; the remaining bottleneck is converting those seams into dense interpretation evidence and durable publication rows.
 
 ## What To Do Next
 
-Operationalize the queue x refill seam first. Use full-depth order-book data with event markers for volatility shocks, auction uncrossings, fill outcomes, queue position, refill timing, and maker-withdrawal proxies.
-The first test should be an event study plus simulated passive quoting policy: compare a shock-conditioned queue/refill model against naive spread-based passive posting after shocks and immediately after auction uncrossings.
-Success means the seam survives realistic fees and adverse-selection controls: the queue/refill-conditioned policy should improve fill-quality-adjusted expectancy, not just fill rate, across more than one venue or instrument.
-The second test should layer maker withdrawal on top of the same framework. If queue value degrades materially when makers retreat, that turns the current accepted maker bridge into a concrete regime switch rather than a narrative add-on.
+Operationalize the broadened publication set in three tracks.
+1. Build lane-specific research programs for the surviving market-design, settlement-resolution, participant-pathology, state-graph, and lifecycle leads, using the unrealized index rows as the canonical queue of next experiments.
+2. Keep the stranded q-fin results on a separate execution track, because those papers are already close to deployable execution research rather than broad discovery hypotheses.
+3. Use the transition-state ledger as the venue-microstructure benchmark so the broader lanes can be compared against the older queue/refill seam instead of replacing it blindly.
 
-## The Near-Misses That Matter
+## Papers Worth a Second Look
 
-- `2009.02808` (Limit Order Book (LOB) shape modeling in presence of heterogeneously informed market participants) is worth a second look because it keeps surfacing as the top queue/refill near miss and may supply the state variables for shock-conditioned passive quoting.
-- `cond-mat/0210475` (Statistical theory of the continuous double auction) is worth a second look because it is the cleanest older foundation for the auction-to-book transition seam and keeps reappearing around auction/refill evidence.
-- `1005.0182` (A Multi Agent Model for the Limit Order Book Dynamics) is worth a second look because it gives a maker-behavior and queue-dynamics lens on why displayed depth may lose protective value under stress.
-- `2205.14699` (Managing Risk in DeFi Portfolios) is an interesting cross-domain signal because DeFi settlement and liquidation risk may rhyme with fragmented execution stress even though the venue structure is different.
-- `2012.13230` (SoK: Lending Pools in Decentralized Finance) is an interesting cross-domain signal because pool depletion and refill mechanics may transfer into how the system thinks about liquidity recovery after stress.
+- `1609.04620` (Price impact without order book: A study of the OTC credit index market) is worth another pass because it keeps appearing near the parity_propagation_delayed_repair x refill_lag_resiliency seam.
+- `1602.00731` (Limit-order book resiliency after effective market orders: Spread, depth and intensity) is worth another pass because it keeps appearing near the market_design_seams x refill_lag_local_shock seam.
+- `1609.04620` (Price impact without order book: A study of the OTC credit index market) is worth another pass because it keeps appearing near the market_design_seams x parity_propagation_delayed_repair seam.
+- `1609.04620` (Price impact without order book: A study of the OTC credit index market) is worth another pass because it keeps appearing near the parity_propagation_delayed_repair x refill_lag_resiliency seam.
+- `1201.5448` (Determinants of immediate price impacts at the trade level in an emerging order-driven market) is worth another pass because it keeps appearing near the refill_lag_local_shock x refill_lag_resiliency seam.
+- `1403.0842` (The adaptive nature of liquidity taking in limit order books) is worth another pass because it keeps appearing near the refill_lag_local_shock x refill_lag_resiliency seam.
+- `2205.14699` (Managing Risk in DeFi Portfolios) is worth another pass because it keeps appearing near the near settlement, lexically far seam.
+- `2201.08875` (Information-Based Trading) is worth another pass because it keeps appearing near the near auction design, lexically far seam.
+
+## Publication Summary
+
+Accepted findings in the broadened run: 9.
+Rejected findings recorded with reasons: 2.
+Near-miss papers still worth inspection: 15.

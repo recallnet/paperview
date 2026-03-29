@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH))
     parser.add_argument("--run-id", default="unrealized-ideas-index-20260328")
     parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
-    parser.add_argument("--interpretation-source", choices=("selective", "enhanced_bridge"), default="selective")
+    parser.add_argument("--interpretation-source", choices=("selective", "enhanced_bridge", "enhanced_broadened"), default="selective")
     parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--validation-interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--holdout-run-id", default="holdout-echo-materialization-20260328")
@@ -268,6 +268,71 @@ def fetch_enhanced_bridge_source_rows(connection: sqlite3.Connection, interpreta
     ).fetchall()
 
 
+def fetch_enhanced_broadened_source_rows(connection: sqlite3.Connection, interpretation_run_id: str) -> list[sqlite3.Row]:
+    return connection.execute(
+        """
+        SELECT
+          ei.batch_item_id,
+          ei.source_ref AS pair_key,
+          ei.family_rank,
+          ei.source_score,
+          ei.packet_title AS title,
+          ei.classification,
+          ei.result_summary,
+          ei.first_step,
+          ei.instrument_assumed,
+          ei.modern_equivalent,
+          ei.why_stranded_or_unrealized,
+          ei.gap_to_close,
+          ei.confidence,
+          ei.operator_family,
+          ei.source_kind,
+          ei.source_run_id
+        FROM enhanced_interpretations ei
+        WHERE ei.run_id = ?
+          AND ei.operator_family NOT IN ('stranded_qfin', 'transition_state')
+          AND ei.classification IN ('TRANSLATION_CANDIDATE', 'COMPOSITIONAL_CANDIDATE')
+        ORDER BY ei.family_rank ASC, ei.operator_family ASC, ei.batch_item_id ASC
+        """,
+        (interpretation_run_id,),
+    ).fetchall()
+
+
+def fetch_pair_representative_papers(
+    connection: sqlite3.Connection,
+    source_kind: str,
+    source_run_id: str,
+    pair_key: str,
+) -> list[str]:
+    anchors = pair_key.split("__", 1)
+    if len(anchors) != 2:
+        return []
+    source_anchor_id, target_anchor_id = anchors
+    if source_kind == "bridge_candidate_pair":
+        table_name = "bridge_candidates"
+        score_column = "bridge_score"
+        rank_column = "bridge_rank"
+    elif source_kind == "composition_candidate_pair":
+        table_name = "composition_candidates"
+        score_column = "composition_score"
+        rank_column = "composition_rank"
+    else:
+        return []
+    rows = connection.execute(
+        f"""
+        SELECT paper_id
+        FROM {table_name}
+        WHERE run_id = ?
+          AND source_anchor_id = ?
+          AND target_anchor_id = ?
+        ORDER BY {score_column} DESC, {rank_column} ASC, paper_id ASC
+        LIMIT 5
+        """,
+        (source_run_id, source_anchor_id, target_anchor_id),
+    ).fetchall()
+    return [row["paper_id"] for row in rows]
+
+
 def fetch_validation_echoes_by_pair(
     connection: sqlite3.Connection,
     shortlist_run_id: str,
@@ -401,7 +466,7 @@ def main():
                         },
                     }
                 )
-        else:
+        elif args.interpretation_source == "enhanced_bridge":
             source_rows = fetch_enhanced_bridge_source_rows(connection, args.interpretation_run_id)
             for row in source_rows:
                 classification = row["classification"]
@@ -466,6 +531,57 @@ def main():
                             "classification_bonus": POSITIVE_CLASSIFICATIONS[classification],
                             "source_paper_ids": source_paper_ids,
                             "top_holdout_echoes": top_holdout_echoes,
+                        },
+                    }
+                )
+        else:
+            source_rows = fetch_enhanced_broadened_source_rows(connection, args.interpretation_run_id)
+            for row in source_rows:
+                classification = row["classification"]
+                if classification not in POSITIVE_CLASSIFICATIONS:
+                    continue
+                source_paper_ids = fetch_pair_representative_papers(
+                    connection,
+                    row["source_kind"],
+                    row["source_run_id"],
+                    row["pair_key"],
+                )
+                leakage_score = realized_market_leakage(connection, args.membership_run_id, source_paper_ids)
+                domain_far_score = round(max(0.0, 1.0 - leakage_score), 6)
+                if leakage_score >= float(args.max_realized_market_leakage):
+                    continue
+                # @context decision -- The broadened S27 index publishes new lane findings even when
+                # they do not map back to the old shortlist-backed holdout surface. Otherwise the
+                # publication layer would silently erase the early-market broadening pass and keep the
+                # index centered on the legacy validated bridge slice.
+                ranked_rows.append(
+                    {
+                        "publication_source_surface": "enhanced_interpretation",
+                        "publication_interpretation_run_id": args.interpretation_run_id,
+                        "publication_item_id": row["batch_item_id"],
+                        "shortlist_id": row["batch_item_id"],
+                        "item_type": row["operator_family"],
+                        "item_ref": row["pair_key"],
+                        "title": row["title"],
+                        "classification": classification,
+                        "shortlist_rank": int(row["family_rank"]),
+                        "shortlist_score": round(float(row["source_score"] or 0.0), 6),
+                        "holdout_echo_score": 0.0,
+                        "realized_market_leakage_score": leakage_score,
+                        "domain_far_score": domain_far_score,
+                        "result_summary": row["result_summary"],
+                        "first_step": row["first_step"],
+                        "instrument_assumed": row["instrument_assumed"],
+                        "modern_equivalent": row["modern_equivalent"],
+                        "why_stranded_or_unrealized": row["why_stranded_or_unrealized"],
+                        "gap_to_close": row["gap_to_close"],
+                        "confidence": row["confidence"],
+                        "rationale": {
+                            "lane_family": row["operator_family"],
+                            "shortlist_rank_score": shortlist_rank_score(int(row["family_rank"])),
+                            "classification_bonus": POSITIVE_CLASSIFICATIONS[classification],
+                            "source_paper_ids": source_paper_ids,
+                            "top_holdout_echoes": [],
                         },
                     }
                 )

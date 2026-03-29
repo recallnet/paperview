@@ -80,21 +80,6 @@ def fetch_paper_metadata(connection: sqlite3.Connection, paper_ids: list[str]) -
     }
 
 
-def find_row(rows: list[dict], key: str, value: str) -> dict | None:
-    return next((row for row in rows if row.get(key) == value), None)
-
-
-def find_near_miss(rows: list[dict], paper_id: str) -> dict | None:
-    return next((row for row in rows if row["section"] == "near_miss" and row.get("paper_id") == paper_id), None)
-
-
-def first_sentence(text: str) -> str:
-    sentence = text.strip().split(". ")[0].strip()
-    if sentence.endswith("."):
-        return sentence
-    return sentence + "."
-
-
 def format_paper(paper_id: str, paper_metadata: dict[str, dict]) -> str:
     metadata = paper_metadata.get(paper_id, {})
     title = metadata.get("title")
@@ -103,20 +88,17 @@ def format_paper(paper_id: str, paper_metadata: dict[str, dict]) -> str:
     return f"`{paper_id}`"
 
 
-def build_paper_metadata(connection: sqlite3.Connection, findings_rows: list[dict]) -> dict[str, dict]:
-    paper_ids = {
-        "2106.00581",
-        "2204.08581",
-        "2101.03086",
-        "1011.6402",
-        "1902.10743",
-        "2408.03181",
-        "2406.04969",
-    }
+def build_paper_metadata(connection: sqlite3.Connection, findings_rows: list[dict], stranded_rows: list[dict], transition_rows: list[dict]) -> dict[str, dict]:
+    paper_ids = set()
     for row in findings_rows:
-        paper_id = row.get("paper_id")
-        if paper_id:
-            paper_ids.add(paper_id)
+        if row.get("paper_id"):
+            paper_ids.add(row["paper_id"])
+    for row in stranded_rows:
+        if row.get("paper_id"):
+            paper_ids.add(row["paper_id"])
+    for row in transition_rows:
+        if row.get("paper_id"):
+            paper_ids.add(row["paper_id"])
     return fetch_paper_metadata(connection, sorted(paper_ids))
 
 
@@ -124,6 +106,10 @@ def load_optional_metrics(path: Path) -> dict:
     if not path.exists():
         return {}
     return load_metrics(path)
+
+
+def humanize_family(value: str) -> str:
+    return value.replace("_", " ").strip()
 
 
 def render_report(
@@ -140,192 +126,151 @@ def render_report(
     enhanced_metrics: dict,
     paper_metadata: dict[str, dict],
 ) -> str:
-    queue_refill = unrealized_rows[0] if unrealized_rows else None
-    auction_queue = find_row(transition_rows, "pattern_label", "near auction handoff and queue value")
-    auction_refill = find_row(transition_rows, "pattern_label", "near auction handoff and refill resiliency")
-    maker_bridge = find_row(findings_rows, "shortlist_id", "bridge:maker_stress_inventory_retreat__queue_value_passive_quoting")
-    auction_bridge = find_row(findings_rows, "shortlist_id", "bridge:auction_parimutuel_design__refill_lag_local_shock")
-    stranded_2106 = find_row(stranded_rows, "paper_id", "2106.00581")
-    stranded_2204 = find_row(stranded_rows, "paper_id", "2204.08581")
-    queue_near_miss = find_near_miss(findings_rows, "2009.02808")
-    auction_near_miss = find_near_miss(findings_rows, "cond-mat/0210475")
-    maker_near_miss = find_near_miss(findings_rows, "1005.0182")
-    defi_2205 = find_near_miss(findings_rows, "2205.14699")
-    defi_2012 = find_near_miss(findings_rows, "2012.13230")
-    parity_failure = find_row(findings_rows, "shortlist_id", "bridge:parity_propagation__queue_value_passive_quoting")
+    accepted_rows = [row for row in findings_rows if row.get("section") == "accepted"]
+    accepted_by_family: dict[str, list[dict]] = {}
+    for row in accepted_rows:
+        accepted_by_family.setdefault(row["operator_family"], []).append(row)
+    for rows in accepted_by_family.values():
+        rows.sort(key=lambda row: (row.get("shortlist_rank", 10**9), row.get("shortlist_id", "")))
+
+    near_miss_rows = [row for row in findings_rows if row.get("section") == "near_miss"]
+    near_miss_rows.sort(key=lambda row: (row.get("operator_family", ""), -(row.get("score", 0.0)), row.get("paper_id", "")))
+
+    thesis = (
+        "The broadened run suggests exploitable edge is not confined to mature electronic-book transition states: "
+        "the strongest surviving ideas cluster where market design, settlement timing, participant pathology, "
+        "state-graph inconsistency, and market maturation interact with execution microstructure."
+    )
 
     # @context decision -- S25 is the only root-level narrative surface. It must stay human-facing
-    # and artifact-grounded: read the four published S24 outputs plus supporting metrics, but do
-    # not reprint publication ids or raw scoring dumps here, or the root memo collapses back into
-    # pipeline telemetry instead of a research synthesis.
+    # and artifact-grounded: read the published outputs and supporting metrics, but do not reprint
+    # publication ids or raw scoring dumps here, or the root memo collapses back into telemetry.
     lines = [
         "# Research Memo",
         "",
-        "There may be executable edge in modeling passive quote value immediately after shocks, auctions, or maker withdrawals, especially when refill timing and queue dynamics diverge from naive displayed-depth assumptions.",
+        thesis,
         "",
-        "## Three Best Practical Leads",
-        "",
-        "### 1. Post-shock passive quoting via queue value plus refill lag",
-        "",
-        f"What it is: {queue_refill['result_summary']}" if queue_refill else "What it is: no surviving queue/refill lead.",
-        "Why the system surfaced it: the queue/refill pairing is the only cross-domain idea that survived all the way to publication, and the same motif kept recurring across bridge, composition, and transition-state evidence instead of appearing as a one-off packet.",
-        "What papers back it: "
-        + ", ".join(
-            [
-                format_paper("1902.10743", paper_metadata),
-                format_paper("2408.03181", paper_metadata),
-                format_paper("2406.04969", paper_metadata),
-                format_paper("2009.02808", paper_metadata),
-                format_paper("1005.0182", paper_metadata),
-            ]
-        )
-        + ".",
-        f"First test: {queue_refill['first_step']}" if queue_refill else "First test: not available.",
-        (
-            f"Gap remaining: {queue_refill['why_stranded_or_unrealized']} The missing piece is a live rule that ties shock state, queue position, and refill timing into one quoting policy."
-            if queue_refill
-            else "Gap remaining: not available."
-        ),
-        "",
-        "### 2. Auction-to-continuous-book transition seam",
-        "",
-        (
-            f"What it is: {auction_bridge['result_summary']} {first_sentence(auction_queue['result_summary'])}"
-            if auction_bridge and auction_queue
-            else "What it is: no surviving auction seam."
-        ),
-        "Why the system surfaced it: the auction seam survived twice as a transition-state publication surface and separately as an accepted bridge lead, which means the handoff signal appears both in direct microstructure papers and in cross-domain recombination.",
-        "What papers back it: "
-        + ", ".join(
-            [
-                format_paper("2101.03086", paper_metadata),
-                format_paper("1011.6402", paper_metadata),
-                format_paper("cond-mat/0210475", paper_metadata),
-            ]
-        )
-        + ".",
-        (
-            f"First test: {auction_queue['first_test']} Then test whether refill-speed asymmetry in the same post-uncrossing window adds incremental signal beyond queue priority alone."
-            if auction_queue and auction_refill
-            else "First test: not available."
-        ),
-        (
-            f"Gap remaining: {auction_queue['gap_to_close']} The seam still needs a venue-specific definition of when auction logic hands off to continuous-book logic."
-            if auction_queue
-            else "Gap remaining: not available."
-        ),
-        "",
-        "### 3. Maker-retreat regime switch for queue-based quoting",
-        "",
-        f"What it is: {maker_bridge['result_summary']}" if maker_bridge else "What it is: no surviving maker-retreat lead.",
-        "Why the system surfaced it: the accepted bridge says displayed depth stops being reliable protection when makers back away, and the same queue-centric microstructure papers keep reappearing in the near-miss set, which points to a regime switch rather than a generic liquidity story.",
-        (
-            "What papers back it: "
-            + ", ".join(
-                [
-                    format_paper("1005.0182", paper_metadata),
-                    format_paper("2009.02808", paper_metadata),
-                    format_paper("2101.03086", paper_metadata),
-                ]
-            )
-            + "."
-            if maker_near_miss
-            else "What papers back it: the accepted maker-retreat bridge packet and the recurring queue-value near misses."
-        ),
-        f"First test: {maker_bridge['first_step']}" if maker_bridge else "First test: not available.",
-        "Gap remaining: the lead still lacks a dedicated transition-state ledger entry, so the maker-withdrawal regime has an accepted interpretation but not yet a publication-grade representative seam or canonical representative paper.",
-        "",
-        "## The Stranded Results That Came Back",
-        "",
-        f"### 1. 2106.00581 — {paper_metadata.get('2106.00581', {}).get('title', 'title unavailable')} ({paper_metadata.get('2106.00581', {}).get('published_at', 'date unavailable')})",
-        "",
-        f"What it is in plain language: {stranded_2106['result_summary']}" if stranded_2106 else "What it is in plain language: not available.",
-        "What changed since publication: modern depth feeds, cheaper intraday calibration, and queue-aware backtesting infrastructure make an impact-aware control law much easier to test now than it was in 2021.",
-        f"Why it matters now: the old result reads like math-finance control theory, but today it can be treated as a concrete adaptive execution policy for fragmented electronic books. Modern equivalent: {stranded_2106['modern_equivalent']}" if stranded_2106 else "Why it matters now: not available.",
-        f"First test: {stranded_2106['first_test']}" if stranded_2106 else "First test: not available.",
-        f"Gap remaining: {stranded_2106['gap_to_close']}" if stranded_2106 else "Gap remaining: not available.",
-        "",
-        f"### 2. 2204.08581 — {paper_metadata.get('2204.08581', {}).get('title', 'title unavailable')} ({paper_metadata.get('2204.08581', {}).get('published_at', 'date unavailable')})",
-        "",
-        f"What it is in plain language: {stranded_2204['result_summary']}" if stranded_2204 else "What it is in plain language: not available.",
-        "What changed since publication: surrogate-model tooling, GPU inference, and broader venue-fragmented execution data make fast policy search much more operationally plausible now than when the paper first appeared.",
-        f"Why it matters now: the original result sat inside calibration language, but today it looks like a practical execution-research workflow for searching policy space quickly. Modern equivalent: {stranded_2204['modern_equivalent']}" if stranded_2204 else "Why it matters now: not available.",
-        f"First test: {stranded_2204['first_test']}" if stranded_2204 else "First test: not available.",
-        f"Gap remaining: {stranded_2204['gap_to_close']}" if stranded_2204 else "Gap remaining: not available.",
-        "",
-        "## The Transition-State Seam Map",
-        "",
-        (
-            f"- queue x refill: evidenced. {queue_refill['result_summary']} This seam has the strongest support because it is already a published cross-domain idea and keeps reappearing in the near-miss set."
-            if queue_refill
-            else "- queue x refill: speculative."
-        ),
-        (
-            f"- auction x refill: evidenced. {auction_refill['result_summary']} The seam is grounded by {format_paper('1011.6402', paper_metadata)} and the accepted auction/refill bridge."
-            if auction_refill
-            else "- auction x refill: speculative."
-        ),
-        (
-            f"- auction x queue: evidenced. {auction_queue['result_summary']} The seam is grounded by {format_paper('2101.03086', paper_metadata)} and reinforced by the older auction microstructure backdrop in {format_paper('cond-mat/0210475', paper_metadata)}."
-            if auction_queue
-            else "- auction x queue: speculative."
-        ),
-        (
-            f"- maker-stress x queue: provisional evidence. {maker_bridge['result_summary']} It has an accepted interpretation but not yet a dedicated ledger entry."
-            if maker_bridge
-            else "- maker-stress x queue: speculative."
-        ),
-        (
-            f"- parity x refill: speculative. The seam still shows up in transition and bridge evidence, but the current run preserves it only as a rejection (`{parity_failure['reason']}`) plus the recurring near miss around {format_paper('1011.6402', paper_metadata)}."
-            if parity_failure
-            else "- parity x refill: speculative."
-        ),
-        "",
-        "## The Conversion Funnel",
-        "",
-        "The system is strong at discovery and weak at synthesis.",
-        "",
-        (
-            f"The search started with {stranding_metrics.get('scored_papers', 0):,} scored discovery papers, narrowed to {shortlist_metrics.get('shortlist_count', 0)} shortlist items, then to {enhanced_metrics.get('accepted_count', 0)} accepted interpretations, and finally to {unrealized_metrics.get('entry_count', 0)} published unrealized cross-domain idea, {stranded_metrics.get('entry_count', 0)} stranded q-fin results, and {transition_metrics.get('entry_count', 0)} transition-state entries."
-        ),
-        "What this means: discovery is working. The system is repeatedly finding the same microstructure motif across bridge, composition, transition, and stranded-q-fin paths. What is still weak is synthesis and ledger translation: too many good packets stop at interpretation or remain one step away from a publishable test memo.",
-        "",
-        "## What To Do Next",
-        "",
-        "Operationalize the queue x refill seam first. Use full-depth order-book data with event markers for volatility shocks, auction uncrossings, fill outcomes, queue position, refill timing, and maker-withdrawal proxies.",
-        "The first test should be an event study plus simulated passive quoting policy: compare a shock-conditioned queue/refill model against naive spread-based passive posting after shocks and immediately after auction uncrossings.",
-        "Success means the seam survives realistic fees and adverse-selection controls: the queue/refill-conditioned policy should improve fill-quality-adjusted expectancy, not just fill rate, across more than one venue or instrument.",
-        "The second test should layer maker withdrawal on top of the same framework. If queue value degrades materially when makers retreat, that turns the current accepted maker bridge into a concrete regime switch rather than a narrative add-on.",
-        "",
-        "## The Near-Misses That Matter",
-        "",
-        (
-            f"- {format_paper('2009.02808', paper_metadata)} is worth a second look because it keeps surfacing as the top queue/refill near miss and may supply the state variables for shock-conditioned passive quoting."
-            if queue_near_miss
-            else "- `2009.02808` is worth a second look because it keeps surfacing as the top queue/refill near miss."
-        ),
-        (
-            f"- {format_paper('cond-mat/0210475', paper_metadata)} is worth a second look because it is the cleanest older foundation for the auction-to-book transition seam and keeps reappearing around auction/refill evidence."
-            if auction_near_miss
-            else "- `cond-mat/0210475` is worth a second look because it is a recurrent auction seam near miss."
-        ),
-        (
-            f"- {format_paper('1005.0182', paper_metadata)} is worth a second look because it gives a maker-behavior and queue-dynamics lens on why displayed depth may lose protective value under stress."
-            if maker_near_miss
-            else "- `1005.0182` is worth a second look because it is a recurrent maker/queue near miss."
-        ),
-        (
-            f"- {format_paper('2205.14699', paper_metadata)} is an interesting cross-domain signal because DeFi settlement and liquidation risk may rhyme with fragmented execution stress even though the venue structure is different."
-            if defi_2205
-            else "- `2205.14699` is an interesting cross-domain signal because it keeps surfacing in the contrast set."
-        ),
-        (
-            f"- {format_paper('2012.13230', paper_metadata)} is an interesting cross-domain signal because pool depletion and refill mechanics may transfer into how the system thinks about liquidity recovery after stress."
-            if defi_2012
-            else "- `2012.13230` is an interesting cross-domain signal because it keeps surfacing in the contrast set."
-        ),
+        "## Broadest Surviving Leads",
         "",
     ]
+
+    for idx, row in enumerate(unrealized_rows, start=1):
+        lines.extend(
+            [
+                f"### {idx}. {row['title']}",
+                "",
+                f"Lane: {humanize_family(row.get('item_type', 'unknown'))}.",
+                f"What it is: {row['result_summary']}",
+                f"Why it survived: {row['why_stranded_or_unrealized']}",
+                f"First test: {row['first_step']}",
+                f"Modern equivalent: {row['modern_equivalent']}",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "## Lane Coverage",
+            "",
+            "The broadened discovery set now has surviving accepted interpretations in all five new early-market lanes, plus the existing stranded-q-fin and transition-state paths.",
+            "",
+        ]
+    )
+    for family in (
+        "market_design",
+        "settlement_resolution",
+        "participant_pathologies",
+        "state_graph",
+        "lifecycle",
+        "stranded_qfin",
+        "transition_state",
+    ):
+        rows = accepted_by_family.get(family, [])
+        if not rows:
+            lines.append(f"- {humanize_family(family)}: no accepted item survived publication or ingestion.")
+            continue
+        lines.append(f"- {humanize_family(family)}: {rows[0]['result_summary']}")
+
+    lines.extend(
+        [
+            "",
+            "## The Stranded Results That Came Back",
+            "",
+        ]
+    )
+    for row in stranded_rows:
+        title = paper_metadata.get(row["paper_id"], {}).get("title", "title unavailable")
+        published_at = paper_metadata.get(row["paper_id"], {}).get("published_at", "date unavailable")
+        lines.extend(
+            [
+                f"### {row['paper_id']} — {title} ({published_at})",
+                "",
+                f"What it is in plain language: {row['result_summary']}",
+                f"Why it matters now: {row['why_stranded_or_unrealized']}",
+                f"Modern equivalent: {row['modern_equivalent']}",
+                f"First test: {row['first_test']}",
+                f"Gap remaining: {row['gap_to_close']}",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "## Transition-State Seams Still Matter",
+            "",
+            "The broadened run no longer treats transition-state microstructure as the only center of gravity, but the venue-level auction and queue seams remain the clearest microstructure benchmark.",
+            "",
+        ]
+    )
+    for row in transition_rows:
+        lines.append(f"- {row['pattern_label']}: {row['result_summary']} First test: {row['first_test']}")
+
+    lines.extend(
+        [
+            "",
+            "## The Conversion Funnel",
+            "",
+            (
+                f"The search started with {stranding_metrics.get('scored_papers', 0):,} scored discovery papers, narrowed to "
+                f"{shortlist_metrics.get('shortlist_count', 0)} shortlist items, then to "
+                f"{enhanced_metrics.get('accepted_count', 0)} accepted broadened interpretations, and finally to "
+                f"{unrealized_metrics.get('entry_count', 0)} unrealized cross-domain entries, "
+                f"{stranded_metrics.get('entry_count', 0)} stranded q-fin results, and "
+                f"{transition_metrics.get('entry_count', 0)} transition-state entries."
+            ),
+            "What this means: discovery is now broader than the original microstructure loop, but publication is still selective. The system can find multi-lane seams; the remaining bottleneck is converting those seams into dense interpretation evidence and durable publication rows.",
+            "",
+            "## What To Do Next",
+            "",
+            "Operationalize the broadened publication set in three tracks.",
+            "1. Build lane-specific research programs for the surviving market-design, settlement-resolution, participant-pathology, state-graph, and lifecycle leads, using the unrealized index rows as the canonical queue of next experiments.",
+            "2. Keep the stranded q-fin results on a separate execution track, because those papers are already close to deployable execution research rather than broad discovery hypotheses.",
+            "3. Use the transition-state ledger as the venue-microstructure benchmark so the broader lanes can be compared against the older queue/refill seam instead of replacing it blindly.",
+            "",
+            "## Papers Worth a Second Look",
+            "",
+        ]
+    )
+    for row in near_miss_rows[:8]:
+        paper_id = row.get("paper_id")
+        label = row.get("operator_label", row.get("operator_family", "unknown"))
+        if paper_id:
+            lines.append(f"- {format_paper(paper_id, paper_metadata)} is worth another pass because it keeps appearing near the {label} seam.")
+        else:
+            title = row.get("title", "title unavailable")
+            lines.append(f"- {title} is worth another pass because it keeps appearing near the {label} seam.")
+
+    lines.extend(
+        [
+            "",
+            "## Publication Summary",
+            "",
+            f"Accepted findings in the broadened run: {findings_metrics.get('accepted_count', 0)}.",
+            f"Rejected findings recorded with reasons: {findings_metrics.get('rejected_count', 0)}.",
+            f"Near-miss papers still worth inspection: {findings_metrics.get('near_miss_count', 0)}.",
+            "",
+        ]
+    )
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -364,7 +309,8 @@ def main():
     connection = sqlite3.connect(str(Path(args.db_path).resolve()))
     connection.row_factory = sqlite3.Row
     try:
-        report_text = render_report(
+        paper_metadata = build_paper_metadata(connection, findings_rows, stranded_rows, transition_rows)
+        report = render_report(
             unrealized_rows,
             unrealized_metrics,
             stranded_rows,
@@ -376,10 +322,9 @@ def main():
             stranding_metrics,
             shortlist_metrics,
             enhanced_metrics,
-            build_paper_metadata(connection, findings_rows),
+            paper_metadata,
         )
-        output_path.write_text(report_text, encoding="utf-8")
-
+        output_path.write_text(report, encoding="utf-8")
         log_run_event(
             connection,
             args.run_id,
