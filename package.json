@@ -43,6 +43,7 @@
     "store:materialize-research-output": "python3 scripts/materialize_research_output.py",
     "store:materialize-run-summary": "python3 scripts/materialize_run_summary.py",
     "store:materialize-test-memos": "python3 scripts/materialize_test_memos.py",
+    "store:materialize-lane-memos": "python3 scripts/materialize_lane_memos.py",
     "score:materialize-diamond-lane-scores": "uv run --with pyyaml python3 scripts/materialize_diamond_lane_scores.py",
     "score:materialize-diamond-scores": "uv run --with pyyaml python3 scripts/materialize_diamond_scores.py",
     "study:ds1-translation-gap": "uv run --with pyyaml python3 scripts/materialize_ds1_translation_gap.py",
