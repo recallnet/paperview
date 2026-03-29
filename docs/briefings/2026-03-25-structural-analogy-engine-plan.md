@@ -762,14 +762,14 @@ Current status:
 ## Active Signoff Block
 
 - Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by archiving the tracked research-finding-pack utility and its paired export helper while leaving the active staged pipeline unchanged
+- Why this commit exists: continue the cleanup pass by removing tracked `corpus:*` package commands that point at untracked scripts and are not part of the canonical staged pipeline
 - Stages touched: `S16`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`, `scripts/archive/README.md`, `scripts/archive/noncanonical-research-packs/materialize_research_finding_pack.py`, `scripts/archive/noncanonical-research-packs/export_cluster_cartography.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:py -- scripts/archive/noncanonical-research-packs/materialize_research_finding_pack.py`, `git grep -n \"research:materialize-findings\\|materialize_research_finding_pack.py\\|export_cluster_cartography.py\" -- package.json docs scripts tests`, `find scripts/archive -maxdepth 2 -type f | sort`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"corpus:(status|inventory|readiness)\"' package.json`, `git status --short package.json scripts/corpus_status.py scripts/corpus_inventory.py scripts/corpus_readiness_report.py`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `scripts/archive/noncanonical-research-packs/`
-- Acceptance result: `the third S16 cleanup slice is live: the research finding pack runner and export helper moved into the archive, the package entrypoint was removed, and the archived runner still points at its paired archived helper`
-- Open risks after commit: `package-wired extraction-era and edge-reset surfaces still need later cleanup after these safer archive-only slices`
+- Artifacts produced: `none`
+- Acceptance result: `the active package surface is smaller: corpus:status, corpus:inventory, and corpus:readiness are removed because they pointed at untracked helper scripts and were not part of the canonical staged pipeline`
+- Open risks after commit: `dirty extraction-era files still prevent a broader archive move, so this slice only removes tracked package entrypoints that point at untracked helper scripts`
 - Next intended commit: `S16 active/archive cleanup foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
