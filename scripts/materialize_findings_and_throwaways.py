@@ -28,6 +28,7 @@ def parse_args():
     parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH))
     parser.add_argument("--run-id", default="findings-and-throwaways-20260328")
     parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
+    parser.add_argument("--interpretation-source", choices=("selective", "enhanced"), default="selective")
     parser.add_argument("--interpretation-run-id", default="selective-interpretation-ingestion-20260328")
     parser.add_argument("--interpretation-rejections-path", default=None)
     parser.add_argument("--bridge-run-id", default="bridge-materialization-20260328")
@@ -53,6 +54,8 @@ def log_run_event(connection: sqlite3.Connection, run_id: str, stage: str, event
 
 
 def default_rejections_path(interpretation_run_id: str) -> Path:
+    if interpretation_run_id.startswith("enhanced-interpretation-ingestion-"):
+        return DEFAULT_OUTPUT_ROOT / interpretation_run_id / "enhanced_interpretation_rejections.jsonl"
     return DEFAULT_OUTPUT_ROOT / interpretation_run_id / "interpretation_rejections.jsonl"
 
 
@@ -107,6 +110,52 @@ def fetch_positive_findings(connection: sqlite3.Connection, shortlist_run_id: st
                 "modern_equivalent": row["modern_equivalent"],
             }
         )
+    return findings
+
+
+def fetch_positive_enhanced_findings(connection: sqlite3.Connection, interpretation_run_id: str) -> list[dict]:
+    rows = connection.execute(
+        """
+        SELECT
+          operator_family,
+          batch_item_id,
+          family_rank,
+          source_ref,
+          packet_title,
+          classification,
+          result_summary,
+          first_step,
+          why_stranded_or_unrealized,
+          modern_equivalent,
+          confidence
+        FROM enhanced_interpretations
+        WHERE run_id = ?
+        ORDER BY operator_family ASC, family_rank ASC, batch_item_id ASC
+        """,
+        (interpretation_run_id,),
+    ).fetchall()
+    findings = []
+    for row in rows:
+        if row["classification"] not in POSITIVE_CLASSIFICATIONS:
+            continue
+        findings.append(
+            {
+                "section": "accepted",
+                "operator_family": row["operator_family"],
+                "shortlist_id": row["batch_item_id"],
+                "shortlist_rank": int(row["family_rank"]),
+                "item_type": row["operator_family"],
+                "item_ref": row["source_ref"],
+                "title": row["packet_title"],
+                "classification": row["classification"],
+                "confidence": row["confidence"],
+                "result_summary": row["result_summary"],
+                "first_step": row["first_step"],
+                "why": row["why_stranded_or_unrealized"],
+                "modern_equivalent": row["modern_equivalent"],
+            }
+        )
+    findings.sort(key=lambda row: (row["operator_family"], row["shortlist_rank"], row["shortlist_id"]))
     return findings
 
 
@@ -171,6 +220,65 @@ def load_rejections(path: Path, shortlist_lookup: dict[str, dict], top_k: int) -
         )
         rejected.extend(rows[:top_k])
     return rejected
+
+
+def load_enhanced_rejections(path: Path, batch_lookup: dict[str, dict], top_k: int) -> list[dict]:
+    if not path.exists():
+        return []
+    grouped: dict[str, list[dict]] = {}
+    with path.open("r", encoding="utf-8") as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line:
+                continue
+            payload = json.loads(line)
+            batch_item_id = payload.get("batch_item_id")
+            lookup = batch_lookup.get(batch_item_id or "", {})
+            operator_family = lookup.get("operator_family", "unknown")
+            grouped.setdefault(operator_family, []).append(
+                {
+                    "section": "rejected",
+                    "operator_family": operator_family,
+                    "shortlist_id": batch_item_id,
+                    "shortlist_rank": lookup.get("shortlist_rank"),
+                    "title": lookup.get("title"),
+                    "reason": payload["reason"],
+                    "line_number": int(payload["line_number"]),
+                }
+            )
+    rejected = []
+    for operator_family, rows in grouped.items():
+        rows.sort(
+            key=lambda item: (
+                item["shortlist_rank"] if item["shortlist_rank"] is not None else 10**9,
+                item["line_number"],
+            )
+        )
+        rejected.extend(rows[:top_k])
+    return rejected
+
+
+def fetch_enhanced_batch_lookup(connection: sqlite3.Connection, interpretation_run_id: str) -> dict[str, dict]:
+    rows = connection.execute(
+        """
+        SELECT
+          batch_item_id,
+          operator_family,
+          family_rank,
+          packet_title
+        FROM enhanced_interpretations
+        WHERE run_id = ?
+        """,
+        (interpretation_run_id,),
+    ).fetchall()
+    return {
+        row["batch_item_id"]: {
+            "operator_family": row["operator_family"],
+            "shortlist_rank": int(row["family_rank"]),
+            "title": row["packet_title"],
+        }
+        for row in rows
+    }
 
 
 def fetch_near_misses(connection: sqlite3.Connection, args) -> list[dict]:
@@ -360,6 +468,57 @@ def fetch_stranded_qfin_failures(
     return failures
 
 
+def fetch_enhanced_stranded_qfin_failures(
+    connection: sqlite3.Connection,
+    interpretation_run_id: str,
+    resurfacing_run_id: str,
+    stranded_ledger_run_id: str,
+    top_k: int,
+) -> list[dict]:
+    rows = connection.execute(
+        """
+        SELECT
+          src.paper_id,
+          src.resurfacing_score,
+          src.resurfacing_rank,
+          COALESCE(p.title, src.paper_id) AS title,
+          interp.batch_item_id,
+          interp.classification
+        FROM stranded_resurfacing_candidates src
+        JOIN papers p
+          ON p.paper_id = src.paper_id
+        LEFT JOIN enhanced_interpretations interp
+          ON interp.run_id = ?
+         AND interp.operator_family = 'stranded_qfin'
+         AND interp.source_ref = src.paper_id
+        LEFT JOIN stranded_result_ledger ledger
+          ON ledger.run_id = ?
+         AND ledger.paper_id = src.paper_id
+        WHERE src.run_id = ?
+          AND ledger.paper_id IS NULL
+        ORDER BY src.resurfacing_rank ASC, src.paper_id ASC
+        LIMIT ?
+        """,
+        (interpretation_run_id, stranded_ledger_run_id, resurfacing_run_id, top_k),
+    ).fetchall()
+    failures = []
+    for row in rows:
+        failures.append(
+            {
+                "section": "stranded_qfin_failure",
+                "operator_family": "stranded_resurfacing",
+                "paper_id": row["paper_id"],
+                "title": row["title"],
+                "resurfacing_score": round(float(row["resurfacing_score"] or 0.0), 6),
+                "resurfacing_rank": int(row["resurfacing_rank"]),
+                "shortlist_id": row["batch_item_id"],
+                "classification": row["classification"],
+                "failure_reason": failure_reason(row["batch_item_id"], row["classification"]),
+            }
+        )
+    return failures
+
+
 def render_markdown(
     accepted: list[dict],
     rejected: list[dict],
@@ -475,6 +634,7 @@ def main():
             "started",
             {
                 "shortlist_run_id": args.shortlist_run_id,
+                "interpretation_source": args.interpretation_source,
                 "interpretation_run_id": args.interpretation_run_id,
                 "interpretation_rejections_path": str(rejections_path),
                 "stranded_ledger_run_id": args.stranded_ledger_run_id,
@@ -482,21 +642,36 @@ def main():
                 "top_k": args.top_k,
             },
         )
-        accepted = fetch_positive_findings(connection, args.shortlist_run_id, args.interpretation_run_id)
-        shortlist_lookup = fetch_shortlist_lookup(connection, args.shortlist_run_id)
-        # @context decision -- Rejection reasons only exist as the S12 ingestion artifact, not in a
-        # canonical table. S21 intentionally reads the checked-in JSONL directly so the report keeps
-        # the exact rejection contract rather than reconstructing or weakening it from derived state.
-        rejected = load_rejections(rejections_path, shortlist_lookup, args.top_k)
+        if args.interpretation_source == "selective":
+            accepted = fetch_positive_findings(connection, args.shortlist_run_id, args.interpretation_run_id)
+            shortlist_lookup = fetch_shortlist_lookup(connection, args.shortlist_run_id)
+            # @context decision -- Rejection reasons only exist as the S12 ingestion artifact, not in a
+            # canonical table. S21 intentionally reads the checked-in JSONL directly so the report keeps
+            # the exact rejection contract rather than reconstructing or weakening it from derived state.
+            rejected = load_rejections(rejections_path, shortlist_lookup, args.top_k)
+            stranded_failures = fetch_stranded_qfin_failures(
+                connection,
+                args.shortlist_run_id,
+                args.interpretation_run_id,
+                args.resurfacing_run_id,
+                args.stranded_ledger_run_id,
+                args.top_k,
+            )
+        else:
+            accepted = fetch_positive_enhanced_findings(connection, args.interpretation_run_id)
+            batch_lookup = fetch_enhanced_batch_lookup(connection, args.interpretation_run_id)
+            # @context decision -- S24 rematerialization must report the enhanced interpretation run
+            # exactly as ingested, so enhanced rejection rows still come from the checked-in JSONL
+            # artifact rather than being inferred from missing table rows.
+            rejected = load_enhanced_rejections(rejections_path, batch_lookup, args.top_k)
+            stranded_failures = fetch_enhanced_stranded_qfin_failures(
+                connection,
+                args.interpretation_run_id,
+                args.resurfacing_run_id,
+                args.stranded_ledger_run_id,
+                args.top_k,
+            )
         near_misses = fetch_near_misses(connection, args)
-        stranded_failures = fetch_stranded_qfin_failures(
-            connection,
-            args.shortlist_run_id,
-            args.interpretation_run_id,
-            args.resurfacing_run_id,
-            args.stranded_ledger_run_id,
-            args.top_k,
-        )
 
         report_rows = accepted + rejected + near_misses + stranded_failures
         jsonl_path = output_dir / "findings_and_throwaways.jsonl"
@@ -510,6 +685,7 @@ def main():
         metrics = {
             "run_id": args.run_id,
             "shortlist_run_id": args.shortlist_run_id,
+            "interpretation_source": args.interpretation_source,
             "interpretation_run_id": args.interpretation_run_id,
             "accepted_count": len(accepted),
             "rejected_count": len(rejected),
@@ -517,7 +693,7 @@ def main():
             "stranded_qfin_failure_count": len(stranded_failures),
             "accepted_by_operator": {
                 family: sum(1 for row in accepted if row["operator_family"] == family)
-                for family in sorted({row["operator_family"] for row in accepted} | {"bridge", "composition", "stranded_qfin"})
+                for family in sorted({row["operator_family"] for row in accepted} | {"bridge", "composition", "stranded_qfin", "transition_state"})
             },
             "rejected_by_operator": {
                 family: sum(1 for row in rejected if row["operator_family"] == family)

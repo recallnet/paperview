@@ -298,7 +298,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S21` | findings and throwaways materializer | `done` | `findings_and_throwaways.*` per-run report |
 | `S22` | transition-state microstructure ledger | `done` | `transition_state_ledger.*` publication surface |
 | `S23` | enhanced interpretation batch | `done` | expanded batch + enhanced interpretation ingestion |
-| `S24` | re-materialize all publication surfaces | `in_progress` | all four publication outputs from a single enhanced interpretation run |
+| `S24` | re-materialize all publication surfaces | `done` | all four publication outputs from a single enhanced interpretation run |
 
 ## Completed Stages
 
@@ -980,7 +980,14 @@ Current status:
   - `top_ranked_pattern_id`: `near_transition_auction_queue`
   - `top_ranked_publication_item_id`: `transition_state:near_transition_auction_queue:2101.03086`
   - `counts_by_priority_tier`: `p1=2`, `p2=0`, `p3=0`
-- the remaining S24 order is unchanged and the active next step is now Findings and Throwaways rematerialization from the expanded interpretation store
+- the fourth `S24` sub-step is now complete: `scripts/materialize_findings_and_throwaways.py` can rematerialize the report from `enhanced_interpretations` in `enhanced` mode while keeping the canonical near-miss operator sections intact
+- fixture coverage in `tests/test_materialize_findings_and_throwaways.py` now proves both the original selective mode and the enhanced report rematerialization path
+- the live rerun `npm run store:materialize-findings-and-throwaways -- --run-id findings-and-throwaways-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced --interpretation-rejections-path data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_rejections.jsonl --stranded-ledger-run-id stranded-result-ledger-enhanced-20260328` completed successfully with:
+  - `accepted_count`: `7`
+  - `rejected_count`: `3`
+  - `near_miss_count`: `15`
+  - `stranded_qfin_failure_count`: `3`
+- the stage is complete: all four publication surfaces are now non-empty and rematerialized from the expanded interpretation store under the `*-enhanced-20260328` run family
 
 ---
 
@@ -1114,15 +1121,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s24-transition-state-ledger-rematerialization`
-- Why this commit exists: rematerialize the Transition-State Microstructure Ledger from enhanced transition-state interpretations while preserving the ledger's microstructure scope and adding explicit publication provenance
+- Commit scope: `s24-findings-and-throwaways-rematerialization`
+- Why this commit exists: rematerialize Findings and Throwaways from the expanded interpretation store so accepted survivors, checked-in rejections, and stranded failures all reflect the enhanced run family without losing the canonical near-miss operator sections
 - Stages touched: `S24`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `sql/paperview_schema.sql`, `scripts/materialize_transition_state_ledger.py`, `tests/test_materialize_transition_state_ledger.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- sql/paperview_schema.sql`, `npm run codecontext:scope -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:scope -- scripts/materialize_enhanced_interpretation_batch.py`, `npm run codecontext:scope -- scripts/ingest_enhanced_interpretations.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select batch_item_id, operator_family, source_ref, classification, family_rank from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' and operator_family='transition_state' order by family_rank, batch_item_id;"`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select pattern_id, paper_id, transition_state_candidate_score, transition_state_rank from transition_state_candidates where run_id='transition-state-candidate-materialization-20260328' order by transition_state_rank asc, transition_state_candidate_score desc limit 15;"`, `npm run codecontext:py -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:py -- tests/test_materialize_transition_state_ledger.py`, `python3 -m unittest -v tests.test_materialize_transition_state_ledger`, `npm run store:materialize-transition-state-ledger -- --run-id transition-state-ledger-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced_transition`, `python3 - <<'PY' ... enhanced transition-state ledger metrics and rows ... PY`, `npm run codecontext:diff -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_transition_state_ledger.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_transition_state_ledger`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/transition-state-ledger-enhanced-20260328/transition_state_ledger_metrics.json`, `data/structural-analogy/runs/transition-state-ledger-enhanced-20260328/transition_state_ledger.jsonl`, `data/structural-analogy/runs/transition-state-ledger-enhanced-20260328/transition_state_ledger.md`
-- Acceptance result: `complete; the third S24 publication surface now rematerializes from enhanced transition-state interpretations and publishes two p1 microstructure rows with explicit publication provenance`
-- Open risks after commit: `the remaining S24 publication surface still points at mixed interpretation inputs today, and the findings-and-throwaways rematerialization must surface enhanced survivors, rejections, and near-misses without collapsing the old shortlist-backed evidence trail`
-- Next intended commit: `S24 findings-and-throwaways rematerialization`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_findings_and_throwaways.py`, `tests/test_materialize_findings_and_throwaways.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_findings_and_throwaways.py`, `sqlite3 data/structural-analogy/paperview.sqlite3 "select operator_family, classification, count(*) from enhanced_interpretations where run_id='enhanced-interpretation-ingestion-20260328' group by operator_family, classification order by operator_family, classification;"`, `cat data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_rejections.jsonl`, `npm run codecontext:py -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- tests/test_materialize_findings_and_throwaways.py`, `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run store:materialize-findings-and-throwaways -- --run-id findings-and-throwaways-enhanced-20260328 --interpretation-run-id enhanced-interpretation-ingestion-20260328 --interpretation-source enhanced --interpretation-rejections-path data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328/enhanced_interpretation_rejections.jsonl --stranded-ledger-run-id stranded-result-ledger-enhanced-20260328`, `python3 - <<'PY' ... enhanced findings metrics and sections ... PY`, `npm run codecontext:diff -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:diff -- tests/test_materialize_findings_and_throwaways.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/findings-and-throwaways-enhanced-20260328/findings_and_throwaways_metrics.json`, `data/structural-analogy/runs/findings-and-throwaways-enhanced-20260328/findings_and_throwaways.jsonl`, `data/structural-analogy/runs/findings-and-throwaways-enhanced-20260328/findings_and_throwaways.md`
+- Acceptance result: `complete; the fourth S24 publication surface now rematerializes from enhanced interpretations and closes the full S24 publication run family with survivors, rejections, near misses, and stranded failures`
+- Open risks after commit: `none inside S24; future work is now about improving interpretation breadth or publication quality rather than finishing the enhanced rematerialization loop`
+- Next intended commit: `none; S24 is complete`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
