@@ -4,7 +4,7 @@ owner: devrel
 review_policy: periodic-7
 reviewed: 2026-03-28
 status: active
-summary: Canonical active development plan for building the Unrealized Idea Index with Stranding Overlay from the current embedding-first arXiv discovery system.
+summary: Canonical active development plan for building the Unrealized Idea Index with Stranding Overlay and Transition-State Workbench from the current embedding-first arXiv discovery system.
 tags:
   - docs
   - briefing
@@ -39,23 +39,22 @@ This doc must be updated before every commit that advances the system. The commi
 
 The target system is:
 
-**Unrealized Idea Index with Stranding Overlay**
+**Unrealized Idea Index with Stranding Overlay and Transition-State Workbench**
 
-One ranking system over arXiv using three kinds of evidence:
+One unified system over arXiv with three scoring layers and four publication surfaces.
 
-1. latent similarity
-2. translation gap
-3. stranding evidence
+### Three Scoring Layers
 
-The system should find smart technical ideas that existed before 2024 but had no realized market connection, or only a premature one.
+1. **Latent discovery** — broad search over arXiv using embeddings, bridge/composition operators, and challenge-anchor affinity
+2. **Stranding overlay** — pragmatic q-fin rescue using sparse BM25/TF-IDF-style features as a prior
+3. **Transition-state workbench** — dedicated operator family for the microstructure seams the current run already identifies as the richest evidence cluster
 
-It must support two final output surfaces from the same pipeline:
+### Four Publication Surfaces
 
-1. **Unrealized Ideas Index**
-   Cross-domain, bridge-heavy, mechanism-close and domain-far.
-
-2. **Stranded Result Ledger**
-   Mostly q-fin, practical, date-aware, and explicit about why a result was stranded.
+1. **Unrealized Ideas Index** — cross-domain, bridge-heavy, mechanism-close and domain-far
+2. **Stranded Result Ledger** — mostly q-fin, directly practical, date-aware
+3. **Findings and Throwaways** — required every run: top survivors, top rejected, why rejected, top near-misses by operator family
+4. **Transition-State Microstructure Ledger** — dedicated surface for queue x refill, auction x refill, auction x queue, maker-retreat x queue, parity-propagation x refill
 
 ## Canonical Question
 
@@ -136,12 +135,25 @@ Every paper, region, bridge, or shortlist item should eventually carry:
 - bridge score
 - composition score
 - holdout echo score
+- transition-state score
 - genericity penalty
 - realized-market leakage penalty
 
 The intended shape is:
 
-`unrealized_idea_score = translation_gap + challenge_affinity + positive_anchor_affinity + bridge_score + composition_score + stranding_score + holdout_echo - negative_anchor_affinity - genericity_penalty - realized_market_leakage`
+`unrealized_idea_score = translation_gap + challenge_affinity + positive_anchor_affinity + bridge_score + composition_score + stranding_score + holdout_echo + transition_state_score - negative_anchor_affinity - genericity_penalty - realized_market_leakage`
+
+### Transition-State Score
+
+Boost candidates that sit near:
+
+- queue-value / passive quoting
+- refill-lag / resiliency
+- auction handoff / continuous-market transition
+- maker-retreat / inventory stress
+- parity propagation with delayed repair
+
+This is a first-class score family derived from the current run's strongest evidence cluster.
 
 ## Representation Views
 
@@ -279,6 +291,14 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S14` | Unrealized Ideas Index | `done` | human-facing index |
 | `S15` | Stranded Result Ledger | `done` | human-facing ledger |
 | `S16` | active / archive cleanup | `done` | clean active pipeline surface |
+| `S17` | transition-state anchor and probe config | `pending` | transition-state anchors, probes, and probe hits |
+| `S18` | transition-state score materializer | `pending` | `transition_state_scores` table + metrics |
+| `S19` | transition-state operator | `pending` | `transition_state_candidates` table + artifacts |
+| `S20` | stranded q-fin resurfacing operator | `pending` | `stranded_resurfacing_candidates` table + artifacts |
+| `S21` | findings and throwaways materializer | `pending` | `findings_and_throwaways.*` per-run report |
+| `S22` | transition-state microstructure ledger | `pending` | `transition_state_ledger.*` publication surface |
+| `S23` | enhanced interpretation batch | `pending` | expanded top-10-20 per operator family interpretation |
+| `S24` | re-materialize all publication surfaces | `pending` | all four publication outputs from a single run |
 
 ## Completed Stages
 
@@ -683,6 +703,122 @@ Current status:
 - the stage is complete: the active `package.json` command surface is now canonical, the major superseded workflow clusters have been moved into `scripts/archive/`, and the remaining dirty or untracked files are local worktree state rather than active canonical pipeline surface
 - the canonical `S00–S16` execution path is now complete end to end
 
+## Enhancement Stages (S17–S24)
+
+### `S17` Transition-State Anchor and Probe Config
+
+Build:
+
+- add 5 transition-state anchor families to `configs/anchors.yaml`:
+  - `queue_value_passive_quoting`
+  - `refill_lag_resiliency`
+  - `auction_handoff`
+  - `maker_retreat_inventory_stress`
+  - `parity_propagation_delayed_repair`
+- add transition-state agitator probes to `configs/probes.yaml`
+- re-materialize probes against the existing embedding space
+
+Accept when:
+
+- transition-state anchors are queryable in the canonical store
+- probe hits exist for transition-state patterns
+
+### `S18` Transition-State Score Materializer
+
+Build:
+
+- canonical `transition_state_scores` table and staged materializer
+- sparse + embedding-proximity scoring for the 5 transition-state families
+- papers near these anchors in embedding space get boosted
+
+Accept when:
+
+- transition-state scores exist in canonical outputs
+- scores are continuous, not binary
+
+### `S19` Transition-State Operator
+
+Build:
+
+- dedicated retrieval operator that surfaces papers and regions about: shock recovery, local depletion, delayed repair, handoff between matching regimes, queue reformation, asynchronous refill
+- canonical `transition_state_candidates` table with run-scoped provenance
+
+Accept when:
+
+- transition-state candidates exist in the main store
+- candidates come from embedding proximity to transition-state anchors, not just keyword matching
+
+### `S20` Stranded Q-Fin Resurfacing Operator
+
+Build:
+
+- dedicated operator running only over the stranded-alpha slice (q-fin 2015–2023)
+- ranking by: stranding score, result specificity, low survey/empirical-only penalty, low realized leakage, closeness to current venue mechanics
+- canonical `stranded_resurfacing_candidates` table
+
+Accept when:
+
+- resurfacing candidates are ranked and queryable
+- the operator is distinct from the general stranding scorer
+
+### `S21` Findings and Throwaways Materializer
+
+Build:
+
+- mandatory per-run review-summary report
+- top accepted by operator
+- top rejected by operator with rejection reasons
+- top near-misses by operator
+- top stranded q-fin rows that failed ledger conversion with reasons
+
+Accept when:
+
+- `findings_and_throwaways.*` artifacts exist (markdown + JSONL + metrics)
+- the report covers all operator families
+
+### `S22` Transition-State Microstructure Ledger
+
+Build:
+
+- dedicated publication surface for transition-state microstructure findings
+- specific pairings: queue x refill, auction x refill, auction x queue, maker-retreat x queue, parity-propagation x refill
+- ledger format matching the stranded result ledger shape
+
+Accept when:
+
+- `transition_state_ledger.*` artifacts exist
+- entries are tied to transition-state candidates and interpretations
+
+### `S23` Enhanced Interpretation Batch
+
+Build:
+
+- expand second-pass interpretation to cover:
+  - top 10–20 cross-domain bridge packets
+  - top 10–20 stranded q-fin packets
+  - top 10–20 transition-state packets
+- use the same strict JSON contract from S12
+
+Accept when:
+
+- interpretation batch covers all three operator families
+- accepted/rejected counts are meaningfully larger than the S12 pilot
+
+### `S24` Re-Materialize All Publication Surfaces
+
+Build:
+
+- re-run all four publication surfaces from the expanded interpretation:
+  1. `unrealized_ideas_index.*`
+  2. `stranded_result_ledger.*`
+  3. `transition_state_ledger.*`
+  4. `findings_and_throwaways.*`
+
+Accept when:
+
+- all four artifacts are non-empty and backed by the expanded interpretation run
+- the findings report covers survivors, rejections, and near-misses
+
 ---
 
 ## Development Policy
@@ -807,15 +943,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s16-closeout-full-plan`
-- Why this commit exists: mark the canonical execution path complete now that the active surface is clean and every planned stage from `S00` through `S16` has a live, verified contract
-- Stages touched: `S07`, `S16`
+- Commit scope: `s17-s24-enhancement-plan-reset`
+- Why this commit exists: add the transition-state workbench, findings-and-throwaways report, stranded resurfacing operator, and enhanced interpretation stages to the canonical plan based on analysis of the S00-S16 run outputs
+- Stages touched: `S17` through `S24`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `none`
-- Acceptance result: `the canonical plan now truthfully records all stages from S00 through S16 as complete and the active cleanup stage as finished`
-- Open risks after commit: `future expansion can still refine breadth or add new stages, but the current canonical S00–S16 execution path is complete`
-- Next intended commit: `none`
-- Signoff status: `committed`
+- Commands run: `npm run docs:lint`
+- Tests run: `docs governance lint only`
+- Artifacts produced: `updated canonical plan with S17-S24 stage definitions`
+- Acceptance result: `pending`
+- Open risks after commit: `S17-S24 are all pending and need commit-by-commit execution`
+- Next intended commit: `S17 transition-state anchor and probe config`
+- Signoff status: `draft`
 - Last updated: `2026-03-28`
