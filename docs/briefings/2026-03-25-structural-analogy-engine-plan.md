@@ -1662,16 +1662,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s35-memo-3-rule-sensitive-toxic-flow-filters`
-- Why this commit exists: turn the accepted participant-pathology lead into the third standalone lane memo so the follow-on work covers venue-conditioned toxic-flow detection instead of only repair-timing seams
+- Commit scope: `s35-memo-4-state-graph-repair-timing-monitor`
+- Why this commit exists: turn the accepted state-graph lead into the fourth standalone lane memo so the follow-on work finishes with a linked-market repair monitor rather than stopping at venue rules and participant filters
 - Stages touched: `S35`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_lane_memos.py`, `tests/test_materialize_lane_memos.py`, `reports/lane-memo-rule-sensitive-toxic-flow-filters.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_lane_memos.py`, `npm run codecontext:scope -- tests/test_materialize_lane_memos.py`, `npm run codecontext:py -- scripts/materialize_lane_memos.py`, `npm run codecontext:py -- tests/test_materialize_lane_memos.py`, `python3 -m unittest -v tests.test_materialize_lane_memos`, `npm run store:materialize-lane-memos -- --memo-id rule-sensitive-toxic-flow-filters --run-id lane-memos-20260329-toxic-flow`, `npm run codecontext:diff -- scripts/materialize_lane_memos.py`, `npm run codecontext:diff -- tests/test_materialize_lane_memos.py`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_lane_memos.py`, `tests/test_materialize_lane_memos.py`, `reports/lane-memo-state-graph-repair-timing-monitor.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_lane_memos.py`, `npm run codecontext:scope -- tests/test_materialize_lane_memos.py`, `npm run codecontext:py -- scripts/materialize_lane_memos.py`, `npm run codecontext:py -- tests/test_materialize_lane_memos.py`, `python3 -m unittest -v tests.test_materialize_lane_memos`, `npm run store:materialize-lane-memos -- --memo-id state-graph-repair-timing-monitor --run-id lane-memos-20260329-state-graph`, `npm run codecontext:diff -- scripts/materialize_lane_memos.py`, `npm run codecontext:diff -- tests/test_materialize_lane_memos.py`, `npm run docs:lint`
 - Tests run: `python3 -m unittest -v tests.test_materialize_lane_memos`, `npm run docs:lint`
-- Artifacts produced: `reports/lane-memo-rule-sensitive-toxic-flow-filters.md`
-- Acceptance result: `reports/lane-memo-rule-sensitive-toxic-flow-filters.md` was generated successfully from the current root publication surfaces; the memo cites `1104.0587`, `0908.0202`, `1903.12458`, `1311.4160`, `2006.08682`, `2009.02808`, and `2003.04425` and converts the accepted `participant_pathologies` lead into a venue-state toxic-flow program
-- Open risks after commit: memo 4 still needs to stay focused on repair timing across linked states rather than collapsing back into the already-covered market-design parity memo
-- Next intended commit: `S35 memo 4 — state-graph repair timing monitor`
+- Artifacts produced: `reports/lane-memo-state-graph-repair-timing-monitor.md`
+- Acceptance result: `reports/lane-memo-state-graph-repair-timing-monitor.md` was generated successfully from the current root publication surfaces; the memo cites `2104.09309`, `1111.7103`, `2010.15105`, `2004.12011`, `1609.04620`, and `1811.08038` and turns the accepted `state_graph` lead into a graph-aware repair timing program
+- Open risks after commit: none inside memo scope; the remaining task is a clean `S35` closeout commit
+- Next intended commit: `S35 closeout`
 - Signoff status: `committed`
 - Last updated: `2026-03-29`
 
@@ -1686,4 +1686,4 @@ Current status:
   - shortlist-gated diamond interpretation
   - six publication surfaces plus `diamond_board.md`
   - three empirical memo v2 outputs
-  - a new follow-on `S35` lane-memo stage aimed at focused writeups for the strongest non-generic early-market leads, with memo 1 (`market-design delayed parity repair`), memo 2 (`settlement-lag / resolution-friction timing`), and memo 3 (`rule-sensitive toxic-flow filters`) completed
+  - a new follow-on `S35` lane-memo stage aimed at focused writeups for the strongest non-generic early-market leads, with memo 1 (`market-design delayed parity repair`), memo 2 (`settlement-lag / resolution-friction timing`), memo 3 (`rule-sensitive toxic-flow filters`), and memo 4 (`state-graph repair timing monitor`) completed

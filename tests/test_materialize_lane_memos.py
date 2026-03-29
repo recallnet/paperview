@@ -252,6 +252,86 @@ class MaterializeLaneMemosTests(unittest.TestCase):
             self.assertIn("## Fail-Fast", memo)
             self.assertIn("## Gap To Close", memo)
 
+    def test_materializes_state_graph_repair_timing_memo(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            reports_root = tmp / "reports"
+            db_path = tmp / "paperview.sqlite3"
+            diamond_board_path = tmp / "diamond_board.md"
+            findings_path = tmp / "findings_and_throwaways.md"
+            research_output_path = tmp / "research_output.md"
+
+            subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "init_local_store.py"), "--db-path", str(db_path)],
+                check=True,
+                cwd=ROOT,
+            )
+
+            connection = sqlite3.connect(str(db_path))
+            try:
+                connection.executemany(
+                    "INSERT INTO papers (paper_id, source_corpus, title, published_at) VALUES (?, ?, ?, ?)",
+                    [
+                        ("2104.09309", "arxiv", "Foreign exchange markets: price response and spread impact", "2021-07-26"),
+                        ("1111.7103", "arxiv", "High Frequency Lead/lag Relationships - Empirical facts", "2012-01-17"),
+                        ("2010.15105", "arxiv", "Price response functions and spread impact in correlated financial markets", "2020-10-28"),
+                        ("2004.12011", "arxiv", "Trading Foreign Exchange Triplets", "2020-04-24"),
+                        ("1609.04620", "arxiv", "Price impact without order book: A study of the OTC credit index market", "2016-09-15"),
+                        ("1811.08038", "arxiv", "Arbitrage Opportunities in CDS Term Structure: Theory and Implications for OTC Derivatives", "2018-12-16"),
+                    ],
+                )
+                connection.commit()
+            finally:
+                connection.close()
+
+            diamond_board_path.write_text(
+                "# Diamond Board\n\nModern equivalent: state-graph inconsistency monitor\n",
+                encoding="utf-8",
+            )
+            findings_path.write_text(
+                "# Findings and Throwaways\n\n`state_graph:2104.09309`\n",
+                encoding="utf-8",
+            )
+            research_output_path.write_text(
+                "# Research Memo\n\nCross-market inconsistencies may persist longer when the connected venues enforce different trading or protection rules.\n",
+                encoding="utf-8",
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT_PATH),
+                    "--db-path",
+                    str(db_path),
+                    "--run-id",
+                    "lane-memos-test-state-graph",
+                    "--reports-root",
+                    str(reports_root),
+                    "--diamond-board-path",
+                    str(diamond_board_path),
+                    "--findings-path",
+                    str(findings_path),
+                    "--research-output-path",
+                    str(research_output_path),
+                    "--memo-id",
+                    "state-graph-repair-timing-monitor",
+                ],
+                check=True,
+                cwd=ROOT,
+            )
+
+            memo = (reports_root / "lane-memo-state-graph-repair-timing-monitor.md").read_text(encoding="utf-8")
+            self.assertIn("# State-Graph Repair Timing Monitor", memo)
+            self.assertIn("## Thesis", memo)
+            self.assertIn("## Supporting Papers", memo)
+            self.assertIn("2104.09309", memo)
+            self.assertIn("1111.7103", memo)
+            self.assertIn("## Baseline", memo)
+            self.assertIn("## First Test", memo)
+            self.assertIn("## Metric", memo)
+            self.assertIn("## Fail-Fast", memo)
+            self.assertIn("## Gap To Close", memo)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,6 +25,7 @@ def parse_args():
             "market-design-delayed-parity-repair",
             "settlement-lag-resolution-friction-timing",
             "rule-sensitive-toxic-flow-filters",
+            "state-graph-repair-timing-monitor",
         ],
         default="market-design-delayed-parity-repair",
     )
@@ -86,6 +87,15 @@ def ensure_toxic_flow_state(diamond_board_text: str, findings_text: str, researc
         raise ValueError("missing_toxic_flow_accept_in_findings")
     if "Participant pathologies such as toxic or manipulative flow may become more predictable when they interact with specific market-design rules." not in research_output_text:
         raise ValueError("missing_toxic_flow_thesis_in_research_output")
+
+
+def ensure_state_graph_state(diamond_board_text: str, findings_text: str, research_output_text: str) -> None:
+    if "state-graph inconsistency monitor" not in diamond_board_text:
+        raise ValueError("missing_state_graph_clue_in_diamond_board")
+    if "state_graph:2104.09309" not in findings_text:
+        raise ValueError("missing_state_graph_accept_in_findings")
+    if "Cross-market inconsistencies may persist longer when the connected venues enforce different trading or protection rules." not in research_output_text:
+        raise ValueError("missing_state_graph_thesis_in_research_output")
 
 
 def build_market_design_parity_repair_memo(titles: dict[str, str]) -> str:
@@ -288,6 +298,72 @@ def build_toxic_flow_memo(titles: dict[str, str]) -> str:
     ) + "\n"
 
 
+def build_state_graph_memo(titles: dict[str, str]) -> str:
+    return "\n".join(
+        [
+            "# State-Graph Repair Timing Monitor",
+            "",
+            "## Thesis",
+            "",
+            "Linked markets should be monitored as a state graph whose inconsistent edges repair on different clocks, so the tradeable signal is not the raw spread but the timing pattern of which state relationships lag and which ones heal first.",
+            "",
+            "## Why This Lead Exists",
+            "",
+            "The accepted state-graph publication row already says the candidate is a repair-timing workflow across temporarily inconsistent market states. The related parity-repair evidence shows that some of these edges become executable only around the repair boundary, which means the operational task is to monitor graph state transitions rather than to chase isolated price gaps.",
+            "",
+            "## Supporting Papers",
+            "",
+            f"- {format_reference('2104.09309', titles)}: is the accepted anchor because it frames price response and spread impact in a way that naturally extends to linked-state repair monitoring.",
+            f"- {format_reference('1111.7103', titles)}: provides direct high-frequency lead-lag evidence that some linked relationships consistently move before others.",
+            f"- {format_reference('2010.15105', titles)}: turns correlated-market response into an explicit spread-impact problem rather than a single-instrument signal.",
+            f"- {format_reference('2004.12011', titles)}: grounds the graph view with a concrete multi-leg consistency problem in FX triplets.",
+            f"- {format_reference('1609.04620', titles)} and {format_reference('1811.08038', titles)}: show that graph repair can be slowed or distorted when market structure or post-trade state interferes with immediate convergence.",
+            "",
+            "## Hypothesis",
+            "",
+            "When a linked market graph enters an inconsistent state, the order and speed with which edges repair should predict where executable hedging slippage or convergence capture is available. Some edges should systematically lag because they sit behind slower liquidity, protection, or settlement states.",
+            "",
+            "## Data",
+            "",
+            "- Synchronized prices or quotes for all instruments in one linked graph, such as FX triangles, ETF-basket relationships, or cash-futures pairs.",
+            "- A reproducible graph-state definition for each edge, including parity, basis, or implied-price relationships.",
+            "- Event timestamps for graph inconsistency onset, partial repair, and full repair.",
+            "- At least three months of data so lag structure can be estimated across many repair events.",
+            "",
+            "## Baseline",
+            "",
+            "A pairwise spread monitor that treats each inconsistency independently and ignores the order in which the wider graph repairs.",
+            "",
+            "## Seam-Aware Program",
+            "",
+            "Construct a live state graph and classify each event by which edges are broken, which edges repair first, and how long each remaining inconsistency survives. The first model should test whether lagging-edge identity improves prediction of executable repair timing beyond pairwise spread size alone.",
+            "",
+            "## First Test",
+            "",
+            "Monitor linked markets for transient state disagreement and test whether delayed repair predicts execution quality or hedging slippage. Start with one graph, detect inconsistency events, and compare a graph-aware repair timer against a pairwise spread baseline.",
+            "",
+            "## Metric",
+            "",
+            "Primary metric: improvement in repair-time prediction from graph-aware edge-order features over pairwise spread-only features. Secondary metrics: executable convergence capture, hedge slippage during the lag window, and false alarms where pairwise gaps never become tradeable repair events.",
+            "",
+            "## Fail-Fast",
+            "",
+            "- If graph-aware features add no signal beyond pairwise spread size, this is not a state-graph seam.",
+            "- If synchronization errors across feeds create fake graph lags, the monitor is just measuring data latency.",
+            "- If the lagging edge is statistically stable but not executable because liquidity vanishes before repair, the lead is descriptive rather than practical.",
+            "",
+            "## Stop / Go",
+            "",
+            "Go if graph-aware lag structure materially improves repair-time prediction and points to better executable capture or lower hedging slippage than pairwise spread monitoring. Stop if the graph collapses to independent pairwise gaps once feed alignment and liquidity controls are applied.",
+            "",
+            "## Gap To Close",
+            "",
+            "The remaining gap is a robust event definition for graph inconsistency and repair. Without a stable graph-state ontology, the monitor will drift back into ad hoc spread watching.",
+            "",
+        ]
+    ) + "\n"
+
+
 def log_run_event(connection: sqlite3.Connection, run_id: str, stage: str, event_type: str, payload: dict) -> None:
     connection.execute(
         """
@@ -310,6 +386,8 @@ def main():
         ensure_settlement_state(diamond_board_text, findings_text, research_output_text)
     elif args.memo_id == "rule-sensitive-toxic-flow-filters":
         ensure_toxic_flow_state(diamond_board_text, findings_text, research_output_text)
+    elif args.memo_id == "state-graph-repair-timing-monitor":
+        ensure_state_graph_state(diamond_board_text, findings_text, research_output_text)
 
     connection = sqlite3.connect(str(Path(args.db_path).resolve()))
     connection.row_factory = sqlite3.Row
@@ -333,6 +411,9 @@ def main():
                 "2006.08682",
                 "2009.02808",
                 "2003.04425",
+                "2104.09309",
+                "1111.7103",
+                "2010.15105",
             ],
         )
         reports_root.mkdir(parents=True, exist_ok=True)
@@ -348,6 +429,10 @@ def main():
             "rule-sensitive-toxic-flow-filters": (
                 reports_root / "lane-memo-rule-sensitive-toxic-flow-filters.md",
                 build_toxic_flow_memo(titles),
+            ),
+            "state-graph-repair-timing-monitor": (
+                reports_root / "lane-memo-state-graph-repair-timing-monitor.md",
+                build_state_graph_memo(titles),
             ),
         }
         output_path, content = outputs[args.memo_id]
