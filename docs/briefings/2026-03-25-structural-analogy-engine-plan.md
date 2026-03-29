@@ -306,7 +306,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `DS1` | translation-gap search | `done` | top 100 translation-gap candidates; live run hit 21 outside obvious q-fin / trading discourse with five candidate families |
 | `DS2` | bridge-zone mining | `done` | five forced bridge zones materialized with live top-10 paper sets; all five are beyond queue/refill |
 | `DS3` | early-market failure mode ledger | `done` | top 50 early-market entries; live run has 48 non-transition rows across 7 lane families |
-| `DS4` | stranded q-fin rescue with forced translation | `pending` | 15+ stranded ledger entries; success: 5+ read as modern executable research tasks |
+| `DS4` | stranded q-fin rescue with forced translation | `done` | 15 rescued entries live; 8 read as executable modern research tasks |
 | `DS5` | holdout-echo validation | `pending` | holdout echo report; success: 10+ pre-2024 candidates with meaningful 2024+ echoes |
 | `S29` | six-lane discovery expansion | `pending` | 6 lanes with anchors, probes, and lane-specific scoring |
 | `S30` | diamond score and representation redesign | `pending` | unified `diamond_score`, problem/mechanism/regime/stranding views, challenge capsules |
@@ -1428,6 +1428,50 @@ Current status:
   - `1007.2352`, `1206.5324`, `1104.0587` for lifecycle / professionalization
 - the ledger now exposes `failure_mode`, `wrong_actor`, `why_persists`, `what_closes_it`, `likely_market_stage`, and `first_test` directly in the root report pair, so early-market evidence is no longer trapped across bridge, composition, transition, and stranded surfaces
 
+### `DS4` Stranded q-fin Rescue With Forced Translation
+
+Build:
+
+- a concrete rescue study over the top stranded q-fin candidates
+- forced translation fields on every rescued row:
+  - `result_plain`
+  - `instrument_assumed`
+  - `why_stranded_then`
+  - `modern_equivalent_now`
+  - `first_implementation_test`
+  - `gap_to_close`
+  - `why_not_just_theory`
+- root study outputs:
+  - `reports/ds4-stranded-ledger.jsonl`
+  - `reports/ds4-stranded-ledger.md`
+
+Accept when:
+
+- the stranded ledger contains at least `15` entries
+- at least `5` entries read like modern executable research tasks rather than theorem summaries
+- the root report pair exposes the forced translation directly instead of leaving it trapped in interpretation or resurfacing artifacts
+
+Current status:
+
+- `DS4` is complete for the current broadened run
+- live `ds4-stranded-qfin-rescue` produced `15` rescued rows with `8` entries that read like executable modern research tasks, so the study cleared its stop/go bar of at least `5`
+- current rescue-family diversity is:
+  - `portfolio_control`: `3`
+  - `execution_control`: `2`
+  - `derivatives_surface`: `2`
+  - `calibration_speedup`: `2`
+  - `general_qfin`: `2`
+  - `funding_curve`: `1`
+  - `regime_timing`: `1`
+  - `risk_transfer`: `1`
+  - `macro_policy`: `1`
+- the strongest live rescues are now explicit implementation tasks rather than stranded theorem names:
+  - `2204.08581` -> fast-surrogate execution policy search
+  - `2106.00581` -> impact-aware adaptive execution control
+  - `1903.06928` -> state-aware portfolio throttle / inventory overlay
+  - `1910.12130` -> liquidity-stress contagion monitor
+- the root stranded rescue pair now exposes `result_plain`, `instrument_assumed`, `why_stranded_then`, `modern_equivalent_now`, `first_implementation_test`, `gap_to_close`, and `why_not_just_theory` directly, so the rescue translation is no longer hidden inside the two-row publication ledger or intermediate interpretation artifacts
+
 ---
 
 ## Development Policy
@@ -1571,15 +1615,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `ds3-early-market-failure-ledger`
-- Why this commit exists: run the third concrete diamond study — score and expose early-market failure modes instead of letting broadened evidence remain scattered across bridge, composition, interpretation, and ledger surfaces
-- Stages touched: `DS3`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_ds3_early_market_ledger.py`, `tests/test_materialize_ds3_early_market_ledger.py`, `package.json`, `reports/ds3-early-market-ledger.jsonl`, `reports/ds3-early-market-ledger.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_ds3_early_market_ledger.py`, `npm run codecontext:py -- tests/test_materialize_ds3_early_market_ledger.py`, `python3 -m unittest -v tests.test_materialize_ds3_early_market_ledger`, `npm run study:ds3-early-market-ledger`, `npm run codecontext:diff -- scripts/materialize_ds3_early_market_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_ds3_early_market_ledger.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_ds3_early_market_ledger`, `npm run docs:lint`
-- Artifacts produced: `reports/ds3-early-market-ledger.jsonl`, `reports/ds3-early-market-ledger.md`
-- Acceptance result: `ready` — live ledger has `50` rows, `48` are non-transition-state, and the lane mix is led by state-graph, settlement, lifecycle, and market-design failure modes
-- Open risks after commit: `DS4-DS5 diamond studies and S29-S34 platform stages are still pending; the top of DS3 currently leans heavily toward state-graph and lifecycle rows, so DS4 should keep rescuing stranded q-fin work to balance the portfolio`
-- Next intended commit: `DS4 stranded q-fin rescue with forced translation`
+- Commit scope: `ds4-stranded-qfin-rescue`
+- Why this commit exists: run the fourth concrete diamond study — force top stranded q-fin rows into explicit modern implementation paths instead of leaving them as math-finance resurfacing candidates
+- Stages touched: `DS4`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_ds4_stranded_ledger.py`, `tests/test_materialize_ds4_stranded_ledger.py`, `package.json`, `reports/ds4-stranded-ledger.jsonl`, `reports/ds4-stranded-ledger.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_ds4_stranded_ledger.py`, `npm run codecontext:py -- tests/test_materialize_ds4_stranded_ledger.py`, `python3 -m unittest -v tests.test_materialize_ds4_stranded_ledger`, `npm run study:ds4-stranded-ledger`, `npm run codecontext:diff -- scripts/materialize_ds4_stranded_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_ds4_stranded_ledger.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_ds4_stranded_ledger`, `npm run docs:lint`
+- Artifacts produced: `reports/ds4-stranded-ledger.jsonl`, `reports/ds4-stranded-ledger.md`
+- Acceptance result: `ready` — live rescue ledger has `15` rows and `8` executable-looking implementation tasks, which is above the required `5`
+- Open risks after commit: `DS5 and S29-S34 platform stages are still pending; several DS4 rows remain monitors or diagnostics rather than direct strategies, so DS5 should validate which rescues echo in later market-adjacent work`
+- Next intended commit: `DS5 holdout-echo validation`
 - Signoff status: `ready`
 - Last updated: `2026-03-29`
