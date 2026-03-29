@@ -14,7 +14,7 @@ from review_extraction_quality import build_report, load_rows
 from validate_schema_examples import load_json
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_SCHEMA_PATH = ROOT / "schemas" / "extraction.schema.json"
 

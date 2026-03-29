@@ -8,7 +8,7 @@ from ingest_extraction_responses import normalize_line
 from validate_schema_examples import SchemaValidationError, load_json, validate
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_SCHEMA_PATH = ROOT / "schemas" / "extraction.schema.json"
 
 BLOCKING_FLAGS = {
@@ -23,6 +23,11 @@ BLOCKING_FLAGS = {
     "high_fit_without_specific_why_missed",
     "placeholder_mechanism_name",
     "candidate_missing_specific_blocker_context",
+}
+VALID_ABSTAIN_REASONS = {
+    "no_edge_hypothesis",
+    "paper_describes_general_market_property_only",
+    "paper_describes_theory_without_tradeable_monitorable_implication",
 }
 
 WARNING_FLAG_PREFIXES = {
@@ -173,6 +178,20 @@ def build_abstract_like(row):
     ).lower()
 
 
+def scalar_band(value, default="low"):
+    if value is None:
+        return default
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, str) and item.strip():
+                return item.strip().lower()
+        return default
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped.lower() if stripped else default
+    return str(value).strip().lower() or default
+
+
 def assess_extraction(extraction, abstract_like: str, schema):
     flags = []
 
@@ -183,17 +202,20 @@ def assess_extraction(extraction, abstract_like: str, schema):
 
     has_generic_terms = contains_any(abstract_like, GENERIC_MODEL_TERMS)
     has_tradecore_mechanism_terms = contains_any(abstract_like, TRADECORE_MECHANISM_TERMS)
+    tradecore_fit = scalar_band(extraction.get("tradecore_fit"))
+    prediction_portability = scalar_band(extraction.get("prediction_market_portability"))
+    novel_portability = scalar_band(extraction.get("novel_market_portability"))
 
     if has_generic_terms and not has_tradecore_mechanism_terms:
-        if extraction.get("tradecore_fit") in {"high", "medium"}:
+        if tradecore_fit in {"high", "medium"}:
             flags.append("generic_model_paper_fit_too_high")
-        if extraction.get("prediction_market_portability") in {"medium", "high"}:
+        if prediction_portability in {"medium", "high"}:
             flags.append("generic_model_paper_prediction_portability_too_high")
-        if extraction.get("novel_market_portability") == "high":
+        if novel_portability == "high":
             flags.append("generic_model_paper_novel_portability_too_high")
 
     if not has_tradecore_mechanism_terms:
-        if extraction.get("tradecore_fit") == "high":
+        if tradecore_fit == "high":
             flags.append("no_executor_mechanism_but_high_tradecore_fit")
 
     domain = extraction.get("original_market_domain")
@@ -206,13 +228,13 @@ def assess_extraction(extraction, abstract_like: str, schema):
     ):
         flags.append("prediction_market_domain_not_supported")
 
-    if extraction.get("why_missed") == ["other"] and extraction.get("tradecore_fit") == "high":
+    if extraction.get("why_missed") == ["other"] and tradecore_fit == "high":
         flags.append("high_fit_without_specific_why_missed")
 
     promising_candidate = (
-        extraction.get("tradecore_fit") in PROMISING_BANDS
-        or extraction.get("prediction_market_portability") in PROMISING_BANDS
-        or extraction.get("novel_market_portability") in PROMISING_BANDS
+        tradecore_fit in PROMISING_BANDS
+        or prediction_portability in PROMISING_BANDS
+        or novel_portability in PROMISING_BANDS
     )
     # @context requirement -- C02 requires promising candidates to carry explicit blocker context.
     # Otherwise later ranking work can only promote "interesting" outputs without a falsifiable
@@ -259,7 +281,11 @@ def assess_row(row, schema):
         }
 
     paper_flags = []
-    if not normalized_payload["mechanism_instances"] and has_market_signal(abstract_like):
+    if (
+        not normalized_payload["mechanism_instances"]
+        and has_market_signal(abstract_like)
+        and normalized_payload.get("staging_payload", {}).get("abstain_reason") not in VALID_ABSTAIN_REASONS
+    ):
         # @context decision -- C06 allows `0..N` mechanism instances per paper, but an empty batch is
         # only acceptable when the abstract truly lacks transferable mechanism cues. Otherwise the
         # mixed-family runtime can hide retrieval-relevant mechanisms by collapsing them to nothing.

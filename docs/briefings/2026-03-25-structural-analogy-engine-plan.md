@@ -659,6 +659,15 @@ Current status:
   - `assess_live_brief_queue.py`
   - `prepare_gate_c_review.py`
   - `review_gate_c.py`
+- ninth archived slice moved to `scripts/archive/noncanonical-extraction-workflow/`:
+  - `create_pilot_batch.py`
+  - `create_extraction_run.py`
+  - `ingest_extraction_responses.py`
+  - `review_extraction_quality.py`
+  - `run_local_mlx_extraction.py`
+  - `review_and_ingest_extractions.py`
+  - `prepare_section_evidence.py`
+  - `promote_paper_extractions.py`
 - this first slice is intentionally narrow: it archives tracked pilot utilities that are not part of the canonical staged command set and do not have active package-script entrypoints
 - the benchmark cleanup pass removed `retrieve:benchmark` from `package.json`, so that archived script no longer competes with the canonical staged commands
 - the research-pack cleanup pass removed `research:materialize-findings` from `package.json`, and the archived runner now points at the archived export helper instead of reaching back into the active root
@@ -667,9 +676,10 @@ Current status:
 - the edge-reset cleanup pass moved the old edge-reset runner, card generator, funnel report, and semantic helpers into the archive, and the archived runner now points at its archived card generator instead of the former root path
 - the ranking-stack cleanup pass moved the old fingerprint, retrieval, queryless, adjudication, and ranking scripts into the archive, and the archived edge-reset runner now points at the archived ranking stack instead of the former root paths
 - the downstream-review cleanup pass moved the old briefing, queue, and Gate C review scripts into the archive, and the archived downstream orchestrator now points at its archived review steps instead of the former root paths
+- the extraction-workflow cleanup pass moved the old pilot, extraction, review, and promotion scripts into the archive, patched the archived edge-reset runner to call those archived scripts, and fixed the moved scripts to resolve the real repo root from `scripts/archive/...`
 - historical docs still reference `materialize_mixed_family_pilot.py`, which is acceptable for `S16` because the archive preserves the file while removing it from the active script surface
 - historical docs still reference `research:materialize-findings`, which is acceptable for `S16` because the archive preserves the implementation while the active package surface is reduced
-- the stage remains in progress because additional noncanonical extraction-era helper scripts still sit in the active root even though most competing package entrypoints are now gone
+- the stage remains in progress because untracked extraction-era prep helpers and a few other noncanonical root scripts still remain outside the canonical staged command surface
 
 ---
 
@@ -795,15 +805,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by moving the old downstream briefing and Gate C review workflow into `scripts/archive/` now that its package entrypoints are gone and it no longer belongs in the active root
+- Commit scope: `s16-archive-extraction-workflow`
+- Why this commit exists: continue the cleanup pass by moving the old extraction workflow into `scripts/archive/` now that its package entrypoints are gone and it no longer belongs in the active root
 - Stages touched: `S16`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/archive/README.md`, `scripts/archive/noncanonical-downstream-review/generate_strategy_briefs.py`, `scripts/archive/noncanonical-downstream-review/materialize_live_downstream_run.py`, `scripts/archive/noncanonical-downstream-review/assess_live_brief_queue.py`, `scripts/archive/noncanonical-downstream-review/prepare_gate_c_review.py`, `scripts/archive/noncanonical-downstream-review/review_gate_c.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git status --short scripts/generate_strategy_briefs.py scripts/materialize_live_downstream_run.py scripts/assess_live_brief_queue.py scripts/prepare_gate_c_review.py scripts/review_gate_c.py`, `rg -n 'generate_strategy_briefs.py|materialize_live_downstream_run.py|assess_live_brief_queue.py|prepare_gate_c_review.py|review_gate_c.py' package.json docs scripts tests`, `npm run codecontext:scope -- scripts/archive/noncanonical-downstream-review/materialize_live_downstream_run.py`, `npm run codecontext:py -- scripts/archive/noncanonical-downstream-review/materialize_live_downstream_run.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-downstream-review/materialize_live_downstream_run.py`, `find scripts/archive/noncanonical-downstream-review -maxdepth 1 -type f | sort`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `scripts/archive/noncanonical-downstream-review/`
-- Acceptance result: `the old downstream briefing, queue, and Gate C review scripts are now preserved under scripts/archive, and the archived downstream orchestrator points at its archived review steps instead of the former root paths`
-- Open risks after commit: `additional noncanonical extraction-era helper scripts still remain in the active root for later archival decisions`
-- Next intended commit: `S16 active/archive cleanup foundation`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/archive/README.md`, `scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `scripts/archive/noncanonical-extraction-workflow/create_pilot_batch.py`, `scripts/archive/noncanonical-extraction-workflow/create_extraction_run.py`, `scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py`, `scripts/archive/noncanonical-extraction-workflow/review_extraction_quality.py`, `scripts/archive/noncanonical-extraction-workflow/run_local_mlx_extraction.py`, `scripts/archive/noncanonical-extraction-workflow/review_and_ingest_extractions.py`, `scripts/archive/noncanonical-extraction-workflow/prepare_section_evidence.py`, `scripts/archive/noncanonical-extraction-workflow/promote_paper_extractions.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `npm run codecontext:scope -- scripts/ingest_extraction_responses.py`, `npm run codecontext:py -- scripts/ingest_extraction_responses.py`, `npm run codecontext:scope -- scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py`, `npm run codecontext:py -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py`, `git status --short scripts/create_pilot_batch.py scripts/create_extraction_run.py scripts/ingest_extraction_responses.py scripts/review_extraction_quality.py scripts/run_local_mlx_extraction.py scripts/review_and_ingest_extractions.py scripts/prepare_section_evidence.py scripts/promote_paper_extractions.py scripts/archive/noncanonical-extraction-workflow scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py scripts/archive/README.md docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `rg -n 'create_pilot_batch.py|create_extraction_run.py|ingest_extraction_responses.py|review_extraction_quality.py|run_local_mlx_extraction.py|review_and_ingest_extractions.py|prepare_section_evidence.py|promote_paper_extractions.py' package.json docs scripts tests`, `find scripts/archive/noncanonical-extraction-workflow -maxdepth 1 -type f | sort`, `npm run codecontext:diff -- scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py`, `npm run docs:lint`
+- Tests run: `python3 -m py_compile scripts/archive/noncanonical-edge-reset/materialize_edge_reset_slice.py scripts/archive/noncanonical-extraction-workflow/create_pilot_batch.py scripts/archive/noncanonical-extraction-workflow/create_extraction_run.py scripts/archive/noncanonical-extraction-workflow/ingest_extraction_responses.py scripts/archive/noncanonical-extraction-workflow/review_extraction_quality.py scripts/archive/noncanonical-extraction-workflow/run_local_mlx_extraction.py scripts/archive/noncanonical-extraction-workflow/review_and_ingest_extractions.py scripts/archive/noncanonical-extraction-workflow/prepare_section_evidence.py scripts/archive/noncanonical-extraction-workflow/promote_paper_extractions.py`, `npm run docs:lint`
+- Artifacts produced: `scripts/archive/noncanonical-extraction-workflow/`
+- Acceptance result: `the old pilot, extraction, review, and promotion scripts are now preserved under scripts/archive, the archived edge-reset runner points at those archived scripts instead of former root paths, and the moved extraction scripts now resolve the real repo root from scripts/archive/...`
+- Open risks after commit: `untracked extraction-era prep helpers and other noncanonical root scripts still remain for later archival decisions`
+- Next intended commit: `S16 active/archive cleanup closeout decision`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

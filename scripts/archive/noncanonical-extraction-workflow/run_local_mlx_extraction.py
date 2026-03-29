@@ -4,7 +4,6 @@ import argparse
 import json
 from pathlib import Path
 
-
 DEFAULT_MODEL = "mlx-community/Qwen2.5-3B-Instruct-4bit"
 
 
@@ -106,6 +105,10 @@ def attach_parsed_payload(response, request, parsed_payload):
             "response_contract_version",
             request.get("response_contract_version", "mechanism-instance-batch-v1"),
         )
+        if "abstain_reason" in parsed_payload:
+            response["abstain_reason"] = parsed_payload["abstain_reason"]
+        if "abstain_explanation" in parsed_payload:
+            response["abstain_explanation"] = parsed_payload["abstain_explanation"]
         response["mechanism_instances"] = parsed_payload["mechanism_instances"]
         return
 

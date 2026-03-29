@@ -9,12 +9,18 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ARCHIVE_ROOT = Path(__file__).resolve().parent.parent
+# @context requirement -- Archived runners live under scripts/archive/... so the
+# old parent.parent root calculation now lands on the archive directory instead
+# of the repo root. Use parents[3] to keep historical workflows pointed at the
+# real data/, prompts/, and sql/ surfaces.
+ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_PROMPT_PATH = ROOT / "prompts" / "edge-extraction-v26.md"
 DEFAULT_SCHEMA_PATH = ROOT / "schemas" / "edge_extraction.schema.json"
 DEFAULT_RUNS_ROOT = ROOT / "data" / "structural-analogy" / "runs"
-RANKING_STACK_DIR = Path(__file__).resolve().parent.parent / "noncanonical-ranking-stack"
+RANKING_STACK_DIR = ARCHIVE_ROOT / "noncanonical-ranking-stack"
+EXTRACTION_DIR = ARCHIVE_ROOT / "noncanonical-extraction-workflow"
 
 
 def parse_args():
@@ -245,7 +251,7 @@ def main():
         "--with",
         "pypdf",
         "python3",
-        "scripts/prepare_section_evidence.py",
+        str(EXTRACTION_DIR / "prepare_section_evidence.py"),
         "--db-path",
         str(db_path),
     ]
@@ -259,7 +265,7 @@ def main():
     summary["prepare_run"] = run_cmd(
         [
             "python3",
-            "scripts/create_extraction_run.py",
+            str(EXTRACTION_DIR / "create_extraction_run.py"),
             "--db-path",
             str(db_path),
             "--batch-path",
@@ -286,7 +292,7 @@ def main():
             "--with",
             "mlx-lm",
             "python3",
-            "scripts/run_local_mlx_extraction.py",
+            str(EXTRACTION_DIR / "run_local_mlx_extraction.py"),
             "--requests-path",
             str(DEFAULT_RUNS_ROOT / run_ids["extraction"] / "requests.jsonl"),
             "--responses-path",
@@ -303,7 +309,7 @@ def main():
     summary["gate_and_ingest"] = run_cmd(
         [
             "python3",
-            "scripts/review_and_ingest_extractions.py",
+            str(EXTRACTION_DIR / "review_and_ingest_extractions.py"),
             "--db-path",
             str(db_path),
             "--run-id",

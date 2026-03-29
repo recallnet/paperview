@@ -32,6 +32,12 @@ Current archive groups:
   so the archived downstream orchestrator still points at its archived review
   steps.
 
+- `noncanonical-extraction-workflow/`
+  Pilot batching, extraction-run creation, local model execution, schema
+  review, and section-evidence helpers from the older extraction-first
+  workflow. These are preserved as a group so archived runners can still follow
+  the full historical extraction chain without competing from the active root.
+
 - `noncanonical-benchmarks/`
   Benchmark utilities that were useful for one-off retrieval evaluation but
   are not part of the canonical staged command surface.

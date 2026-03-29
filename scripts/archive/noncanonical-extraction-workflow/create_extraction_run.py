@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_BATCH_PATH = (
     ROOT / "data" / "structural-analogy" / "pilots" / "abstract-pilot-v1" / "papers.jsonl"
@@ -62,6 +62,16 @@ def parse_args():
         help="Prompt version identifier recorded in SQLite.",
     )
     parser.add_argument(
+        "--response-contract-version",
+        default="mechanism-instance-batch-v1",
+        help="Response contract version recorded in prepared requests.",
+    )
+    parser.add_argument(
+        "--request-kind",
+        default="abstract_extraction",
+        help="Logical request kind emitted in prepared requests.",
+    )
+    parser.add_argument(
         "--max-requests",
         type=int,
         default=None,
@@ -90,7 +100,7 @@ def load_batch(batch_path: Path, max_requests=None):
 
 
 def build_request_payload(row):
-    return {
+    payload = {
         "paper_id": row["paper_id"],
         "literature_family": row.get("literature_family", "unknown"),
         "evaluation_split": row.get("evaluation_split", "unknown"),
@@ -101,6 +111,14 @@ def build_request_payload(row):
         "ingest_status": row["ingest_status"],
         "abstract": row["abstract"],
     }
+    # @context decision -- The edge-card reset can only become more than another abstract pass if
+    # prepared batches preserve any section-backed evidence assembled upstream. Silently dropping
+    # those fields here would make the new prompt/schema look live while the model still only sees
+    # abstracts.
+    for key in ("section_evidence", "section_snippets", "edge_focus", "selection_reason"):
+        if key in row:
+            payload[key] = row[key]
+    return payload
 
 
 def build_prompt(prompt_template: str, row):
@@ -190,8 +208,8 @@ def main():
                 "run_kind": args.run_kind,
                 "prompt_version": args.prompt_version,
                 "model_name": args.model_name,
-                "request_kind": "abstract_extraction",
-                "response_contract_version": "mechanism-instance-batch-v1",
+                "request_kind": args.request_kind,
+                "response_contract_version": args.response_contract_version,
                 "request_payload": build_request_payload(row),
                 "prompt": build_prompt(prompt_template, row),
             }
@@ -204,7 +222,7 @@ def main():
         "prompt_path": str(prompt_path),
         "runs_root": str(runs_root),
         "response_contract": {
-            "version": "mechanism-instance-batch-v1",
+            "version": args.response_contract_version,
             "line_unit": "paper",
             "mechanism_cardinality": "0..N",
             "accepted_line_formats": [

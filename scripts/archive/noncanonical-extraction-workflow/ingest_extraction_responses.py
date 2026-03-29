@@ -3,16 +3,60 @@
 import argparse
 import json
 import sqlite3
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+EDGE_RESET_DIR = Path(__file__).resolve().parent.parent / "noncanonical-edge-reset"
+if str(EDGE_RESET_DIR) not in sys.path:
+    # @context requirement -- edge_semantic_validity moved with the archived
+    # edge-reset workflow, so archived extraction ingestion has to import that
+    # helper from the archive instead of the old root-level path.
+    sys.path.insert(0, str(EDGE_RESET_DIR))
+
+from edge_semantic_validity import semantic_validity
 from validate_schema_examples import SchemaValidationError, load_json, validate
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_SCHEMA_PATH = ROOT / "schemas" / "extraction.schema.json"
+DEFAULT_EDGE_SCHEMA_PATH = ROOT / "schemas" / "edge_extraction.schema.json"
 DEFAULT_SCHEMA_SQL_PATH = ROOT / "sql" / "paperview_schema.sql"
+REQUIRED_EDGE_FIELDS = (
+    "invariant_statement",
+    "market_object",
+    "wrong_actor",
+    "why_persistence",
+    "cheap_validation_step",
+)
+EDGE_SCHEMA_FIELDS = {
+    "invariant_type",
+    "invariant_statement",
+    "market_object",
+    "trigger_window",
+    "market_lifecycle_phase",
+    "wrong_actor",
+    "why_wrong",
+    "why_persistence",
+    "closure_mechanism",
+    "death_condition",
+    "executor_gap",
+    "cheap_validation_step",
+    "fast_falsifier",
+    "novelty_reason",
+    "composition_opportunity",
+    "edge_confidence",
+}
+MEANINGFUL_EXTRACTION_FIELDS = REQUIRED_EDGE_FIELDS + (
+    "mechanism_name",
+    "mechanism_summary",
+)
+ABSTAIN_REASONS = {
+    "no_edge_hypothesis",
+    "paper_describes_general_market_property_only",
+    "paper_describes_theory_without_tradeable_monitorable_implication",
+}
 
 
 def parse_args():
@@ -39,11 +83,24 @@ def parse_args():
         default=str(DEFAULT_SCHEMA_PATH),
         help="Path to the extraction JSON schema.",
     )
+    parser.add_argument(
+        "--edge-schema-path",
+        default=str(DEFAULT_EDGE_SCHEMA_PATH),
+        help="Path to the edge extraction JSON schema.",
+    )
     return parser.parse_args()
 
 
 def now_utc():
     return datetime.now(timezone.utc).isoformat()
+
+
+def has_explicit_value(value):
+    if value is None:
+        return False
+    if isinstance(value, list):
+        return any(has_explicit_value(item) for item in value)
+    return bool(str(value).strip())
 
 
 def ensure_column(connection, table_name: str, column_name: str, ddl_fragment: str):
@@ -82,19 +139,51 @@ def ensure_c05_store_contract(connection, schema_sql_path: Path = DEFAULT_SCHEMA
     columns = {
         row[1] for row in connection.execute("PRAGMA table_info(mechanism_instances)")
     }
-    if "evidence_confidence" not in columns:
-        connection.execute(
-            """
-            ALTER TABLE mechanism_instances
-            ADD COLUMN evidence_confidence TEXT NOT NULL DEFAULT 'unscored'
-            """
-        )
+    required_columns = {
+        "invariant_type": "TEXT NOT NULL DEFAULT 'other'",
+        "invariant_statement": "TEXT",
+        "market_object": "TEXT",
+        "trigger_window": "TEXT",
+        "market_lifecycle_phase": "TEXT NOT NULL DEFAULT 'unknown'",
+        "wrong_actor": "TEXT",
+        "why_wrong": "TEXT",
+        "why_persistence": "TEXT",
+        "closure_mechanism": "TEXT",
+        "death_condition": "TEXT",
+        "executor_gap": "TEXT",
+        "cheap_validation_step": "TEXT",
+        "fast_falsifier": "TEXT",
+        "novelty_reason": "TEXT",
+        "composition_opportunity": "TEXT",
+        "edge_confidence": "TEXT NOT NULL DEFAULT 'speculative'",
+        "evidence_confidence": "TEXT NOT NULL DEFAULT 'unscored'",
+    }
+    for column_name, ddl_fragment in required_columns.items():
+        if column_name not in columns:
+            connection.execute(
+                f"ALTER TABLE mechanism_instances ADD COLUMN {column_name} {ddl_fragment}"
+            )
 
 
 def infer_legacy_insight_type(extraction):
-    tradecore_fit = extraction.get("tradecore_fit", "low")
-    prediction_portability = extraction.get("prediction_market_portability", "low")
-    novel_portability = extraction.get("novel_market_portability", "low")
+    def scalarize(value, default="low"):
+        if value is None:
+            return default
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, str) and item.strip():
+                    return item.strip().lower()
+            return default
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped.lower() if stripped else default
+        return str(value).strip().lower() or default
+
+    tradecore_fit = scalarize(extraction.get("tradecore_fit", "low"))
+    prediction_portability = scalarize(
+        extraction.get("prediction_market_portability", "low")
+    )
+    novel_portability = scalarize(extraction.get("novel_market_portability", "low"))
     if tradecore_fit == "high" and (
         prediction_portability in {"medium", "high"} or novel_portability in {"medium", "high"}
     ):
@@ -104,10 +193,70 @@ def infer_legacy_insight_type(extraction):
     return "research_dead_end_worth_excluding"
 
 
+def extraction_completeness(extraction):
+    meaningful_values = [
+        field_name
+        for field_name in MEANINGFUL_EXTRACTION_FIELDS
+        if has_explicit_value(extraction.get(field_name))
+    ]
+    present_fields = [
+        field_name
+        for field_name in REQUIRED_EDGE_FIELDS
+        if has_explicit_value(extraction.get(field_name))
+    ]
+    if not meaningful_values:
+        return {
+            "status": "extraction_empty",
+            "present_fields": present_fields,
+            "present_count": 0,
+        }
+    if len(present_fields) < 3:
+        return {
+            "status": "extraction_insufficient",
+            "present_fields": present_fields,
+            "present_count": len(present_fields),
+        }
+    return {
+        "status": "complete",
+        "present_fields": present_fields,
+        "present_count": len(present_fields),
+    }
+
+
+def extraction_semantic_completeness(extraction):
+    explicit_required = [
+        field_name
+        for field_name in REQUIRED_EDGE_FIELDS
+        if has_explicit_value(extraction.get(field_name))
+    ]
+    if len(explicit_required) < len(REQUIRED_EDGE_FIELDS):
+        return {
+            "status": "extraction_semantic_insufficient",
+            "present_fields": explicit_required,
+            "failure_reasons": ["missing_required_edge_fields"],
+        }
+    semantic = semantic_validity(extraction)
+    if not semantic["semantic_valid"]:
+        return {
+            "status": "extraction_semantic_insufficient",
+            "present_fields": explicit_required,
+            "failure_reasons": semantic["semantic_failure_reasons"],
+        }
+    return {
+        "status": "complete",
+        "present_fields": explicit_required,
+        "failure_reasons": [],
+    }
+
+
 def upgrade_legacy_extraction_contract(extraction):
     upgraded = dict(extraction)
     defaults = {
         "insight_type": infer_legacy_insight_type(extraction),
+        "invariant_type": "other",
+        "trigger_window": "",
+        "market_lifecycle_phase": "unknown",
+        "edge_confidence": "speculative",
         "required_assumptions": ["other"],
         "assumption_violations": ["other"],
         "fragility_flags": ["other"],
@@ -145,19 +294,26 @@ def normalize_line(payload):
             extraction = dict(extraction)
             extraction["paper_id"] = payload["paper_id"]
         extraction = upgrade_legacy_extraction_contract(extraction)
+        completeness = extraction_completeness(extraction)
+        if completeness["status"] == "complete":
+            completeness = extraction_semantic_completeness(extraction)
         return {
             "paper_id": extraction["paper_id"],
             "contract_version": "legacy-single-mechanism-v1",
-            "mechanism_instances": [extraction],
+            "mechanism_instances": [extraction] if completeness["status"] == "complete" else [],
+            "validation_status": completeness["status"],
             "staging_payload": extraction,
         }
 
     if "mechanism_instances" in payload:
         paper_id = payload.get("paper_id")
+        abstain_reason = payload.get("abstain_reason")
+        abstain_explanation = payload.get("abstain_explanation")
         if not isinstance(payload["mechanism_instances"], list):
             raise SchemaValidationError("$.mechanism_instances: expected array")
 
         normalized_instances = []
+        statuses = []
         for index, extraction in enumerate(payload["mechanism_instances"]):
             if not isinstance(extraction, dict):
                 raise SchemaValidationError(
@@ -170,7 +326,14 @@ def normalize_line(payload):
                         f"$.mechanism_instances[{index}]: missing paper_id"
                     )
                 normalized["paper_id"] = paper_id
-            normalized_instances.append(normalized)
+            completeness = extraction_completeness(normalized)
+            if completeness["status"] == "complete":
+                semantic_completeness = extraction_semantic_completeness(normalized)
+                statuses.append(semantic_completeness["status"])
+                if semantic_completeness["status"] == "complete":
+                    normalized_instances.append(normalized)
+            else:
+                statuses.append(completeness["status"])
 
         if paper_id is None:
             if normalized_instances:
@@ -185,12 +348,25 @@ def normalize_line(payload):
                 "mechanism-instance-batch-v1",
             ),
             "mechanism_instances": normalized_instances,
+            "validation_status": (
+                "valid"
+                if normalized_instances
+                else abstain_reason
+                if abstain_reason in ABSTAIN_REASONS
+                else "extraction_empty"
+                if statuses and all(status == "extraction_empty" for status in statuses)
+                else "extraction_semantic_insufficient"
+                if statuses and all(status == "extraction_semantic_insufficient" for status in statuses)
+                else "extraction_insufficient"
+            ),
             "staging_payload": {
                 "paper_id": paper_id,
                 "response_contract_version": payload.get(
                     "response_contract_version",
                     "mechanism-instance-batch-v1",
                 ),
+                "abstain_reason": abstain_reason,
+                "abstain_explanation": abstain_explanation,
                 "mechanism_instances": normalized_instances,
             },
         }
@@ -199,12 +375,22 @@ def normalize_line(payload):
         raise SchemaValidationError("$.paper_id: missing required key 'paper_id'")
 
     payload = upgrade_legacy_extraction_contract(payload)
+    completeness = extraction_completeness(payload)
+    if completeness["status"] == "complete":
+        completeness = extraction_semantic_completeness(payload)
     return {
         "paper_id": payload["paper_id"],
         "contract_version": "legacy-single-mechanism-v1",
-        "mechanism_instances": [payload],
+        "mechanism_instances": [payload] if completeness["status"] == "complete" else [],
+        "validation_status": completeness["status"],
         "staging_payload": payload,
     }
+
+
+def choose_schema(extraction, base_schema, edge_schema):
+    if any(key in extraction for key in EDGE_SCHEMA_FIELDS):
+        return edge_schema
+    return base_schema
 
 
 def fetch_paper_abstract(connection, paper_id: str):
@@ -253,7 +439,7 @@ def persist_staging_extraction(connection, paper_id: str, run, normalized_payloa
             run["prompt_version"],
             json.dumps(normalized_payload["staging_payload"], sort_keys=True),
             normalized_payload["contract_version"],
-            "valid",
+            normalized_payload.get("validation_status", "valid"),
         ),
     )
 
@@ -269,6 +455,26 @@ def persist_staging_extraction(connection, paper_id: str, run, normalized_payloa
 
 
 def build_mechanism_json(extraction):
+    field_provenance = {
+        field_name: (
+            "explicit_from_model" if has_explicit_value(extraction.get(field_name)) else "missing"
+        )
+        for field_name in (
+            "invariant_statement",
+            "market_object",
+            "trigger_window",
+            "wrong_actor",
+            "why_wrong",
+            "why_persistence",
+            "closure_mechanism",
+            "death_condition",
+            "executor_gap",
+            "cheap_validation_step",
+            "fast_falsifier",
+            "novelty_reason",
+            "composition_opportunity",
+        )
+    }
     return {
         "original_market_domain": extraction["original_market_domain"],
         "instrument_type": extraction["instrument_type"],
@@ -283,6 +489,23 @@ def build_mechanism_json(extraction):
         "likely_crowding": extraction["likely_crowding"],
         "why_missed": extraction["why_missed"],
         "negative_transfer_rationale": extraction["negative_transfer_rationale"],
+        "invariant_type": extraction["invariant_type"],
+        "invariant_statement": extraction["invariant_statement"],
+        "market_object": extraction["market_object"],
+        "trigger_window": extraction["trigger_window"],
+        "market_lifecycle_phase": extraction["market_lifecycle_phase"],
+        "wrong_actor": extraction["wrong_actor"],
+        "why_wrong": extraction["why_wrong"],
+        "why_persistence": extraction["why_persistence"],
+        "closure_mechanism": extraction["closure_mechanism"],
+        "death_condition": extraction["death_condition"],
+        "executor_gap": extraction["executor_gap"],
+        "cheap_validation_step": extraction["cheap_validation_step"],
+        "fast_falsifier": extraction["fast_falsifier"],
+        "novelty_reason": extraction["novelty_reason"],
+        "composition_opportunity": extraction["composition_opportunity"],
+        "edge_confidence": extraction["edge_confidence"],
+        "field_provenance": field_provenance,
     }
 
 
@@ -306,6 +529,22 @@ def upsert_mechanism_instance(connection, extraction_id: int, run, extraction):
         mechanism_label,
         extraction["mechanism_summary"],
         extraction["insight_type"],
+        extraction["invariant_type"],
+        extraction["invariant_statement"],
+        extraction["market_object"],
+        extraction["trigger_window"],
+        extraction["market_lifecycle_phase"],
+        extraction["wrong_actor"],
+        extraction["why_wrong"],
+        extraction["why_persistence"],
+        extraction["closure_mechanism"],
+        extraction["death_condition"],
+        extraction["executor_gap"],
+        extraction["cheap_validation_step"],
+        extraction["fast_falsifier"],
+        extraction["novelty_reason"],
+        extraction["composition_opportunity"],
+        extraction["edge_confidence"],
         extraction["evidence_strength"],
         json.dumps(extraction["required_assumptions"], sort_keys=True),
         json.dumps(extraction["assumption_violations"], sort_keys=True),
@@ -327,6 +566,22 @@ def upsert_mechanism_instance(connection, extraction_id: int, run, extraction):
               mechanism_label,
               mechanism_summary,
               insight_type,
+              invariant_type,
+              invariant_statement,
+              market_object,
+              trigger_window,
+              market_lifecycle_phase,
+              wrong_actor,
+              why_wrong,
+              why_persistence,
+              closure_mechanism,
+              death_condition,
+              executor_gap,
+              cheap_validation_step,
+              fast_falsifier,
+              novelty_reason,
+              composition_opportunity,
+              edge_confidence,
               evidence_confidence,
               required_assumptions_json,
               assumption_violations_json,
@@ -337,7 +592,7 @@ def upsert_mechanism_instance(connection, extraction_id: int, run, extraction):
               lifecycle_status,
               updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             shared_params,
         )
@@ -353,6 +608,22 @@ def upsert_mechanism_instance(connection, extraction_id: int, run, extraction):
             SET run_id = ?,
                 mechanism_summary = ?,
                 insight_type = ?,
+                invariant_type = ?,
+                invariant_statement = ?,
+                market_object = ?,
+                trigger_window = ?,
+                market_lifecycle_phase = ?,
+                wrong_actor = ?,
+                why_wrong = ?,
+                why_persistence = ?,
+                closure_mechanism = ?,
+                death_condition = ?,
+                executor_gap = ?,
+                cheap_validation_step = ?,
+                fast_falsifier = ?,
+                novelty_reason = ?,
+                composition_opportunity = ?,
+                edge_confidence = ?,
                 evidence_confidence = ?,
                 required_assumptions_json = ?,
                 assumption_violations_json = ?,
@@ -368,6 +639,22 @@ def upsert_mechanism_instance(connection, extraction_id: int, run, extraction):
                 run["run_id"],
                 extraction["mechanism_summary"],
                 extraction["insight_type"],
+                extraction["invariant_type"],
+                extraction["invariant_statement"],
+                extraction["market_object"],
+                extraction["trigger_window"],
+                extraction["market_lifecycle_phase"],
+                extraction["wrong_actor"],
+                extraction["why_wrong"],
+                extraction["why_persistence"],
+                extraction["closure_mechanism"],
+                extraction["death_condition"],
+                extraction["executor_gap"],
+                extraction["cheap_validation_step"],
+                extraction["fast_falsifier"],
+                extraction["novelty_reason"],
+                extraction["composition_opportunity"],
+                extraction["edge_confidence"],
                 extraction["evidence_strength"],
                 json.dumps(extraction["required_assumptions"], sort_keys=True),
                 json.dumps(extraction["assumption_violations"], sort_keys=True),
@@ -490,8 +777,33 @@ def reconcile_benchmark_pairs(connection, paper_id: str):
     )
 
 
+def supersede_active_mechanisms_for_paper(connection, paper_id: str):
+    connection.execute(
+        """
+        UPDATE mechanism_instances
+        SET lifecycle_status = 'superseded',
+            updated_at = ?
+        WHERE paper_id = ?
+          AND lifecycle_status = 'active'
+        """,
+        (now_utc(), paper_id),
+    )
+
+
 def promote_to_mechanism_store(connection, extraction_id: int, run, normalized_payload):
     paper_id = normalized_payload["paper_id"]
+    if not normalized_payload["mechanism_instances"]:
+        # @context risk -- Fail-closed reruns must remove stale active
+        # mechanisms for papers whose latest extraction is empty or
+        # insufficient. Otherwise old junk survives downstream even though the
+        # new contract explicitly rejected it.
+        supersede_active_mechanisms_for_paper(connection, paper_id)
+        reconcile_benchmark_pairs(connection, paper_id)
+        return {
+            "mechanism_inserted": 0,
+            "mechanism_updated": 0,
+            "evidence_spans_written": 0,
+        }
     paper_abstract = fetch_paper_abstract(connection, paper_id)
     seen_labels = set()
     mechanism_inserted = 0
@@ -533,10 +845,13 @@ def ingest(connection, schema, run, responses_path: Path):
     inserted = 0
     updated = 0
     invalid = 0
+    extraction_empty = 0
+    extraction_insufficient = 0
     mechanism_inserted = 0
     mechanism_updated = 0
     evidence_spans_written = 0
     errors = []
+    edge_schema = load_json(DEFAULT_EDGE_SCHEMA_PATH)
 
     connection.execute("BEGIN")
     try:
@@ -548,10 +863,13 @@ def ingest(connection, schema, run, responses_path: Path):
                     normalized_payload = normalize_line(raw_payload)
                 except SchemaValidationError as exc:
                     invalid += 1
+                    paper_id = raw_payload.get("paper_id")
+                    if paper_id:
+                        supersede_active_mechanisms_for_paper(connection, paper_id)
                     errors.append(
                         {
                             "line_number": line_number,
-                            "paper_id": raw_payload.get("paper_id"),
+                            "paper_id": paper_id,
                             "error": str(exc),
                         }
                     )
@@ -559,10 +877,15 @@ def ingest(connection, schema, run, responses_path: Path):
 
                 is_valid = True
                 for extraction in normalized_payload["mechanism_instances"]:
+                    chosen_schema = choose_schema(extraction, schema, edge_schema)
                     try:
-                        validate(schema, extraction)
+                        validate(chosen_schema, extraction)
                     except SchemaValidationError as exc:
                         invalid += 1
+                        if extraction.get("paper_id"):
+                            supersede_active_mechanisms_for_paper(
+                                connection, extraction.get("paper_id")
+                            )
                         errors.append(
                             {
                                 "line_number": line_number,
@@ -574,6 +897,11 @@ def ingest(connection, schema, run, responses_path: Path):
                         break
                 if not is_valid:
                     continue
+
+                if normalized_payload.get("validation_status") == "extraction_empty":
+                    extraction_empty += 1
+                elif normalized_payload.get("validation_status") == "extraction_insufficient":
+                    extraction_insufficient += 1
 
                 paper_id = normalized_payload["paper_id"]
                 extraction_id, existed = persist_staging_extraction(
@@ -615,6 +943,8 @@ def ingest(connection, schema, run, responses_path: Path):
         "inserted": inserted,
         "updated": updated,
         "invalid": invalid,
+        "extraction_empty": extraction_empty,
+        "extraction_insufficient": extraction_insufficient,
         "mechanism_inserted": mechanism_inserted,
         "mechanism_updated": mechanism_updated,
         "evidence_spans_written": evidence_spans_written,
