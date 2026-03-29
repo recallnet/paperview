@@ -309,6 +309,11 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S32` | shortlist-gated diamond interpretation | `pending` | top-40 + per-lane interpretation with `TRANSITION_SEAM` class, strict JSON |
 | `S33` | six publication surfaces + diamond board | `pending` | unrealized index, stranded ledger, transition ledger, early-market ledger, findings, diamond board |
 | `S34` | empirical test memos v2 | `pending` | queue x refill, auction handoff, maker-retreat memos with hypothesis/data/baseline/metric/fail-fast |
+| `DS1` | translation-gap search | `pending` | top 100 translation-gap candidates; success: 20+ outside q-fin/trading discourse |
+| `DS2` | bridge-zone mining | `pending` | top bridge zones with thesis and translation questions; success: 5+ zones beyond queue/refill |
+| `DS3` | early-market failure mode ledger | `pending` | top 50 early-market entries; success: 15+ not transition-state microstructure |
+| `DS4` | stranded q-fin rescue with forced translation | `pending` | 15+ stranded ledger entries; success: 5+ read as modern executable research tasks |
+| `DS5` | holdout-echo validation | `pending` | holdout echo report; success: 10+ pre-2024 candidates with meaningful 2024+ echoes |
 
 ## Completed Stages
 
@@ -1458,15 +1463,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s28-closeout-and-truth-signoff`
-- Why this commit exists: close the truth-stabilization chapter after verifying the root run summary and root findings surface still reconcile to the same broadened counts
-- Stages touched: `S28`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `python3 - <<'PY' ... read run_summary.json counts and all_accepted_items_exposed ... PY`, `python3 - <<'PY' ... verify findings_and_throwaways.md headline counts ... PY`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `none; closeout verification only`
-- Acceptance result: `passed; S28 truth surfaces remain reconciled and no accepted evidence is hidden outside the root summary and root findings outputs`
-- Open risks after commit: `S29 six-lane discovery expansion is still pending, and diamond_board.md does not exist yet because that requirement lands in S33 publication surfaces`
-- Next intended commit: `S29 lane expansion foundation`
-- Signoff status: `ready`
+- Commit scope: `ds1-translation-gap-search`
+- Why this commit exists: run the first concrete diamond study — find papers mechanistically close to challenge capsules but far from pre-2024 realized market discourse
+- Stages touched: `DS1`
+- Code paths touched:
+- Commands run:
+- Tests run:
+- Artifacts produced:
+- Acceptance result: `pending`
+- Open risks after commit: `DS1-DS5 diamond studies and S29-S34 platform stages are all pending`
+- Next intended commit: `DS1 translation-gap search`
+- Signoff status: `draft`
 - Last updated: `2026-03-29`
