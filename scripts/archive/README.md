@@ -26,6 +26,12 @@ Current archive groups:
   scripts from the older downstream ranking workflow. These are preserved as a
   group so the archived edge-reset flow can still call the archived stack.
 
+- `noncanonical-downstream-review/`
+  Downstream brief generation, queue assessment, and Gate C review scripts from
+  the older analyst-facing publication workflow. These are preserved as a group
+  so the archived downstream orchestrator still points at its archived review
+  steps.
+
 - `noncanonical-benchmarks/`
   Benchmark utilities that were useful for one-off retrieval evaluation but
   are not part of the canonical staged command surface.
