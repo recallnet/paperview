@@ -302,6 +302,13 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S25` | consolidated research output report | `done` | `research_output.md` — single human-readable document with all findings |
 | `S26` | executable test memos | `done` | `reports/test-memo-*.md` — three concrete research programs grounded in the current findings |
 | `S27` | early-market failure-mode broadening pass | `done` | broader anchor, probe, operator, interpretation, and publication surfaces for thin, early, and weakly arbitraged markets |
+| `S28` | stabilize truth — canonical run summary | `pending` | `run_summary.json`, `run_summary.md`, reconciled counts across all surfaces |
+| `S29` | six-lane discovery expansion | `pending` | 6 lanes with anchors, probes, and lane-specific scoring |
+| `S30` | diamond score and representation redesign | `pending` | unified `diamond_score`, problem/mechanism/regime/stranding views, challenge capsules |
+| `S31` | eight-operator materialization | `pending` | bridge, composition, contrast, negative-space, transition-state, state-graph, participant-pathology, stranded-qfin operators |
+| `S32` | shortlist-gated diamond interpretation | `pending` | top-40 + per-lane interpretation with `TRANSITION_SEAM` class, strict JSON |
+| `S33` | six publication surfaces + diamond board | `pending` | unrealized index, stranded ledger, transition ledger, early-market ledger, findings, diamond board |
+| `S34` | empirical test memos v2 | `pending` | queue x refill, auction handoff, maker-retreat memos with hypothesis/data/baseline/metric/fail-fast |
 
 ## Completed Stages
 
@@ -1367,15 +1374,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s27-broadened-publication-rematerialization`
-- Why this commit exists: rematerialize all publication surfaces and the root research memo from the broadened enhanced interpretation run so the public outputs reflect the full early-market broadening pass instead of the older transition-state-centered narrative
-- Stages touched: `S27`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_unrealized_ideas_index.py`, `scripts/materialize_research_output.py`, `tests/test_materialize_unrealized_ideas_index.py`, `tests/test_materialize_research_output.py`, `data/structural-analogy/runs/unrealized-ideas-index-broadened-20260328/*`, `data/structural-analogy/runs/stranded-result-ledger-broadened-20260328/*`, `data/structural-analogy/runs/transition-state-ledger-broadened-20260328/*`, `data/structural-analogy/runs/findings-and-throwaways-broadened-20260328/*`, `research_output.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_unrealized_ideas_index.py`, `npm run codecontext:scope -- scripts/materialize_stranded_result_ledger.py`, `npm run codecontext:scope -- scripts/materialize_transition_state_ledger.py`, `npm run codecontext:scope -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:scope -- scripts/materialize_research_output.py`, `npm run codecontext:py -- scripts/materialize_unrealized_ideas_index.py`, `npm run codecontext:py -- scripts/materialize_research_output.py`, `npm run codecontext:py -- tests/test_materialize_unrealized_ideas_index.py`, `npm run codecontext:py -- tests/test_materialize_research_output.py`, `python3 -m unittest -v tests.test_materialize_unrealized_ideas_index tests.test_materialize_stranded_result_ledger tests.test_materialize_transition_state_ledger tests.test_materialize_findings_and_throwaways tests.test_materialize_research_output`, `python3 scripts/materialize_unrealized_ideas_index.py --run-id unrealized-ideas-index-broadened-20260328 --interpretation-source enhanced_broadened --interpretation-run-id enhanced-interpretation-ingestion-20260328-broadened --validation-interpretation-run-id selective-interpretation-ingestion-20260328`, `python3 scripts/materialize_stranded_result_ledger.py --run-id stranded-result-ledger-broadened-20260328 --interpretation-source enhanced_stranded --interpretation-run-id enhanced-interpretation-ingestion-20260328-broadened`, `python3 scripts/materialize_transition_state_ledger.py --run-id transition-state-ledger-broadened-20260328 --candidate-run-id transition-state-candidate-materialization-20260328-broadened --interpretation-source enhanced_transition --interpretation-run-id enhanced-interpretation-ingestion-20260328-broadened`, `python3 scripts/materialize_findings_and_throwaways.py --run-id findings-and-throwaways-broadened-20260328 --interpretation-source enhanced --interpretation-run-id enhanced-interpretation-ingestion-20260328-broadened --interpretation-rejections-path data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328-broadened/enhanced_interpretation_rejections.jsonl --bridge-run-id bridge-materialization-20260328-broadened --composition-run-id composition-materialization-20260328-broadened --transition-run-id transition-state-candidate-materialization-20260328-broadened --stranded-ledger-run-id stranded-result-ledger-broadened-20260328`, `python3 scripts/materialize_research_output.py --run-id research-output-broadened-20260328 --unrealized-run-id unrealized-ideas-index-broadened-20260328 --stranded-run-id stranded-result-ledger-broadened-20260328 --transition-run-id transition-state-ledger-broadened-20260328 --findings-run-id findings-and-throwaways-broadened-20260328 --enhanced-interpretation-run-id enhanced-interpretation-ingestion-20260328-broadened` (first parallel attempt failed with `missing_required_artifact`; sequential rerun succeeded after findings artifacts were written), `npm run codecontext:diff -- scripts/materialize_unrealized_ideas_index.py`, `npm run codecontext:diff -- scripts/materialize_research_output.py`, `npm run codecontext:diff -- tests/test_materialize_unrealized_ideas_index.py`, `npm run codecontext:diff -- tests/test_materialize_research_output.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_unrealized_ideas_index tests.test_materialize_stranded_result_ledger tests.test_materialize_transition_state_ledger tests.test_materialize_findings_and_throwaways tests.test_materialize_research_output`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/unrealized-ideas-index-broadened-20260328/*`, `data/structural-analogy/runs/stranded-result-ledger-broadened-20260328/*`, `data/structural-analogy/runs/transition-state-ledger-broadened-20260328/*`, `data/structural-analogy/runs/findings-and-throwaways-broadened-20260328/*`, `research_output.md`
-- Acceptance result: `passed; all four publication surfaces and the root memo were regenerated from the broadened interpretation run, and the live outputs now include five unrealized cross-domain entries across the new early-market lanes plus the broadened stranded and transition-state ledger surfaces`
-- Open risks after commit: `the broadened publication surfaces are still selective relative to discovery volume, and state-graph plus participant-pathology leads remain accepted findings rather than dedicated ledger surfaces`
-- Next intended commit: `none; await next user-directed stage`
-- Signoff status: `ready`
-- Last updated: `2026-03-28`
+- Commit scope: `s28-stabilize-truth`
+- Why this commit exists: create a canonical run summary that reconciles all counts across shortlist, interpretation, ledgers, and reports into one authoritative surface
+- Stages touched: `S28`
+- Code paths touched:
+- Commands run:
+- Tests run:
+- Artifacts produced:
+- Acceptance result: `pending`
+- Open risks after commit: `S28-S34 are all pending`
+- Next intended commit: `S28 canonical run summary`
+- Signoff status: `draft`
+- Last updated: `2026-03-29`
