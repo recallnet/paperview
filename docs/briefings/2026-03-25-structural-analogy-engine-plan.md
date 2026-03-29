@@ -305,7 +305,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S28` | stabilize truth — canonical run summary | `done` | `run_summary.json`, `run_summary.md`, root findings surface, reconciled counts across all surfaces |
 | `DS1` | translation-gap search | `done` | top 100 translation-gap candidates; live run hit 21 outside obvious q-fin / trading discourse with five candidate families |
 | `DS2` | bridge-zone mining | `done` | five forced bridge zones materialized with live top-10 paper sets; all five are beyond queue/refill |
-| `DS3` | early-market failure mode ledger | `pending` | top 50 early-market entries; success: 15+ not transition-state microstructure |
+| `DS3` | early-market failure mode ledger | `done` | top 50 early-market entries; live run has 48 non-transition rows across 7 lane families |
 | `DS4` | stranded q-fin rescue with forced translation | `pending` | 15+ stranded ledger entries; success: 5+ read as modern executable research tasks |
 | `DS5` | holdout-echo validation | `pending` | holdout echo report; success: 10+ pre-2024 candidates with meaningful 2024+ echoes |
 | `S29` | six-lane discovery expansion | `pending` | 6 lanes with anchors, probes, and lane-specific scoring |
@@ -1390,6 +1390,44 @@ Current status:
   - DeFi / immature repair: `2103.08842` `The Adoption of Blockchain-based Decentralized Exchanges`
 - every zone now carries a bridge thesis paragraph, `why_neither_side_alone`, and `3` translation questions in the root report pair, so the evidence is no longer trapped only in operator tables
 
+### `DS3` Early-Market Failure Mode Ledger
+
+Build:
+
+- a concrete early-market failure-mode study over the current broadened operator and interpretation state
+- an explicit early-market score driven by:
+  - lifecycle dependence
+  - rule / settlement dependence
+  - participant pathology
+  - state-graph inconsistency
+  - low professionalization / thinness cues
+- root study outputs:
+  - `reports/ds3-early-market-ledger.jsonl`
+  - `reports/ds3-early-market-ledger.md`
+
+Accept when:
+
+- the top `50` rows include `failure_mode`, `wrong_actor`, `why_persists`, `what_closes_it`, `likely_market_stage`, and `first_test`
+- candidate-family diversity is reported explicitly
+- at least `15` entries are not dominated by transition-state microstructure
+
+Current status:
+
+- `DS3` is complete for the current broadened run
+- live `ds3-early-market-failure-ledger` produced `50` ledger rows with `48` non-transition-state entries, so the study cleared its stop/go bar of at least `15` non-transition entries by a wide margin
+- current early-market lane diversity is:
+  - `market_design`: `10`
+  - `settlement_resolution`: `10`
+  - `state_graph`: `8`
+  - `participant_pathologies`: `8`
+  - `lifecycle`: `8`
+  - `stranded_qfin`: `4`
+  - `transition_state`: `2`
+- the leading live rows are dominated by state-graph inconsistency and lifecycle / professionalization failure modes rather than transition-state microstructure:
+  - `physics/0702210`, `cond-mat/9808240`, `2108.00242` for state-graph inconsistency
+  - `1007.2352`, `1206.5324`, `1104.0587` for lifecycle / professionalization
+- the ledger now exposes `failure_mode`, `wrong_actor`, `why_persists`, `what_closes_it`, `likely_market_stage`, and `first_test` directly in the root report pair, so early-market evidence is no longer trapped across bridge, composition, transition, and stranded surfaces
+
 ---
 
 ## Development Policy
@@ -1533,15 +1571,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `ds2-bridge-zone-mining`
-- Why this commit exists: run the second concrete diamond study — force specific bridge families and expose why the bridge matters, not just which pair scored highest
-- Stages touched: `DS2`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_ds2_bridge_zones.py`, `tests/test_materialize_ds2_bridge_zones.py`, `package.json`, `reports/ds2-bridge-zones.jsonl`, `reports/ds2-bridge-zones-report.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_ds2_bridge_zones.py`, `npm run codecontext:py -- tests/test_materialize_ds2_bridge_zones.py`, `python3 -m unittest -v tests.test_materialize_ds2_bridge_zones`, `npm run study:ds2-bridge-zones`, `npm run codecontext:diff -- scripts/materialize_ds2_bridge_zones.py`, `npm run codecontext:diff -- tests/test_materialize_ds2_bridge_zones.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_ds2_bridge_zones`, `npm run docs:lint`
-- Artifacts produced: `reports/ds2-bridge-zones.jsonl`, `reports/ds2-bridge-zones-report.md`
-- Acceptance result: `ready` — all `5` forced bridge zones materialized with live top-10 paper sets, and all `5` are materially different from queue/refill
-- Open risks after commit: `DS3-DS5 diamond studies and S29-S34 platform stages are still pending; the queue-service-discipline zone is currently the closest to mature-book microstructure and should stay secondary to the broader settlement, design, and DeFi seams`
-- Next intended commit: `DS3 early-market failure mode ledger`
+- Commit scope: `ds3-early-market-failure-ledger`
+- Why this commit exists: run the third concrete diamond study — score and expose early-market failure modes instead of letting broadened evidence remain scattered across bridge, composition, interpretation, and ledger surfaces
+- Stages touched: `DS3`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_ds3_early_market_ledger.py`, `tests/test_materialize_ds3_early_market_ledger.py`, `package.json`, `reports/ds3-early-market-ledger.jsonl`, `reports/ds3-early-market-ledger.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_ds3_early_market_ledger.py`, `npm run codecontext:py -- tests/test_materialize_ds3_early_market_ledger.py`, `python3 -m unittest -v tests.test_materialize_ds3_early_market_ledger`, `npm run study:ds3-early-market-ledger`, `npm run codecontext:diff -- scripts/materialize_ds3_early_market_ledger.py`, `npm run codecontext:diff -- tests/test_materialize_ds3_early_market_ledger.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_ds3_early_market_ledger`, `npm run docs:lint`
+- Artifacts produced: `reports/ds3-early-market-ledger.jsonl`, `reports/ds3-early-market-ledger.md`
+- Acceptance result: `ready` — live ledger has `50` rows, `48` are non-transition-state, and the lane mix is led by state-graph, settlement, lifecycle, and market-design failure modes
+- Open risks after commit: `DS4-DS5 diamond studies and S29-S34 platform stages are still pending; the top of DS3 currently leans heavily toward state-graph and lifecycle rows, so DS4 should keep rescuing stranded q-fin work to balance the portfolio`
+- Next intended commit: `DS4 stranded q-fin rescue with forced translation`
 - Signoff status: `ready`
 - Last updated: `2026-03-29`
