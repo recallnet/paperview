@@ -1662,16 +1662,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s35-memo-2-settlement-lag-resolution-friction-timing`
-- Why this commit exists: turn the accepted settlement-resolution lead into the second standalone lane memo so the follow-on work covers post-trade timing seams instead of over-centering on venue-design parity repair
+- Commit scope: `s35-memo-3-rule-sensitive-toxic-flow-filters`
+- Why this commit exists: turn the accepted participant-pathology lead into the third standalone lane memo so the follow-on work covers venue-conditioned toxic-flow detection instead of only repair-timing seams
 - Stages touched: `S35`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_lane_memos.py`, `tests/test_materialize_lane_memos.py`, `reports/lane-memo-settlement-lag-resolution-friction-timing.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_lane_memos.py`, `npm run codecontext:scope -- tests/test_materialize_lane_memos.py`, `npm run codecontext:py -- scripts/materialize_lane_memos.py`, `npm run codecontext:py -- tests/test_materialize_lane_memos.py`, `python3 -m unittest -v tests.test_materialize_lane_memos`, `npm run store:materialize-lane-memos -- --memo-id settlement-lag-resolution-friction-timing --run-id lane-memos-20260329-settlement`, `npm run codecontext:diff -- scripts/materialize_lane_memos.py`, `npm run codecontext:diff -- tests/test_materialize_lane_memos.py`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_lane_memos.py`, `tests/test_materialize_lane_memos.py`, `reports/lane-memo-rule-sensitive-toxic-flow-filters.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_lane_memos.py`, `npm run codecontext:scope -- tests/test_materialize_lane_memos.py`, `npm run codecontext:py -- scripts/materialize_lane_memos.py`, `npm run codecontext:py -- tests/test_materialize_lane_memos.py`, `python3 -m unittest -v tests.test_materialize_lane_memos`, `npm run store:materialize-lane-memos -- --memo-id rule-sensitive-toxic-flow-filters --run-id lane-memos-20260329-toxic-flow`, `npm run codecontext:diff -- scripts/materialize_lane_memos.py`, `npm run codecontext:diff -- tests/test_materialize_lane_memos.py`, `npm run docs:lint`
 - Tests run: `python3 -m unittest -v tests.test_materialize_lane_memos`, `npm run docs:lint`
-- Artifacts produced: `reports/lane-memo-settlement-lag-resolution-friction-timing.md`
-- Acceptance result: `reports/lane-memo-settlement-lag-resolution-friction-timing.md` was generated successfully from the current root publication surfaces; the memo cites `1811.08038`, `1709.08238`, `1609.04620`, `1101.3926`, `1312.0128`, `2106.06389`, and `2009.13235` and turns the accepted `settlement_resolution` lead into a concrete resolution-state timing program
-- Open risks after commit: memo 3 still needs to separate participant-pathology rule filters from this post-trade timing seam; otherwise the remaining S35 lane coverage will blur together
-- Next intended commit: `S35 memo 3 — rule-sensitive toxic-flow filters`
+- Artifacts produced: `reports/lane-memo-rule-sensitive-toxic-flow-filters.md`
+- Acceptance result: `reports/lane-memo-rule-sensitive-toxic-flow-filters.md` was generated successfully from the current root publication surfaces; the memo cites `1104.0587`, `0908.0202`, `1903.12458`, `1311.4160`, `2006.08682`, `2009.02808`, and `2003.04425` and converts the accepted `participant_pathologies` lead into a venue-state toxic-flow program
+- Open risks after commit: memo 4 still needs to stay focused on repair timing across linked states rather than collapsing back into the already-covered market-design parity memo
+- Next intended commit: `S35 memo 4 — state-graph repair timing monitor`
 - Signoff status: `committed`
 - Last updated: `2026-03-29`
 
@@ -1686,4 +1686,4 @@ Current status:
   - shortlist-gated diamond interpretation
   - six publication surfaces plus `diamond_board.md`
   - three empirical memo v2 outputs
-  - a new follow-on `S35` lane-memo stage aimed at focused writeups for the strongest non-generic early-market leads, with memo 1 (`market-design delayed parity repair`) and memo 2 (`settlement-lag / resolution-friction timing`) completed
+  - a new follow-on `S35` lane-memo stage aimed at focused writeups for the strongest non-generic early-market leads, with memo 1 (`market-design delayed parity repair`), memo 2 (`settlement-lag / resolution-friction timing`), and memo 3 (`rule-sensitive toxic-flow filters`) completed
