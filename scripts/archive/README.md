@@ -11,6 +11,11 @@ Current archive groups:
   failure-recovery workflow. These are preserved for history but are not part
   of the canonical staged command surface.
 
+- `noncanonical-corpus-pipeline/`
+  Launch, retry, reconcile, and pipeline runners from the earlier q-fin corpus
+  acquisition workflow. These are preserved together so the archived workflow
+  remains coherent without competing from the active root.
+
 - `noncanonical-benchmarks/`
   Benchmark utilities that were useful for one-off retrieval evaluation but
   are not part of the canonical staged command surface.

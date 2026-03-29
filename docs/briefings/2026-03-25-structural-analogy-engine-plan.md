@@ -634,10 +634,16 @@ Current status:
   - `corpus_status.py`
   - `corpus_inventory.py`
   - `corpus_readiness_report.py`
+- fifth archived slice moved to `scripts/archive/noncanonical-corpus-pipeline/`:
+  - `launch_qfin_download.py`
+  - `reconcile_failures.py`
+  - `retry_failures.py`
+  - `run_qfin_pipeline.py`
 - this first slice is intentionally narrow: it archives tracked pilot utilities that are not part of the canonical staged command set and do not have active package-script entrypoints
 - the benchmark cleanup pass removed `retrieve:benchmark` from `package.json`, so that archived script no longer competes with the canonical staged commands
 - the research-pack cleanup pass removed `research:materialize-findings` from `package.json`, and the archived runner now points at the archived export helper instead of reaching back into the active root
 - the corpus-helper cleanup pass removed the old `corpus:*` helper entrypoints from `package.json` and moved the untracked helper files into the archive, so those root-level status utilities no longer compete with the canonical stages
+- the corpus-pipeline cleanup pass moved the old launch, retry, reconcile, and pipeline runners into the archive and patched their internal imports and subprocess paths so the archived workflow remains self-contained
 - historical docs still reference `materialize_mixed_family_pilot.py`, which is acceptable for `S16` because the archive preserves the file while removing it from the active script surface
 - historical docs still reference `research:materialize-findings`, which is acceptable for `S16` because the archive preserves the implementation while the active package surface is reduced
 - the stage remains in progress because additional noncanonical scripts still sit in the active root even though most competing package entrypoints are now gone
@@ -767,14 +773,14 @@ Current status:
 ## Active Signoff Block
 
 - Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by moving the untracked corpus helper scripts into `scripts/archive/` now that their package entrypoints have already been removed
+- Why this commit exists: continue the cleanup pass by moving the old corpus pipeline runners into `scripts/archive/` now that their package entrypoints and helper scripts are already out of the active command surface
 - Stages touched: `S16`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/archive/README.md`, `scripts/archive/noncanonical-corpus-helpers/corpus_status.py`, `scripts/archive/noncanonical-corpus-helpers/corpus_inventory.py`, `scripts/archive/noncanonical-corpus-helpers/corpus_readiness_report.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `rg -n 'corpus_status.py|corpus_inventory.py|corpus_readiness_report.py' package.json docs scripts tests`, `git status --short scripts/corpus_status.py scripts/corpus_inventory.py scripts/corpus_readiness_report.py scripts/archive/README.md`, `find scripts/archive -maxdepth 2 -type f | sort`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/archive/README.md`, `scripts/archive/noncanonical-corpus-pipeline/launch_qfin_download.py`, `scripts/archive/noncanonical-corpus-pipeline/reconcile_failures.py`, `scripts/archive/noncanonical-corpus-pipeline/retry_failures.py`, `scripts/archive/noncanonical-corpus-pipeline/run_qfin_pipeline.py`, `scripts/archive/noncanonical-corpus-helpers/corpus_inventory.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `rg -n 'launch_qfin_download.py|reconcile_failures.py|retry_failures.py|run_qfin_pipeline.py' package.json docs scripts tests`, `git status --short scripts/launch_qfin_download.py scripts/reconcile_failures.py scripts/retry_failures.py scripts/run_qfin_pipeline.py scripts/archive/README.md`, `find scripts/archive -maxdepth 2 -type f | sort`, `npm run codecontext:scope -- scripts/archive/noncanonical-corpus-pipeline/launch_qfin_download.py`, `npm run codecontext:scope -- scripts/archive/noncanonical-corpus-pipeline/run_qfin_pipeline.py`, `npm run codecontext:scope -- scripts/archive/noncanonical-corpus-helpers/corpus_inventory.py`, `npm run codecontext:py -- scripts/archive/noncanonical-corpus-pipeline/launch_qfin_download.py`, `npm run codecontext:py -- scripts/archive/noncanonical-corpus-pipeline/run_qfin_pipeline.py`, `npm run codecontext:py -- scripts/archive/noncanonical-corpus-helpers/corpus_inventory.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-corpus-pipeline/launch_qfin_download.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-corpus-pipeline/run_qfin_pipeline.py`, `npm run codecontext:diff -- scripts/archive/noncanonical-corpus-helpers/corpus_inventory.py`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `scripts/archive/noncanonical-corpus-helpers/`
-- Acceptance result: `the corpus status, inventory, and readiness helpers are now preserved under scripts/archive instead of competing from the active root`
-- Open risks after commit: `an older noncanonical corpus pipeline script still references the former helper path, and other noncanonical scripts still remain in the active root for later archival decisions`
+- Artifacts produced: `scripts/archive/noncanonical-corpus-pipeline/`
+- Acceptance result: `the old launch, retry, reconcile, and q-fin pipeline runners are now preserved under scripts/archive, and their archived copy now points at the archived helper locations instead of the former active-root paths`
+- Open risks after commit: `other noncanonical scripts still remain in the active root for later archival decisions, but the old corpus acquisition workflow is now archived as a coherent group`
 - Next intended commit: `S16 active/archive cleanup foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

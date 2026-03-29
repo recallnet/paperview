@@ -5,7 +5,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
+
+PIPELINE_DIR = Path(__file__).resolve().parent.parent / "noncanonical-corpus-pipeline"
+if str(PIPELINE_DIR) not in sys.path:
+    # @context requirement -- this helper was archived away from the old corpus
+    # pipeline scripts, so the archive must restore the local import path for
+    # reconcile_failures or the preserved inventory workflow stops working.
+    sys.path.insert(0, str(PIPELINE_DIR))
 
 from reconcile_failures import reconcile_failures
 
