@@ -294,7 +294,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S17` | transition-state anchor and probe config | `done` | transition-state anchors, probes, and probe hits |
 | `S18` | transition-state score materializer | `done` | `transition_state_scores` table + metrics |
 | `S19` | transition-state operator | `done` | `transition_state_candidates` table + artifacts |
-| `S20` | stranded q-fin resurfacing operator | `pending` | `stranded_resurfacing_candidates` table + artifacts |
+| `S20` | stranded q-fin resurfacing operator | `done` | `stranded_resurfacing_candidates` table + artifacts |
 | `S21` | findings and throwaways materializer | `pending` | `findings_and_throwaways.*` per-run report |
 | `S22` | transition-state microstructure ledger | `pending` | `transition_state_ledger.*` publication surface |
 | `S23` | enhanced interpretation batch | `pending` | expanded top-10-20 per operator family interpretation |
@@ -819,6 +819,24 @@ Accept when:
 - resurfacing candidates are ranked and queryable
 - the operator is distinct from the general stranding scorer
 
+Current status:
+
+- the `S20` commit adds the canonical operator in `scripts/materialize_stranded_resurfacing_candidates.py`
+- the operator runs only over the time-firewalled stranded-alpha q-fin slice from `corpus_memberships`
+- ranking combines the existing stranding prior with result specificity, penalty relief, realized-market leakage, and a simple current-venue closeness signal from `transition_state_scores` plus recency
+- fixture coverage in `tests/test_materialize_stranded_resurfacing_candidates.py` proves that only the stranded q-fin slice is ranked and that realized-market rows are demoted rather than silently mixed with the generic scorer
+- the live rerun `npm run store:materialize-stranded-resurfacing-candidates -- --run-id stranded-resurfacing-materialization-20260328` completed successfully with:
+  - `candidate_count`: `50`
+  - `top_score`: `0.416187`
+  - `top_ranked_paper_id`: `2204.08581`
+- the top five live resurfacing rows are now queryable in the canonical store:
+  - `2204.08581`
+  - `2106.00581`
+  - `1712.10105`
+  - `1903.06928`
+  - `2005.04297`
+- the stage is complete: resurfacing candidates are ranked and queryable, and the operator is now distinct from the generic stranding scorer because it only ranks the stranded-alpha q-fin slice with operator-specific leakage and venue-closeness terms
+
 ### `S21` Findings and Throwaways Materializer
 
 Build:
@@ -1001,15 +1019,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s19-transition-state-operator`
-- Why this commit exists: turn the live `S18` paper-level transition-state prior into a dedicated canonical candidate operator for shock recovery, handoff, queue reformation, and delayed-repair regions
-- Stages touched: `S19`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_transition_state_candidates.py`, `tests/test_materialize_transition_state_candidates.py`, `package.json`, `sql/paperview_schema.sql`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_compositions.py`, `sed -n '1,260p' scripts/materialize_compositions.py`, `sed -n '1,260p' scripts/materialize_contrasts.py`, `sed -n '1,260p' tests/test_materialize_compositions.py`, `npm run codecontext:py -- scripts/materialize_transition_state_candidates.py`, `npm run codecontext:py -- tests/test_materialize_transition_state_candidates.py`, `python3 -m unittest -v tests.test_materialize_transition_state_candidates`, `npm run store:materialize-transition-state-candidates -- --run-id transition-state-candidate-materialization-20260328`, `python3 - <<'PY' ... transition-state candidate metrics and top rows ... PY`, `npm run codecontext:diff -- scripts/materialize_transition_state_candidates.py`, `npm run codecontext:diff -- tests/test_materialize_transition_state_candidates.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_transition_state_candidates`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/transition-state-candidate-materialization-20260328/transition_state_candidate_metrics.json`, `data/structural-analogy/runs/transition-state-candidate-materialization-20260328/transition_state_candidates.jsonl`
-- Acceptance result: `passed; transition-state candidates now exist in the main store and remain grounded in probe proximity rather than a keyword-only retrieval path`
-- Open risks after commit: `the operator surface is live, but S20 and S21 still have to expose the stranded-q-fin resurfacing path and the findings/throwaways report the user actually wants to read`
-- Next intended commit: `S20 stranded q-fin resurfacing operator`
+- Commit scope: `s20-stranded-qfin-resurfacing-operator`
+- Why this commit exists: turn the existing stranding and transition-state priors into a distinct stranded q-fin resurfacing queue over the 2015–2023 stranded-alpha slice
+- Stages touched: `S20`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_stranded_resurfacing_candidates.py`, `tests/test_materialize_stranded_resurfacing_candidates.py`, `package.json`, `sql/paperview_schema.sql`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_stranding_scores.py`, `sed -n '1,260p' scripts/materialize_stranded_result_ledger.py`, `git show HEAD:sql/paperview_schema.sql | rg -n "selective_interpretations|stranded_result_ledger|corpus_memberships|stranding_scores" -n -C 2`, `npm run codecontext:py -- scripts/materialize_stranded_resurfacing_candidates.py`, `npm run codecontext:py -- tests/test_materialize_stranded_resurfacing_candidates.py`, `python3 -m unittest -v tests.test_materialize_stranded_resurfacing_candidates`, `npm run store:materialize-stranded-resurfacing-candidates -- --run-id stranded-resurfacing-materialization-20260328`, `python3 - <<'PY' ... stranded resurfacing metrics and top rows ... PY`, `npm run codecontext:diff -- scripts/materialize_stranded_resurfacing_candidates.py`, `npm run codecontext:diff -- tests/test_materialize_stranded_resurfacing_candidates.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_stranded_resurfacing_candidates`, `npm run docs:lint`
+- Artifacts produced: `data/structural-analogy/runs/stranded-resurfacing-materialization-20260328/stranded_resurfacing_candidate_metrics.json`, `data/structural-analogy/runs/stranded-resurfacing-materialization-20260328/stranded_resurfacing_candidates.jsonl`
+- Acceptance result: `passed; stranded resurfacing candidates are now ranked and queryable as a distinct operator over the stranded-alpha q-fin slice`
+- Open risks after commit: `the resurfacing queue is live, but S21 still has to synthesize accepted, rejected, and near-miss evidence into the findings report the user actually asked for`
+- Next intended commit: `S21 findings and throwaways materializer`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

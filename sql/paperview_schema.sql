@@ -490,6 +490,27 @@ CREATE TABLE IF NOT EXISTS transition_state_candidates (
 CREATE INDEX IF NOT EXISTS idx_transition_state_candidates_run_pattern_rank
 ON transition_state_candidates(run_id, pattern_id, transition_state_rank);
 
+-- @context decision -- Stranded resurfacing candidates are a distinct operator surface over the
+-- stranded-alpha q-fin slice, not a copy of the global stranding score table. Persisting them
+-- canonically keeps later findings and publication stages tied to an explicit resurfacing queue
+-- with operator-specific leakage and venue-closeness logic.
+CREATE TABLE IF NOT EXISTS stranded_resurfacing_candidates (
+  run_id TEXT NOT NULL,
+  paper_id TEXT NOT NULL,
+  resurfacing_score REAL NOT NULL,
+  resurfacing_rank INTEGER NOT NULL,
+  membership_run_id TEXT NOT NULL,
+  stranding_run_id TEXT NOT NULL,
+  transition_score_run_id TEXT NOT NULL,
+  rationale_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, paper_id),
+  FOREIGN KEY (paper_id) REFERENCES papers(paper_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_stranded_resurfacing_candidates_run_rank
+ON stranded_resurfacing_candidates(run_id, resurfacing_rank);
+
 CREATE TABLE IF NOT EXISTS extraction_runs (
   run_id TEXT PRIMARY KEY,
   run_kind TEXT NOT NULL,
