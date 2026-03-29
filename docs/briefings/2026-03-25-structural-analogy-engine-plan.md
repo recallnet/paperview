@@ -291,7 +291,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S14` | Unrealized Ideas Index | `done` | human-facing index |
 | `S15` | Stranded Result Ledger | `done` | human-facing ledger |
 | `S16` | active / archive cleanup | `done` | clean active pipeline surface |
-| `S17` | transition-state anchor and probe config | `in_progress` | transition-state anchors, probes, and probe hits |
+| `S17` | transition-state anchor and probe config | `done` | transition-state anchors, probes, and probe hits |
 | `S18` | transition-state score materializer | `pending` | `transition_state_scores` table + metrics |
 | `S19` | transition-state operator | `pending` | `transition_state_candidates` table + artifacts |
 | `S20` | stranded q-fin resurfacing operator | `pending` | `stranded_resurfacing_candidates` table + artifacts |
@@ -726,16 +726,23 @@ Accept when:
 Current status:
 
 - the plan has been reopened beyond `S16` because the completed pipeline still under-surfaces the actual microstructure findings and near-misses
-- the first `S17` commit adds the exact transition-state anchor families to `configs/anchors.yaml`:
+- the first `S17` commit added the exact transition-state anchor families to `configs/anchors.yaml`:
   - `queue_value_passive_quoting`
   - `refill_lag_resiliency`
   - `auction_handoff`
   - `maker_retreat_inventory_stress`
   - `parity_propagation_delayed_repair`
-- the first `S17` commit also adds matching transition-state composition probes to `configs/probes.yaml`
+- the first `S17` commit also added matching transition-state composition probes to `configs/probes.yaml`
 - fixture coverage now guards those checked-in config ids directly in `tests/test_materialize_probes.py`
-- a default-size live rerun was attempted with `npm run store:materialize-probes -- --run-id probe-materialization-20260328-transition-state`, but it hung for more than one minute without emitting `probe_metrics.json`; the empty run directory is therefore not treated as a valid artifact
-- the stage remains in progress until a successful live probe run confirms canonical probe hits for the new transition-state patterns
+- `scripts/materialize_probes.py` now preloads vectors and centroids once per embedding space instead of once per pattern, which removed the live-run stall on the canonical corpus
+- the rerun `npm run store:materialize-probes -- --run-id probe-materialization-20260328-transition-state` completed successfully with `11` anchors, `15` patterns, and `375` total probe hits
+- each new transition-state pattern now has live canonical hits in `probe_hits` for that run:
+  - `near_transition_queue_refill`: `25`
+  - `near_transition_auction_refill`: `25`
+  - `near_transition_auction_queue`: `25`
+  - `near_transition_maker_queue`: `25`
+  - `near_transition_parity_repair`: `25`
+- the stage is complete: transition-state anchors are queryable in the canonical store and live probe hits exist for the new transition-state patterns
 
 ### `S18` Transition-State Score Materializer
 
@@ -957,15 +964,15 @@ Accept when:
 
 ## Active Signoff Block
 
-- Commit scope: `s17-transition-anchor-probe-foundation`
-- Why this commit exists: add the exact transition-state anchor and probe config needed to surface the microstructure strategy clues that are currently buried in shortlist and packet artifacts
+- Commit scope: `s17-transition-probe-live-materialization`
+- Why this commit exists: remove the live probe-stage stall and complete canonical `S17` with a successful transition-state probe materialization over the existing embedding space
 - Stages touched: `S17`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/anchors.yaml`, `configs/probes.yaml`, `tests/test_materialize_probes.py`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_probes.py`, `npm run codecontext:py -- scripts/materialize_probes.py`, `python3 -m unittest -v tests.test_materialize_probes`, `npm run store:materialize-probes -- --run-id probe-materialization-20260328-transition-state`, `npm run codecontext:py -- tests/test_materialize_probes.py`, `npm run codecontext:diff -- tests/test_materialize_probes.py`, `ls -la data/structural-analogy/runs/probe-materialization-20260328-transition-state`, `npm run docs:lint`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_probes.py`, `tests/test_materialize_probes.py`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_probes.py`, `npm run codecontext:py -- scripts/materialize_probes.py`, `npm run codecontext:py -- tests/test_materialize_probes.py`, `python3 -m unittest -v tests.test_materialize_probes`, `npm run store:materialize-probes -- --run-id probe-materialization-20260328-transition-state`, `python3 - <<'PY' ... probe hit counts by transition-state pattern ... PY`, `npm run codecontext:diff -- scripts/materialize_probes.py`, `npm run codecontext:diff -- tests/test_materialize_probes.py`, `npm run docs:lint`
 - Tests run: `python3 -m unittest -v tests.test_materialize_probes`, `npm run docs:lint`
-- Artifacts produced: `configs/anchors.yaml`, `configs/probes.yaml`, `data/structural-analogy/runs/probe-materialization-20260328-transition-state/ (empty partial run directory only)`
-- Acceptance result: `exact transition-state anchor and probe ids are now checked in and covered by unit tests, but the attempted default live rerun did not finish successfully, so S17 remains in progress`
-- Open risks after commit: `a successful live probe materialization is still needed before transition-state anchors can be treated as live canonical probe surfaces`
-- Next intended commit: `S17 successful live probe materialization`
+- Artifacts produced: `data/structural-analogy/runs/probe-materialization-20260328-transition-state/probe_metrics.json`
+- Acceptance result: `passed; transition-state anchors are queryable in the canonical store and all five new transition-state patterns now have live probe hits`
+- Open risks after commit: `probe hits are now live, but the next stage still needs to score and operatorize these regions before they appear in publication surfaces`
+- Next intended commit: `S18 transition-state score materializer`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`

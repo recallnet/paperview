@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 import numpy as np
@@ -14,9 +15,44 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from sqlite_vec_adapter import connect as connect_vec_store, ensure_vec_table, write_vectors
+from materialize_probes import prepare_space_payloads
 
 
 class MaterializeProbesTests(unittest.TestCase):
+    def test_prepare_space_payloads_loads_each_space_once(self):
+        conn = sqlite3.connect(":memory:")
+        try:
+            embedding_metrics = {
+                "spaces": [
+                    {"name": "space_one", "dims": 4, "view_type": "title_abs", "table_name": "vec_space_one_4"},
+                    {"name": "space_two", "dims": 4, "view_type": "title_abs", "table_name": "vec_space_two_4"},
+                ]
+            }
+            with patch("materialize_probes.load_space_vectors") as load_space_vectors_mock, patch(
+                "materialize_probes.build_anchor_centroids"
+            ) as build_anchor_centroids_mock:
+                load_space_vectors_mock.side_effect = [
+                    ({1: np.array([1, 0, 0, 0], dtype=np.float32)}, [1]),
+                    ({2: np.array([0, 1, 0, 0], dtype=np.float32)}, [2]),
+                ]
+                build_anchor_centroids_mock.side_effect = [
+                    {"a": np.array([1, 0, 0, 0], dtype=np.float32)},
+                    {"b": np.array([0, 1, 0, 0], dtype=np.float32)},
+                ]
+
+                payloads = prepare_space_payloads(
+                    conn,
+                    conn,
+                    embedding_metrics,
+                    {"anchors": [{"anchor_id": "a"}, {"anchor_id": "b"}]},
+                )
+
+            self.assertEqual(len(payloads), 2)
+            self.assertEqual(load_space_vectors_mock.call_count, 2)
+            self.assertEqual(build_anchor_centroids_mock.call_count, 2)
+        finally:
+            conn.close()
+
     def test_repo_transition_state_configs_include_required_families(self):
         anchors_payload = yaml.safe_load((ROOT / "configs" / "anchors.yaml").read_text(encoding="utf-8"))
         probes_payload = yaml.safe_load((ROOT / "configs" / "probes.yaml").read_text(encoding="utf-8"))
