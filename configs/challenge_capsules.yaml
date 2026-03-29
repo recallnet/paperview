@@ -1,0 +1,72 @@
+capsules:
+  - capsule_id: queue_refill_repair
+    label: Queue / refill repair
+    lane: transition_state
+    anchor_ids:
+      - queue_value_passive_quoting
+      - refill_lag_resiliency
+      - refill_lag_local_shock
+    pattern_ids:
+      - near_transition_queue_refill
+    far_realized_patterns: []
+  - capsule_id: auction_handoff_repair
+    label: Auction handoff repair
+    lane: transition_state
+    anchor_ids:
+      - auction_handoff
+      - queue_value_passive_quoting
+      - refill_lag_resiliency
+    pattern_ids:
+      - near_transition_auction_queue
+      - near_transition_auction_refill
+    far_realized_patterns: []
+  - capsule_id: settlement_async_repair
+    label: Settlement / async repair
+    lane: settlement_resolution
+    anchor_ids:
+      - settlement_resolution_seams
+      - amm_settlement_latency
+      - parity_propagation
+      - state_graph_inconsistencies
+    pattern_ids: []
+    far_realized_patterns:
+      - near_settlement_resolution_far_realized
+      - near_state_graph_far_realized
+  - capsule_id: participant_design_failure
+    label: Participant pathology x design
+    lane: participant_pathologies
+    anchor_ids:
+      - participant_pathologies
+      - market_design_seams
+    pattern_ids: []
+    far_realized_patterns:
+      - near_participant_pathology_far_realized
+      - near_market_design_far_realized
+  - capsule_id: state_graph_repair
+    label: State-graph repair
+    lane: state_graph
+    anchor_ids:
+      - state_graph_inconsistencies
+      - parity_propagation
+      - parity_propagation_delayed_repair
+    pattern_ids:
+      - near_transition_parity_repair
+    far_realized_patterns:
+      - near_state_graph_far_realized
+  - capsule_id: thin_market_professionalization
+    label: Thin-market professionalization
+    lane: lifecycle
+    anchor_ids:
+      - lifecycle_professionalization
+      - market_design_seams
+      - settlement_resolution_seams
+    pattern_ids: []
+    far_realized_patterns:
+      - near_lifecycle_far_realized
+      - near_market_design_far_realized
+  - capsule_id: stranded_qfin_rescue
+    label: Stranded q-fin rescue
+    lane: stranded_qfin
+    anchor_ids: []
+    pattern_ids: []
+    far_realized_patterns: []

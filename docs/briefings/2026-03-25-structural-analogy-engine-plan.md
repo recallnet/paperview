@@ -303,17 +303,17 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S26` | executable test memos | `done` | `reports/test-memo-*.md` — three concrete research programs grounded in the current findings |
 | `S27` | early-market failure-mode broadening pass | `done` | broader anchor, probe, operator, interpretation, and publication surfaces for thin, early, and weakly arbitraged markets |
 | `S28` | stabilize truth — canonical run summary | `done` | `run_summary.json`, `run_summary.md`, root findings surface, reconciled counts across all surfaces |
+| `DS1` | translation-gap search | `done` | top 100 translation-gap candidates; live run hit 21 outside obvious q-fin / trading discourse with five candidate families |
+| `DS2` | bridge-zone mining | `pending` | top bridge zones with thesis and translation questions; success: 5+ zones beyond queue/refill |
+| `DS3` | early-market failure mode ledger | `pending` | top 50 early-market entries; success: 15+ not transition-state microstructure |
+| `DS4` | stranded q-fin rescue with forced translation | `pending` | 15+ stranded ledger entries; success: 5+ read as modern executable research tasks |
+| `DS5` | holdout-echo validation | `pending` | holdout echo report; success: 10+ pre-2024 candidates with meaningful 2024+ echoes |
 | `S29` | six-lane discovery expansion | `pending` | 6 lanes with anchors, probes, and lane-specific scoring |
 | `S30` | diamond score and representation redesign | `pending` | unified `diamond_score`, problem/mechanism/regime/stranding views, challenge capsules |
 | `S31` | eight-operator materialization | `pending` | bridge, composition, contrast, negative-space, transition-state, state-graph, participant-pathology, stranded-qfin operators |
 | `S32` | shortlist-gated diamond interpretation | `pending` | top-40 + per-lane interpretation with `TRANSITION_SEAM` class, strict JSON |
 | `S33` | six publication surfaces + diamond board | `pending` | unrealized index, stranded ledger, transition ledger, early-market ledger, findings, diamond board |
 | `S34` | empirical test memos v2 | `pending` | queue x refill, auction handoff, maker-retreat memos with hypothesis/data/baseline/metric/fail-fast |
-| `DS1` | translation-gap search | `pending` | top 100 translation-gap candidates; success: 20+ outside q-fin/trading discourse |
-| `DS2` | bridge-zone mining | `pending` | top bridge zones with thesis and translation questions; success: 5+ zones beyond queue/refill |
-| `DS3` | early-market failure mode ledger | `pending` | top 50 early-market entries; success: 15+ not transition-state microstructure |
-| `DS4` | stranded q-fin rescue with forced translation | `pending` | 15+ stranded ledger entries; success: 5+ read as modern executable research tasks |
-| `DS5` | holdout-echo validation | `pending` | holdout echo report; success: 10+ pre-2024 candidates with meaningful 2024+ echoes |
 
 ## Completed Stages
 
@@ -1320,6 +1320,37 @@ Current status:
   - root findings markdown still exposes `9` accepted findings, `2` rejections, `15` near misses, and `3` stranded-q-fin failures
 - `S28` is now complete because the broadened run has one authoritative machine-readable summary plus one authoritative root findings surface, with no accepted evidence trapped only in intermediate artifacts
 
+### `DS1` Translation-Gap Search
+
+Build:
+
+- a concrete diamond-hunting study over the current broadened corpus and operator state
+- top 100 candidates that are mechanically close to challenge capsules while remaining far from pre-2024 realized-market discourse
+- root study outputs:
+  - `reports/ds1-translation-gap-candidates.jsonl`
+  - `reports/ds1-translation-gap-report.md`
+
+Accept when:
+
+- the output includes `paper_id`, `title`, `home_domain`, `challenge_capsule_matched`, `translation_gap_score`, `why_far_from_realized`, and `translation_kind`
+- candidate-family diversity is reported explicitly
+- at least `20` of the top `100` candidates are outside obvious q-fin / trading discourse
+
+Current status:
+
+- `DS1` is complete for the current broadened run
+- live `ds1-translation-gap-search` produced `100` ranked candidates and `21` candidates outside obvious q-fin / trading discourse, so the study cleared its stop/go bar
+- candidate-family diversity is real rather than queue/refill-only:
+  - `settlement_async_repair`: `45`
+  - `participant_design_failure`: `22`
+  - `thin_market_professionalization`: `20`
+  - `queue_refill_repair`: `7`
+  - `state_graph_repair`: `6`
+- translation-kind mix for the current live top `100` is:
+  - `compositional`: `62`
+  - `speculative`: `38`
+- the strongest non-obvious top-ranked papers came from `cs.GT`, `cond-mat.stat-mech`, and `physics.soc-ph`, which confirms the study is surfacing cross-domain translation gaps rather than only reordering mature q-fin microstructure papers
+
 ---
 
 ## Development Policy
@@ -1466,12 +1497,12 @@ Current status:
 - Commit scope: `ds1-translation-gap-search`
 - Why this commit exists: run the first concrete diamond study — find papers mechanistically close to challenge capsules but far from pre-2024 realized market discourse
 - Stages touched: `DS1`
-- Code paths touched:
-- Commands run:
-- Tests run:
-- Artifacts produced:
-- Acceptance result: `pending`
-- Open risks after commit: `DS1-DS5 diamond studies and S29-S34 platform stages are all pending`
-- Next intended commit: `DS1 translation-gap search`
-- Signoff status: `draft`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/challenge_capsules.yaml`, `scripts/materialize_ds1_translation_gap.py`, `tests/test_materialize_ds1_translation_gap.py`, `package.json`, `reports/ds1-translation-gap-candidates.jsonl`, `reports/ds1-translation-gap-report.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:py -- scripts/materialize_ds1_translation_gap.py`, `npm run codecontext:py -- tests/test_materialize_ds1_translation_gap.py`, `python3 -m unittest -v tests.test_materialize_ds1_translation_gap`, `npm run study:ds1-translation-gap`, `npm run codecontext:diff -- scripts/materialize_ds1_translation_gap.py`, `npm run codecontext:diff -- tests/test_materialize_ds1_translation_gap.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_ds1_translation_gap`, `npm run docs:lint`
+- Artifacts produced: `reports/ds1-translation-gap-candidates.jsonl`, `reports/ds1-translation-gap-report.md`
+- Acceptance result: `ready` — live top `100` includes `21` candidates outside obvious q-fin / trading discourse, and the candidate-family mix is led by `settlement_async_repair`, `participant_design_failure`, and `thin_market_professionalization` rather than queue/refill alone
+- Open risks after commit: `DS2-DS5 diamond studies and S29-S34 platform stages are still pending; DS1 top results are still q-fin-heavy overall even though the stop/go bar passed`
+- Next intended commit: `DS2 bridge-zone mining`
+- Signoff status: `ready`
 - Last updated: `2026-03-29`
