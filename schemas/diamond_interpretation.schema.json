@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://recall-labs.local/paperview/schemas/diamond_interpretation.schema.json",
+  "title": "Diamond Interpretation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "classification",
+    "result_summary",
+    "first_test",
+    "instrument_assumed",
+    "modern_equivalent",
+    "why_stranded_or_unrealized",
+    "gap_to_close",
+    "confidence"
+  ],
+  "properties": {
+    "classification": {
+      "type": "string",
+      "enum": [
+        "TRANSLATION_CANDIDATE",
+        "COMPOSITIONAL_CANDIDATE",
+        "STRANDED_QFIN_RESULT",
+        "TRANSITION_SEAM",
+        "NO_TRANSLATION"
+      ]
+    },
+    "result_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "first_test": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_assumed": {
+      "type": "string",
+      "minLength": 1
+    },
+    "modern_equivalent": {
+      "type": "string",
+      "minLength": 1
+    },
+    "why_stranded_or_unrealized": {
+      "type": "string",
+      "minLength": 1
+    },
+    "gap_to_close": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confidence": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

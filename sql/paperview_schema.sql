@@ -314,6 +314,44 @@ CREATE TABLE IF NOT EXISTS selective_interpretations (
 CREATE INDEX IF NOT EXISTS idx_selective_interpretations_run_classification
 ON selective_interpretations (run_id, classification);
 
+-- @context decision -- S32 introduces a second shortlist-gated interpretation contract over the
+-- v2 diamond top band. It cannot reuse `selective_interpretations` because the new batch is keyed
+-- by diamond batch ids rather than legacy shortlist ids and adds the `TRANSITION_SEAM` class while
+-- preserving operator and lane provenance for S33 publication.
+CREATE TABLE IF NOT EXISTS diamond_interpretations (
+  run_id TEXT NOT NULL,
+  batch_run_id TEXT NOT NULL,
+  batch_item_id TEXT NOT NULL,
+  lane_family TEXT NOT NULL,
+  operator_family TEXT NOT NULL,
+  source_kind TEXT NOT NULL,
+  source_run_id TEXT NOT NULL,
+  source_ref TEXT NOT NULL,
+  family_rank INTEGER NOT NULL,
+  shortlist_rank INTEGER NOT NULL,
+  selection_bucket TEXT NOT NULL,
+  source_score REAL NOT NULL,
+  diamond_score REAL NOT NULL,
+  packet_title TEXT NOT NULL,
+  classification TEXT NOT NULL,
+  result_summary TEXT NOT NULL,
+  first_test TEXT NOT NULL,
+  instrument_assumed TEXT NOT NULL,
+  modern_equivalent TEXT NOT NULL,
+  why_stranded_or_unrealized TEXT NOT NULL,
+  gap_to_close TEXT NOT NULL,
+  confidence TEXT NOT NULL,
+  raw_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (run_id, batch_item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_diamond_interpretations_run_classification
+ON diamond_interpretations (run_id, classification);
+
+CREATE INDEX IF NOT EXISTS idx_diamond_interpretations_run_lane
+ON diamond_interpretations (run_id, lane_family, shortlist_rank);
+
 -- @context decision -- S23 expands interpretation coverage beyond shortlist rows, but the
 -- shortlist-gated `selective_interpretations` contract must remain intact so S12 publication
 -- surfaces do not silently widen. The enhanced table stores schema-shaped interpretations against

@@ -30,6 +30,8 @@
     "store:materialize-shortlist": "python3 scripts/materialize_shortlist.py",
     "store:materialize-selective-interpretation-batch": "python3 scripts/materialize_selective_interpretation_batch.py",
     "store:ingest-selective-interpretations": "python3 scripts/ingest_selective_interpretations.py",
+    "store:materialize-diamond-interpretation-batch": "python3 scripts/materialize_diamond_interpretation_batch.py",
+    "store:ingest-diamond-interpretations": "python3 scripts/ingest_diamond_interpretations.py",
     "store:ingest-enhanced-interpretations": "python3 scripts/ingest_enhanced_interpretations.py",
     "store:materialize-holdout-echoes": "uv run --with sqlite-vec python3 scripts/materialize_holdout_echoes.py",
     "store:materialize-unrealized-ideas-index": "python3 scripts/materialize_unrealized_ideas_index.py",
