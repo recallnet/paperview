@@ -302,7 +302,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S25` | consolidated research output report | `done` | `research_output.md` — single human-readable document with all findings |
 | `S26` | executable test memos | `done` | `reports/test-memo-*.md` — three concrete research programs grounded in the current findings |
 | `S27` | early-market failure-mode broadening pass | `done` | broader anchor, probe, operator, interpretation, and publication surfaces for thin, early, and weakly arbitraged markets |
-| `S28` | stabilize truth — canonical run summary | `in_progress` | `run_summary.json`, `run_summary.md`, reconciled counts across all surfaces |
+| `S28` | stabilize truth — canonical run summary | `done` | `run_summary.json`, `run_summary.md`, root findings surface, reconciled counts across all surfaces |
 | `S29` | six-lane discovery expansion | `pending` | 6 lanes with anchors, probes, and lane-specific scoring |
 | `S30` | diamond score and representation redesign | `pending` | unified `diamond_score`, problem/mechanism/regime/stranding views, challenge capsules |
 | `S31` | eight-operator materialization | `pending` | bridge, composition, contrast, negative-space, transition-state, state-graph, participant-pathology, stranded-qfin operators |
@@ -1306,9 +1306,14 @@ Current status:
   - `state_graph`: `1`
   - `stranded_qfin`: `2`
   - `transition_state`: `2`
-- the stage remains in progress only for `S28` closeout and truth signoff; the two required root truth surfaces are now:
+- the `S28` closeout verification confirms the two required root truth surfaces agree on the active broadened run:
   - `run_summary.md`
   - `findings_and_throwaways.md`
+- closeout verification also confirms:
+  - root summary counts still reconcile to `24` shortlist, `9` accepted interpretations, `9` findings accepted rows, `5` unrealized entries, `2` stranded entries, and `2` transition entries
+  - `all_accepted_items_exposed` remains `true`
+  - root findings markdown still exposes `9` accepted findings, `2` rejections, `15` near misses, and `3` stranded-q-fin failures
+- `S28` is now complete because the broadened run has one authoritative machine-readable summary plus one authoritative root findings surface, with no accepted evidence trapped only in intermediate artifacts
 
 ---
 
@@ -1453,15 +1458,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s28-findings-truth-rematerialization`
-- Why this commit exists: make `findings_and_throwaways.md` a mandatory root artifact regenerated from the actual broadened run artifacts so the truth surface is not trapped only inside per-run directories
+- Commit scope: `s28-closeout-and-truth-signoff`
+- Why this commit exists: close the truth-stabilization chapter after verifying the root run summary and root findings surface still reconcile to the same broadened counts
 - Stages touched: `S28`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_findings_and_throwaways.py`, `tests/test_materialize_findings_and_throwaways.py`, `findings_and_throwaways.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:py -- tests/test_materialize_findings_and_throwaways.py`, `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run store:materialize-findings-and-throwaways -- --run-id findings-and-throwaways-20260329 --interpretation-source enhanced --interpretation-run-id enhanced-interpretation-ingestion-20260328-broadened --interpretation-rejections-path data/structural-analogy/runs/enhanced-interpretation-ingestion-20260328-broadened/enhanced_interpretation_rejections.jsonl --bridge-run-id bridge-materialization-20260328-broadened --composition-run-id composition-materialization-20260328-broadened --transition-run-id transition-state-candidate-materialization-20260328-broadened --stranded-ledger-run-id stranded-result-ledger-broadened-20260328`, `npm run codecontext:diff -- scripts/materialize_findings_and_throwaways.py`, `npm run codecontext:diff -- tests/test_materialize_findings_and_throwaways.py`, `npm run docs:lint`
-- Tests run: `python3 -m unittest -v tests.test_materialize_findings_and_throwaways`, `npm run docs:lint`
-- Artifacts produced: `data/structural-analogy/runs/findings-and-throwaways-20260329/*`, `findings_and_throwaways.md`
-- Acceptance result: `passed; the canonical findings materializer now regenerates the root findings_and_throwaways.md from the actual broadened artifact set, and the root surface exposes the same nine accepted items already reconciled in run_summary`
-- Open risks after commit: `S28 still needs a final closeout commit to freeze the truth-stabilization chapter and point the plan at S29`
-- Next intended commit: `S28 closeout and truth signoff`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `python3 - <<'PY' ... read run_summary.json counts and all_accepted_items_exposed ... PY`, `python3 - <<'PY' ... verify findings_and_throwaways.md headline counts ... PY`, `npm run docs:lint`
+- Tests run: `npm run docs:lint`
+- Artifacts produced: `none; closeout verification only`
+- Acceptance result: `passed; S28 truth surfaces remain reconciled and no accepted evidence is hidden outside the root summary and root findings outputs`
+- Open risks after commit: `S29 six-lane discovery expansion is still pending, and diamond_board.md does not exist yet because that requirement lands in S33 publication surfaces`
+- Next intended commit: `S29 lane expansion foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-29`
