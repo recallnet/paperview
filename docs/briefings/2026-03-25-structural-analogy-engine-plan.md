@@ -762,14 +762,14 @@ Current status:
 ## Active Signoff Block
 
 - Commit scope: `s16-active-archive-cleanup-foundation`
-- Why this commit exists: continue the cleanup pass by removing noncanonical downstream publication and gate-review package commands that sit outside the canonical staged pipeline
+- Why this commit exists: continue the cleanup pass by removing the noncanonical `schemas:validate` package command, which is not part of the canonical staged command set
 - Stages touched: `S16`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `package.json`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"(briefs:generate|live:materialize-downstream|queue:assess-live|gatec:prepare|gatec:review)\"' package.json docs scripts tests`, `git ls-files scripts/generate_strategy_briefs.py scripts/materialize_live_downstream_run.py scripts/assess_live_brief_queue.py scripts/prepare_gate_c_review.py scripts/review_gate_c.py`, `git status --short package.json scripts/generate_strategy_briefs.py scripts/materialize_live_downstream_run.py scripts/assess_live_brief_queue.py scripts/prepare_gate_c_review.py scripts/review_gate_c.py`, `npm run docs:lint`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `git grep -n '\"schemas:validate\"' package.json docs scripts tests`, `git ls-files scripts/validate_schema_examples.py`, `git status --short package.json scripts/validate_schema_examples.py`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
 - Artifacts produced: `none`
-- Acceptance result: `the active package surface is smaller: downstream publication and gate-review commands are removed because they sit outside the canonical staged pipeline while the tracked scripts remain in place for a later archive decision`
-- Open risks after commit: `tracked downstream publication and gate-review scripts still remain in the active root, so this slice only removes their package entrypoints while leaving later archive decisions for follow-up commits`
+- Acceptance result: `the active package surface is smaller: schemas:validate is removed because it is not part of the canonical staged command set while the tracked helper script remains in place for a later archive decision`
+- Open risks after commit: `tracked noncanonical scripts still remain in the active root, so this slice only removes the schema-validation package entrypoint while leaving broader archival decisions for follow-up commits`
 - Next intended commit: `S16 active/archive cleanup foundation`
 - Signoff status: `ready`
 - Last updated: `2026-03-28`
