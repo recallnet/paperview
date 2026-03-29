@@ -34,6 +34,7 @@
     "store:materialize-stranded-result-ledger": "python3 scripts/materialize_stranded_result_ledger.py",
     "store:materialize-findings-and-throwaways": "python3 scripts/materialize_findings_and_throwaways.py",
     "store:materialize-transition-state-ledger": "python3 scripts/materialize_transition_state_ledger.py",
+    "store:materialize-research-output": "python3 scripts/materialize_research_output.py",
     "store:materialize-enhanced-interpretation-batch": "python3 scripts/materialize_enhanced_interpretation_batch.py",
     "score:materialize-stranding": "uv run --with pyyaml python3 scripts/materialize_stranding_scores.py",
     "test:unit": "python3 -m unittest discover -s tests -p 'test_*.py' -v",

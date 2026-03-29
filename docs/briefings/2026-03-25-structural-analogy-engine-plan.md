@@ -299,7 +299,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S22` | transition-state microstructure ledger | `done` | `transition_state_ledger.*` publication surface |
 | `S23` | enhanced interpretation batch | `done` | expanded batch + enhanced interpretation ingestion |
 | `S24` | re-materialize all publication surfaces | `done` | all four publication outputs from a single enhanced interpretation run |
-| `S25` | consolidated research output report | `pending` | `research_output.md` — single human-readable document with all findings |
+| `S25` | consolidated research output report | `done` | `research_output.md` — single human-readable document with all findings |
 
 ## Completed Stages
 
@@ -1014,6 +1014,15 @@ Accept when:
 - the report reads as research findings, not as a pipeline status dump
 - the materializer is wired as an npm command and can be re-run idempotently
 
+Current status:
+
+- the `S25` commit adds the canonical root-level materializer in `scripts/materialize_research_output.py`
+- the materializer reads only the four completed enhanced publication surfaces and overwrites `research_output.md` at the repo root on each run
+- fixture coverage in `tests/test_materialize_research_output.py` proves the generated report is non-empty and contains all six required sections
+- the staged command surface now includes `npm run store:materialize-research-output`
+- the live rerun `npm run store:materialize-research-output -- --run-id research-output-20260328 --unrealized-run-id unrealized-ideas-index-enhanced-20260328 --stranded-run-id stranded-result-ledger-enhanced-20260328 --transition-run-id transition-state-ledger-enhanced-20260328 --findings-run-id findings-and-throwaways-enhanced-20260328` completed successfully and overwrote the repo-root report
+- the stage is complete: `research_output.md` exists at the repo root, contains all six sections, and reads as a research memo over the enhanced publication family rather than as a pipeline-status dump
+
 ---
 
 ## Development Policy
@@ -1073,6 +1082,9 @@ Accept when:
 - `npm run store:materialize-holdout-echoes`
 - `npm run store:materialize-unrealized-ideas-index`
 - `npm run store:materialize-stranded-result-ledger`
+- `npm run store:materialize-transition-state-ledger`
+- `npm run store:materialize-findings-and-throwaways`
+- `npm run store:materialize-research-output`
 - `npm run score:materialize-stranding`
 
 ## Current Canonical Config Inputs
@@ -1143,6 +1155,8 @@ Accept when:
 - stranding scores:
   - `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_metrics.json`
   - `data/structural-analogy/runs/stranding-score-materialization-20260328/stranding_score_top.jsonl`
+- consolidated research output:
+  - `research_output.md`
 
 ## Active Signoff Block
 
@@ -1150,11 +1164,11 @@ Accept when:
 - Why this commit exists: add the consolidated research output materializer that produces a single human-readable `research_output.md` from all four publication surfaces, and make it the mandatory final pipeline step
 - Stages touched: `S25`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `scripts/materialize_research_output.py`, `tests/test_materialize_research_output.py`, `package.json`, `research_output.md`
-- Commands run:
-- Tests run:
-- Artifacts produced:
-- Acceptance result: `pending`
-- Open risks after commit: `S25 is the only remaining pending stage`
-- Next intended commit: `S25 consolidated research output materializer`
-- Signoff status: `draft`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run codecontext:scope -- package.json`, `npm run codecontext:py -- scripts/materialize_research_output.py`, `npm run codecontext:py -- tests/test_materialize_research_output.py`, `python3 -m unittest -v tests.test_materialize_research_output`, `npm run store:materialize-research-output -- --run-id research-output-20260328 --unrealized-run-id unrealized-ideas-index-enhanced-20260328 --stranded-run-id stranded-result-ledger-enhanced-20260328 --transition-run-id transition-state-ledger-enhanced-20260328 --findings-run-id findings-and-throwaways-enhanced-20260328`, `npm run codecontext:diff -- scripts/materialize_research_output.py`, `npm run codecontext:diff -- tests/test_materialize_research_output.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_research_output`, `npm run docs:lint`
+- Artifacts produced: `research_output.md`
+- Acceptance result: `complete; the consolidated root report now exists, contains all six required sections, and synthesizes the enhanced publication surfaces as research findings`
+- Open risks after commit: `none inside S25; the canonical plan is now fully complete unless a new stage is added`
+- Next intended commit: `none`
+- Signoff status: `ready`
 - Last updated: `2026-03-28`
