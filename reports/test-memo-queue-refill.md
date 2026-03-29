@@ -1,6 +1,6 @@
 # Post-Shock Passive Quoting: Queue Value x Refill Lag
 
-## Thesis
+## Hypothesis
 
 There may be positive passive-quoting edge immediately after local shocks when queue position is still favorable and displayed depth refills quickly, while the same setup becomes adverse when refill lags and maker participation falls away.
 
@@ -26,7 +26,14 @@ There may be positive passive-quoting edge immediately after local shocks when q
 - Post-shock spread in ticks and notional terms.
 - Maker count change around the shock window, using unique visible liquidity providers when available or proxy quote-source counts when not.
 
-## Baseline Policy
+## Data
+
+- Full-depth limit-order-book snapshots or event-level reconstruction with enough depth to track queue position at the best level and first two price levels.
+- Event markers for volatility shocks and depth depletion windows, plus quote-source or maker-proxy counts.
+- At least one liquid equity or futures instrument.
+- Minimum three months of data to cover multiple volatility regimes.
+
+## Baseline
 
 Naive spread-based passive posting: post passively at the best bid or ask whenever the spread is above a fixed threshold, with no conditioning on queue position, refill state, or maker withdrawal.
 
@@ -34,18 +41,15 @@ Naive spread-based passive posting: post passively at the best bid or ask whenev
 
 Post passively only when queue position is inside a favorable bound and refill is already recovering. A concrete first pass is: only join or keep a passive quote when queue position is in the front 20% of visible queue and refill lag is below 2 seconds, while suppressing passive posting when refill lag exceeds 5 seconds or maker count drops sharply.
 
-## Success Metric
+## Metric
 
 Use fill-quality-adjusted expectancy, not fill rate. Compare baseline versus seam-aware policy on realized markout per fill net of fees, and explicitly decompose expectancy into fill probability, adverse selection after fill, and missed-trade opportunity cost.
 
-## Data Requirements
+## Stop/Go
 
-- Full-depth limit-order-book snapshots or event-level reconstruction.
-- Event markers for volatility shocks and depth depletion windows.
-- At least one liquid equity or futures instrument.
-- Minimum three months of data to cover multiple volatility regimes.
+Go if seam-aware posting improves fill-quality-adjusted expectancy by reducing post-fill adverse selection without collapsing fill opportunity. Stop if the improvement disappears once hidden-liquidity controls or maker-count controls are added, or if any gain comes only from a trivial drop in fill rate.
 
-## Known Risks
+## Fail-Fast
 
 - Refill lag measurement is venue-specific and can be distorted by hidden liquidity or iceberg replenishment.
 - Queue-position advantage may not survive hidden liquidity, midpoint interaction, or internalization.

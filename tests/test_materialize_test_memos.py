@@ -107,19 +107,30 @@ class MaterializeTestMemosTests(unittest.TestCase):
             auction_memo = (reports_root / "test-memo-auction-handoff.md").read_text(encoding="utf-8")
             maker_memo = (reports_root / "test-memo-maker-retreat.md").read_text(encoding="utf-8")
 
-            self.assertIn("## Thesis", queue_memo)
+            self.assertIn("## Hypothesis", queue_memo)
             self.assertIn("## Event Definitions", queue_memo)
             self.assertIn("## Seam-Aware Policy", queue_memo)
+            self.assertIn("## Data", queue_memo)
+            self.assertIn("## Baseline", queue_memo)
+            self.assertIn("## Metric", queue_memo)
+            self.assertIn("## Fail-Fast", queue_memo)
             self.assertIn("1902.10743", queue_memo)
 
             self.assertIn("## Venue-Specific State Boundary", auction_memo)
             self.assertIn("## Test 1", auction_memo)
             self.assertIn("## Test 2", auction_memo)
+            self.assertIn("## Data", auction_memo)
+            self.assertIn("## Baseline", auction_memo)
+            self.assertIn("## Metric", auction_memo)
+            self.assertIn("## Fail-Fast", auction_memo)
             self.assertIn("2101.03086", auction_memo)
 
             self.assertIn("## Maker Withdrawal Proxies", maker_memo)
             self.assertIn("## Regime Classifier", maker_memo)
-            self.assertIn("## Success Metric", maker_memo)
+            self.assertIn("## Data", maker_memo)
+            self.assertIn("## Baseline", maker_memo)
+            self.assertIn("## Metric", maker_memo)
+            self.assertIn("## Fail-Fast", maker_memo)
             self.assertIn("1005.0182", maker_memo)
 
 

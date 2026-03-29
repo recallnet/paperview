@@ -1,6 +1,6 @@
 # Maker-Retreat Regime Switch for Queue-Based Quoting
 
-## Thesis
+## Hypothesis
 
 Queue-position value may degrade materially, or even flip sign, when makers withdraw under stress, so passive quoting logic should treat maker-retreat windows as a separate regime rather than as ordinary queue competition.
 
@@ -17,6 +17,12 @@ Queue-position value may degrade materially, or even flip sign, when makers with
 - Cancellation-rate spike over a short rolling window relative to normal conditions.
 - Inventory-imbalance indicators or one-sided quote retreat proxies inferred from persistent depth withdrawal on one side.
 
+## Data
+
+- Order-level attribution data or credible maker proxy indicators.
+- The same liquid equity or futures instruments used in the queue/refill memo so results can be compared directly.
+- Enough depth and event history to estimate cancellation spikes, quote retreat, and regime transitions reliably.
+
 ## Regime Classifier
 
 Start with a binary classifier: `normal` versus `maker_retreat`. Label a window as `maker_retreat` when at least two withdrawal proxies breach their rolling 90th percentile thresholds, then extend to a three-state classifier (`normal`, `stressed`, `maker_retreat`) if the binary split is too coarse.
@@ -29,17 +35,15 @@ Measure queue-position value as fill quality minus subsequent adverse selection.
 
 Unconditional queue-position value across all regimes, using the same fill-quality and markout calculations but without any regime conditioning.
 
-## Success Metric
+## Metric
 
 A regime-conditional fill-quality difference that survives transaction-cost and adverse-selection controls. Success means queue-position value is measurably worse in maker-retreat windows than in normal windows, and the difference remains after controlling for spread, volatility, and instrument fixed effects.
 
-## Data Requirements
+## Stop/Go
 
-- Order-level attribution data or credible maker proxy indicators.
-- The same liquid equity or futures instruments used in the queue/refill memo so results can be compared directly.
-- Enough depth and event history to estimate cancellation spikes, quote retreat, and regime transitions reliably.
+Go if queue-position value degrades materially or flips sign during maker-retreat regimes after transaction-cost, spread, and volatility controls. Stop if regime effects disappear once the classifier controls for concurrent shock intensity or if maker proxies cannot separate retreat from ordinary stress.
 
-## Known Risks
+## Fail-Fast
 
 - Maker identity is often not directly observable, so proxy quality will vary by venue.
 - Queue degradation may be confounded with volatility shocks unless the regime classifier controls for concurrent price moves.

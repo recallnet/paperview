@@ -1,6 +1,6 @@
 # Auction-to-Continuous Transition Seam
 
-## Thesis
+## Hypothesis
 
 Queue value and refill asymmetry immediately after auction uncrossing may carry more execution signal than the same variables later in the continuous session, creating a distinct post-uncrossing quoting regime.
 
@@ -22,6 +22,16 @@ Queue value and refill asymmetry immediately after auction uncrossing may carry 
 - Primary definition: the first 10 seconds after the auction price is set.
 - Secondary definition for robustness: the first 200 book events after uncrossing.
 
+## Data
+
+- Auction event feeds with official uncrossing timestamps and auction prints.
+- Post-auction limit-order-book reconstruction at message or high-resolution snapshot level.
+- Enough opening or closing auctions to support matched post-uncrossing and later-session control windows, ideally at least three months on a liquid venue.
+
+## Baseline
+
+A queue-priority-only model estimated on later continuous-session windows, without auction-state boundaries or refill-speed asymmetry.
+
 ## Test 1
 
 Does queue priority gained immediately after uncrossing predict short-horizon adverse selection better than queue priority gained 5 minutes later? Measure queue rank at entry, subsequent fill probability, and 1-minute and 5-minute markouts, then compare the post-uncrossing window against a matched later-session control window.
@@ -30,13 +40,15 @@ Does queue priority gained immediately after uncrossing predict short-horizon ad
 
 Does refill-speed asymmetry in the post-uncrossing window add signal beyond queue priority alone? Estimate depth recovery speed separately on bid and ask, then test whether a model with both queue rank and refill asymmetry explains fill-quality outcomes better than queue rank by itself.
 
-## Data Requirements
+## Metric
 
-- Auction event feeds with official uncrossing timestamps and auction prints.
-- Post-auction limit-order-book reconstruction at message or high-resolution snapshot level.
-- Sufficient history to capture many opening or closing auctions, ideally at least three months on a liquid venue.
+Primary metric is short-horizon fill-quality delta: adverse selection after fill in the uncrossing window minus adverse selection for matched later-session entries. Secondary metric is incremental explanatory value from refill-speed asymmetry beyond queue priority alone.
 
-## Known Risks
+## Stop/Go
+
+Go if immediate post-uncrossing queue priority is measurably more informative than later queue priority, and if refill-speed asymmetry adds signal beyond queue position. Stop if the edge vanishes after venue-specific normalization or reduces to a one-venue artifact.
+
+## Fail-Fast
 
 - Auction mechanics differ materially across venues, so the state boundary may not transfer cleanly.
 - Sample sizes for uncrossing events may be small once filters for liquid, clean events are applied.

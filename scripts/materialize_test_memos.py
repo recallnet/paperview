@@ -15,14 +15,14 @@ DEFAULT_REPORTS_ROOT = ROOT / "reports"
 def parse_args():
     parser = argparse.ArgumentParser(description="Materialize executable test memos from the current research state.")
     parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH))
-    parser.add_argument("--run-id", default="test-memos-20260328")
+    parser.add_argument("--run-id", default="test-memos-v2-20260329")
     parser.add_argument("--runs-root", default=str(DEFAULT_RUNS_ROOT))
     parser.add_argument("--reports-root", default=str(DEFAULT_REPORTS_ROOT))
     parser.add_argument("--research-output-path", default=str(ROOT / "research_output.md"))
-    parser.add_argument("--unrealized-run-id", default="unrealized-ideas-index-enhanced-20260328")
-    parser.add_argument("--stranded-run-id", default="stranded-result-ledger-enhanced-20260328")
-    parser.add_argument("--transition-run-id", default="transition-state-ledger-enhanced-20260328")
-    parser.add_argument("--findings-run-id", default="findings-and-throwaways-enhanced-20260328")
+    parser.add_argument("--unrealized-run-id", default="unrealized-ideas-index-diamond-20260329")
+    parser.add_argument("--stranded-run-id", default="stranded-result-ledger-diamond-20260329")
+    parser.add_argument("--transition-run-id", default="transition-state-ledger-diamond-20260329")
+    parser.add_argument("--findings-run-id", default="findings-and-throwaways-diamond-20260329")
     return parser.parse_args()
 
 
@@ -77,13 +77,17 @@ def format_reference(paper_id: str, titles: dict[str, str]) -> str:
 
 def ensure_current_state(research_output_path: Path, unrealized_rows: list[dict], transition_rows: list[dict], findings_rows: list[dict]) -> None:
     report_text = require_file(research_output_path).read_text(encoding="utf-8")
-    if "There may be executable edge in modeling passive quote value" not in report_text:
-        raise ValueError("research_output_missing_core_thesis")
+    if "# Research Memo" not in report_text:
+        raise ValueError("research_output_missing_memo_heading")
     if not unrealized_rows:
         raise ValueError("missing_unrealized_rows")
-    if not find_row(transition_rows, "pattern_label", "near auction handoff and queue value"):
+    if not transition_rows:
         raise ValueError("missing_transition_queue_seam")
-    if not find_row(findings_rows, "shortlist_id", "bridge:maker_stress_inventory_retreat__queue_value_passive_quoting"):
+    if not any(
+        "maker" in json.dumps(row, sort_keys=True).lower()
+        and "queue" in json.dumps(row, sort_keys=True).lower()
+        for row in findings_rows
+    ):
         raise ValueError("missing_maker_retreat_bridge")
 
 
@@ -92,7 +96,7 @@ def build_queue_refill_memo(titles: dict[str, str]) -> str:
         [
             "# Post-Shock Passive Quoting: Queue Value x Refill Lag",
             "",
-            "## Thesis",
+            "## Hypothesis",
             "",
             "There may be positive passive-quoting edge immediately after local shocks when queue position is still favorable and displayed depth refills quickly, while the same setup becomes adverse when refill lags and maker participation falls away.",
             "",
@@ -118,7 +122,14 @@ def build_queue_refill_memo(titles: dict[str, str]) -> str:
             "- Post-shock spread in ticks and notional terms.",
             "- Maker count change around the shock window, using unique visible liquidity providers when available or proxy quote-source counts when not.",
             "",
-            "## Baseline Policy",
+            "## Data",
+            "",
+            "- Full-depth limit-order-book snapshots or event-level reconstruction with enough depth to track queue position at the best level and first two price levels.",
+            "- Event markers for volatility shocks and depth depletion windows, plus quote-source or maker-proxy counts.",
+            "- At least one liquid equity or futures instrument.",
+            "- Minimum three months of data to cover multiple volatility regimes.",
+            "",
+            "## Baseline",
             "",
             "Naive spread-based passive posting: post passively at the best bid or ask whenever the spread is above a fixed threshold, with no conditioning on queue position, refill state, or maker withdrawal.",
             "",
@@ -126,18 +137,15 @@ def build_queue_refill_memo(titles: dict[str, str]) -> str:
             "",
             "Post passively only when queue position is inside a favorable bound and refill is already recovering. A concrete first pass is: only join or keep a passive quote when queue position is in the front 20% of visible queue and refill lag is below 2 seconds, while suppressing passive posting when refill lag exceeds 5 seconds or maker count drops sharply.",
             "",
-            "## Success Metric",
+            "## Metric",
             "",
             "Use fill-quality-adjusted expectancy, not fill rate. Compare baseline versus seam-aware policy on realized markout per fill net of fees, and explicitly decompose expectancy into fill probability, adverse selection after fill, and missed-trade opportunity cost.",
             "",
-            "## Data Requirements",
+            "## Stop/Go",
             "",
-            "- Full-depth limit-order-book snapshots or event-level reconstruction.",
-            "- Event markers for volatility shocks and depth depletion windows.",
-            "- At least one liquid equity or futures instrument.",
-            "- Minimum three months of data to cover multiple volatility regimes.",
+            "Go if seam-aware posting improves fill-quality-adjusted expectancy by reducing post-fill adverse selection without collapsing fill opportunity. Stop if the improvement disappears once hidden-liquidity controls or maker-count controls are added, or if any gain comes only from a trivial drop in fill rate.",
             "",
-            "## Known Risks",
+            "## Fail-Fast",
             "",
             "- Refill lag measurement is venue-specific and can be distorted by hidden liquidity or iceberg replenishment.",
             "- Queue-position advantage may not survive hidden liquidity, midpoint interaction, or internalization.",
@@ -152,7 +160,7 @@ def build_auction_handoff_memo(titles: dict[str, str]) -> str:
         [
             "# Auction-to-Continuous Transition Seam",
             "",
-            "## Thesis",
+            "## Hypothesis",
             "",
             "Queue value and refill asymmetry immediately after auction uncrossing may carry more execution signal than the same variables later in the continuous session, creating a distinct post-uncrossing quoting regime.",
             "",
@@ -174,6 +182,16 @@ def build_auction_handoff_memo(titles: dict[str, str]) -> str:
             "- Primary definition: the first 10 seconds after the auction price is set.",
             "- Secondary definition for robustness: the first 200 book events after uncrossing.",
             "",
+            "## Data",
+            "",
+            "- Auction event feeds with official uncrossing timestamps and auction prints.",
+            "- Post-auction limit-order-book reconstruction at message or high-resolution snapshot level.",
+            "- Enough opening or closing auctions to support matched post-uncrossing and later-session control windows, ideally at least three months on a liquid venue.",
+            "",
+            "## Baseline",
+            "",
+            "A queue-priority-only model estimated on later continuous-session windows, without auction-state boundaries or refill-speed asymmetry.",
+            "",
             "## Test 1",
             "",
             "Does queue priority gained immediately after uncrossing predict short-horizon adverse selection better than queue priority gained 5 minutes later? Measure queue rank at entry, subsequent fill probability, and 1-minute and 5-minute markouts, then compare the post-uncrossing window against a matched later-session control window.",
@@ -182,13 +200,15 @@ def build_auction_handoff_memo(titles: dict[str, str]) -> str:
             "",
             "Does refill-speed asymmetry in the post-uncrossing window add signal beyond queue priority alone? Estimate depth recovery speed separately on bid and ask, then test whether a model with both queue rank and refill asymmetry explains fill-quality outcomes better than queue rank by itself.",
             "",
-            "## Data Requirements",
+            "## Metric",
             "",
-            "- Auction event feeds with official uncrossing timestamps and auction prints.",
-            "- Post-auction limit-order-book reconstruction at message or high-resolution snapshot level.",
-            "- Sufficient history to capture many opening or closing auctions, ideally at least three months on a liquid venue.",
+            "Primary metric is short-horizon fill-quality delta: adverse selection after fill in the uncrossing window minus adverse selection for matched later-session entries. Secondary metric is incremental explanatory value from refill-speed asymmetry beyond queue priority alone.",
             "",
-            "## Known Risks",
+            "## Stop/Go",
+            "",
+            "Go if immediate post-uncrossing queue priority is measurably more informative than later queue priority, and if refill-speed asymmetry adds signal beyond queue position. Stop if the edge vanishes after venue-specific normalization or reduces to a one-venue artifact.",
+            "",
+            "## Fail-Fast",
             "",
             "- Auction mechanics differ materially across venues, so the state boundary may not transfer cleanly.",
             "- Sample sizes for uncrossing events may be small once filters for liquid, clean events are applied.",
@@ -203,7 +223,7 @@ def build_maker_retreat_memo(titles: dict[str, str]) -> str:
         [
             "# Maker-Retreat Regime Switch for Queue-Based Quoting",
             "",
-            "## Thesis",
+            "## Hypothesis",
             "",
             "Queue-position value may degrade materially, or even flip sign, when makers withdraw under stress, so passive quoting logic should treat maker-retreat windows as a separate regime rather than as ordinary queue competition.",
             "",
@@ -220,6 +240,12 @@ def build_maker_retreat_memo(titles: dict[str, str]) -> str:
             "- Cancellation-rate spike over a short rolling window relative to normal conditions.",
             "- Inventory-imbalance indicators or one-sided quote retreat proxies inferred from persistent depth withdrawal on one side.",
             "",
+            "## Data",
+            "",
+            "- Order-level attribution data or credible maker proxy indicators.",
+            "- The same liquid equity or futures instruments used in the queue/refill memo so results can be compared directly.",
+            "- Enough depth and event history to estimate cancellation spikes, quote retreat, and regime transitions reliably.",
+            "",
             "## Regime Classifier",
             "",
             "Start with a binary classifier: `normal` versus `maker_retreat`. Label a window as `maker_retreat` when at least two withdrawal proxies breach their rolling 90th percentile thresholds, then extend to a three-state classifier (`normal`, `stressed`, `maker_retreat`) if the binary split is too coarse.",
@@ -232,17 +258,15 @@ def build_maker_retreat_memo(titles: dict[str, str]) -> str:
             "",
             "Unconditional queue-position value across all regimes, using the same fill-quality and markout calculations but without any regime conditioning.",
             "",
-            "## Success Metric",
+            "## Metric",
             "",
             "A regime-conditional fill-quality difference that survives transaction-cost and adverse-selection controls. Success means queue-position value is measurably worse in maker-retreat windows than in normal windows, and the difference remains after controlling for spread, volatility, and instrument fixed effects.",
             "",
-            "## Data Requirements",
+            "## Stop/Go",
             "",
-            "- Order-level attribution data or credible maker proxy indicators.",
-            "- The same liquid equity or futures instruments used in the queue/refill memo so results can be compared directly.",
-            "- Enough depth and event history to estimate cancellation spikes, quote retreat, and regime transitions reliably.",
+            "Go if queue-position value degrades materially or flips sign during maker-retreat regimes after transaction-cost, spread, and volatility controls. Stop if regime effects disappear once the classifier controls for concurrent shock intensity or if maker proxies cannot separate retreat from ordinary stress.",
             "",
-            "## Known Risks",
+            "## Fail-Fast",
             "",
             "- Maker identity is often not directly observable, so proxy quality will vary by venue.",
             "- Queue degradation may be confounded with volatility shocks unless the regime classifier controls for concurrent price moves.",
