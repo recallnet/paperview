@@ -1663,16 +1663,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s36-spherical-cow-1-market-design-delayed-parity-repair`
-- Why this commit exists: turn the first lane memo into a Tradecore-targeted spherical-cow writeup using only supported markets and leaving sizing unknown where Tradecore does not yet have honest data
+- Commit scope: `s36-spherical-cow-2-settlement-lag-resolution-friction-timing`
+- Why this commit exists: turn the settlement lane memo into a Tradecore-targeted spherical-cow writeup using only supported markets and keeping sizing unknown where Tradecore does not yet have honest post-trade state history
 - Stages touched: `S36`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-market-design-delayed-parity-repair.md`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`
 - Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `reports/spherical-cow-market-design-delayed-parity-repair.md`
-- Acceptance result: `reports/spherical-cow-market-design-delayed-parity-repair.md` was written successfully in the requested spherical-cow format, constrained to Tradecore-supported prediction venues (`Kalshi`, `Polymarket`, `Limitless`), and leaves APR, capacity, and opportunity counts explicitly `unknown` because Tradecore does not yet persist the matched historical cross-venue state required for honest sizing
-- Open risks after commit: this spherical-cow pass must keep unknowns unknown; it should use Tradecore-supported venues and data availability truth instead of fabricating APR, capacity, or execution funnel numbers
-- Next intended commit: `S36 spherical-cow 2 — settlement-lag / resolution-friction timing`
+- Artifacts produced: `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`
+- Acceptance result: `reports/spherical-cow-settlement-lag-resolution-friction-timing.md` was written successfully in the requested spherical-cow format, constrained to Tradecore-supported venue families (`Kalshi`, `Polymarket`, `Limitless`, `Hyperliquid`, `Coinbase`, `Binance`), and leaves APR, capacity, and opportunity counts explicitly `unknown` because Tradecore does not yet persist the resolution-state history required for honest sizing
+- Open risks after commit: this memo must keep unknowns unknown and stay centered on observable Tradecore venue families instead of inventing settlement-state telemetry that the stack does not yet persist
+- Next intended commit: `S36 spherical-cow 3 — rule-sensitive toxic-flow filters`
 - Signoff status: `committed`
 - Last updated: `2026-03-31`
 
