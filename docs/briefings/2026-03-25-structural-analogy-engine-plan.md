@@ -1664,16 +1664,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s37-estimated-spherical-cow-3-rule-sensitive-toxic-flow-filters`
-- Why this commit exists: revise the toxic-flow spherical-cow memo from unknown sizing to explicit estimates using Tradecore's venue-family split, with a heavy haircut because the prediction-market branch is effectively dead and only crypto-first deployment looks plausible
+- Commit scope: `s37-estimated-spherical-cow-4-state-graph-repair-timing-monitor`
+- Why this commit exists: revise the state-graph repair spherical-cow memo from unknown sizing to explicit estimates using Tradecore's cross-venue fragmentation, parity, and lead-lag priors with a conservative haircut for the harder graph-aware trigger
 - Stages touched: `S37`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-state-graph-repair-timing-monitor.md`
 - Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`
-- Acceptance result: `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md` now carries explicit estimates derived from Tradecore priors: `APR 5%`, `Capacity $0.002M/year`, and `3-12 tradeable filtered windows/day`; the memo states clearly that these are low-confidence planning estimates for a crypto-first deployment, not measured replay output and not a claim that prediction-market toxic-flow is viable
+- Artifacts produced: `reports/spherical-cow-state-graph-repair-timing-monitor.md`
+- Acceptance result: `reports/spherical-cow-state-graph-repair-timing-monitor.md` now carries explicit estimates derived from Tradecore priors: `APR 10%`, `Capacity $0.002M/year`, and `5-15 tradeable graph-repair windows/day`; the memo states clearly that these are planning estimates based on cross-venue fragmentation, parity, and lead-lag priors rather than measured replay output
 - Open risks after commit: the sizing must stay estimate-labeled and derived from existing Tradecore priors rather than being presented as measured production output
-- Next intended commit: `S37 estimated spherical-cow 4 — state-graph repair timing monitor`
+- Next intended commit: `none — S37 estimated sizing pass complete`
 - Signoff status: `committed`
 - Last updated: `2026-03-31`
 
@@ -1690,4 +1690,4 @@ Current status:
   - three empirical memo v2 outputs
   - a completed `S35` lane-memo stage with four focused writeups for the strongest non-generic early-market leads
   - a completed `S36` spherical-cow stage with four Tradecore-targeted rewrites of those lane memos, each keeping unsupported sizing explicitly unknown
-  - an active `S37` estimated-sizing pass to replace those unknowns with explicit Tradecore-based priors, one memo at a time
+  - a completed `S37` estimated-sizing pass replacing those unknowns with explicit Tradecore-based priors across all four spherical-cow memos
