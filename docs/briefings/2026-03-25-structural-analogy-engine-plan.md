@@ -1664,16 +1664,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s37-estimated-spherical-cow-2-settlement-lag-resolution-friction-timing`
-- Why this commit exists: revise the settlement / resolution-friction spherical-cow memo from unknown sizing to explicit estimates using Tradecore venue support and settlement-metadata priors with a conservative haircut for the narrower, higher-friction timing seam
+- Commit scope: `s37-estimated-spherical-cow-3-rule-sensitive-toxic-flow-filters`
+- Why this commit exists: revise the toxic-flow spherical-cow memo from unknown sizing to explicit estimates using Tradecore's venue-family split, with a heavy haircut because the prediction-market branch is effectively dead and only crypto-first deployment looks plausible
 - Stages touched: `S37`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`
 - Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`
-- Acceptance result: `reports/spherical-cow-settlement-lag-resolution-friction-timing.md` now carries explicit estimates derived from Tradecore priors: `APR 8%`, `Capacity $0.001M/year`, and `1-5 tradeable timing windows/day`; the memo states clearly that these are planning estimates based on supported-venue scope and narrower resolution-state timing priors rather than measured replay output
+- Artifacts produced: `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`
+- Acceptance result: `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md` now carries explicit estimates derived from Tradecore priors: `APR 5%`, `Capacity $0.002M/year`, and `3-12 tradeable filtered windows/day`; the memo states clearly that these are low-confidence planning estimates for a crypto-first deployment, not measured replay output and not a claim that prediction-market toxic-flow is viable
 - Open risks after commit: the sizing must stay estimate-labeled and derived from existing Tradecore priors rather than being presented as measured production output
-- Next intended commit: `S37 estimated spherical-cow 3 — rule-sensitive toxic-flow filters`
+- Next intended commit: `S37 estimated spherical-cow 4 — state-graph repair timing monitor`
 - Signoff status: `committed`
 - Last updated: `2026-03-31`
 
