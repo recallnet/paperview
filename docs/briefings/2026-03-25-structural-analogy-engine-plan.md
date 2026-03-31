@@ -315,6 +315,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S33` | six publication surfaces + diamond board | `done` | unrealized index, stranded ledger, transition ledger, early-market ledger, findings, diamond board all rematerialized from `diamond_interpretations` |
 | `S34` | empirical test memos v2 | `done` | queue x refill, auction handoff, maker-retreat memos now published in the v2 hypothesis/data/baseline/metric/fail-fast format |
 | `S35` | lane memo suite | `done` | four focused lane memos: market-design delayed parity repair, settlement-lag timing, toxic-flow filters, state-graph repair timing |
+| `S36` | spherical-cow memo suite | `in_progress` | tradecore-targeted spherical-cow writeups for each lane memo, committed one at a time |
 
 ## Completed Stages
 
@@ -1662,18 +1663,18 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s35-closeout`
-- Why this commit exists: close the lane-memo follow-on stage after all four focused memos have been generated and verified from the current publication surfaces
-- Stages touched: `S35`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`
+- Commit scope: `s36-spherical-cow-1-market-design-delayed-parity-repair`
+- Why this commit exists: turn the first lane memo into a Tradecore-targeted spherical-cow writeup using only supported markets and leaving sizing unknown where Tradecore does not yet have honest data
+- Stages touched: `S36`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-market-design-delayed-parity-repair.md`
 - Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `none`
-- Acceptance result: `S35` is complete with all four lane memos live under `reports/`: market-design delayed parity repair, settlement-lag / resolution-friction timing, rule-sensitive toxic-flow filters, and state-graph repair timing monitor
-- Open risks after commit: none
-- Next intended commit: `none`
+- Artifacts produced: `reports/spherical-cow-market-design-delayed-parity-repair.md`
+- Acceptance result: `reports/spherical-cow-market-design-delayed-parity-repair.md` was written successfully in the requested spherical-cow format, constrained to Tradecore-supported prediction venues (`Kalshi`, `Polymarket`, `Limitless`), and leaves APR, capacity, and opportunity counts explicitly `unknown` because Tradecore does not yet persist the matched historical cross-venue state required for honest sizing
+- Open risks after commit: this spherical-cow pass must keep unknowns unknown; it should use Tradecore-supported venues and data availability truth instead of fabricating APR, capacity, or execution funnel numbers
+- Next intended commit: `S36 spherical-cow 2 — settlement-lag / resolution-friction timing`
 - Signoff status: `committed`
-- Last updated: `2026-03-29`
+- Last updated: `2026-03-31`
 
 ## Closeout Status
 
@@ -1687,3 +1688,4 @@ Current status:
   - six publication surfaces plus `diamond_board.md`
   - three empirical memo v2 outputs
   - a completed `S35` lane-memo stage with four focused writeups for the strongest non-generic early-market leads
+  - an active `S36` spherical-cow stage for Tradecore-targeted rewrites of those lane memos, one committed memo at a time
