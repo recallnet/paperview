@@ -1663,16 +1663,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s36-spherical-cow-2-settlement-lag-resolution-friction-timing`
-- Why this commit exists: turn the settlement lane memo into a Tradecore-targeted spherical-cow writeup using only supported markets and keeping sizing unknown where Tradecore does not yet have honest post-trade state history
+- Commit scope: `s36-spherical-cow-3-rule-sensitive-toxic-flow-filters`
+- Why this commit exists: turn the participant-pathology lane memo into a Tradecore-targeted spherical-cow writeup using only supported markets and keeping sizing unknown where Tradecore does not yet have honest venue-state toxicity history
 - Stages touched: `S36`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`
 - Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`
-- Acceptance result: `reports/spherical-cow-settlement-lag-resolution-friction-timing.md` was written successfully in the requested spherical-cow format, constrained to Tradecore-supported venue families (`Kalshi`, `Polymarket`, `Limitless`, `Hyperliquid`, `Coinbase`, `Binance`), and leaves APR, capacity, and opportunity counts explicitly `unknown` because Tradecore does not yet persist the resolution-state history required for honest sizing
-- Open risks after commit: this memo must keep unknowns unknown and stay centered on observable Tradecore venue families instead of inventing settlement-state telemetry that the stack does not yet persist
-- Next intended commit: `S36 spherical-cow 3 — rule-sensitive toxic-flow filters`
+- Artifacts produced: `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`
+- Acceptance result: `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md` was written successfully in the requested spherical-cow format, constrained to Tradecore-supported venue families (`Kalshi`, `Polymarket`, `Limitless`, `Hyperliquid`, `Coinbase`, `Binance`), and leaves APR, capacity, and opportunity counts explicitly `unknown` because Tradecore does not yet persist the joined venue-state toxicity history required for honest sizing
+- Open risks after commit: this memo must keep unknowns unknown and stay centered on venue-conditioned toxicity rather than pretending Tradecore already has a persisted participant-label dataset
+- Next intended commit: `S36 spherical-cow 4 — state-graph repair timing monitor`
 - Signoff status: `committed`
 - Last updated: `2026-03-31`
 
