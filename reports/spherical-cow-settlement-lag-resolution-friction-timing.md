@@ -6,13 +6,13 @@ Strategy Theme: Resolution-State Relative Value
 Venues: Kalshi, Polymarket, Limitless, Hyperliquid, Coinbase, Binance
 Edge Description: Economic execution can move ahead of legal, collateral, inventory, or transfer resolution. The edge is a timing seam where price, hedge, or inventory pressure reacts before the relevant venue state fully synchronizes across execution, collateral, or settlement surfaces.
 Null Hypothesis: Apparent settlement or resolution timing dislocations across supported venues are too rare, too noisy, or too dependent on unobservable post-trade state to generate returns materially above fees after execution friction and carry costs.
-🐮 APR: unknown
-🐮 Capacity ($M/Year): unknown
-🐮 Oppty: unknown
+🐮 APR: 8%
+🐮 Capacity ($M/Year): $0.001
+🐮 Oppty: 1-5 tradeable timing windows/day
 Experiments: unknown
 Last edited time: March 31, 2026 11:59 PM
 👼: ✅
-AI Thesis Eval (0-5): 3 - The thesis is coherent and maps to Tradecore-supported venues, but honest sizing is still unavailable because the required post-trade or resolution-state history is not yet a persisted research surface in Tradecore.
+AI Thesis Eval (0-5): 3 - The thesis is coherent and maps to Tradecore-supported venues. The sizing is still an estimate rather than a replay result, but it is now anchored to Tradecore's visible venue support, partial settlement metadata, and the much smaller execution universe implied by resolution-state timing triggers.
 
 ## Summary
 
@@ -24,7 +24,7 @@ This is potentially relevant across several supported venue families:
 - perps versus spot where hedge pressure can arrive before inventory or transfer state catches up
 - on-chain or hybrid venues where liquidation or collateral state is more explicit than in mature centralized markets
 
-The key constraint is honesty: Tradecore supports the venues, but does not yet expose a stable historical table for the relevant settlement or resolution-state clocks. So this memo names the likely opportunity, but does not pretend to size it.
+The key constraint is honesty: Tradecore supports the venues, but does not yet expose a stable historical table for the relevant settlement or resolution-state clocks. So this memo now uses a conservative planning estimate rather than a measured claim.
 
 ## "Spherical Cow" Opportunity
 
@@ -50,11 +50,11 @@ Query 7: Time-series funnel
 
 ## Spherical Cow Analysis — March 2026 (Tradecore-Supported Venue Families)
 
-*Methodology: constrained to supported venues only: Kalshi, Polymarket, Limitless, Hyperliquid, Coinbase, and Binance. The honest first pass requires historical alignment between executable price state and the relevant resolution state, such as event resolution, collateral or liquidation state, transfer latency, or hedge inventory synchronization. Tradecore does not yet persist that full state history in a research-ready form.*
+*Methodology: constrained to supported venues only: Kalshi, Polymarket, Limitless, Hyperliquid, Coinbase, and Binance. The honest first pass requires historical alignment between executable price state and the relevant resolution state, such as event resolution, collateral or liquidation state, transfer latency, or hedge inventory synchronization. Tradecore does not yet persist that full state history in a research-ready form, so the figures below are explicit planning estimates derived from supported-venue scope, partial settlement metadata, and a conservative haircut versus Tradecore's broader cross-venue timing priors.*
 
 ### Recommendation
 
-**Do not size this yet. First define one concrete resolution-state seam and build the smallest replay dataset for it.**
+**Treat this as a narrow, lower-frequency timing seam worth prototyping only after one concrete resolution-state clock is chosen.**
 
 The strongest immediate candidate is not all six venues at once. It is one narrow family where the resolution clock is visible enough to measure. The cleanest possibilities are:
 
@@ -66,11 +66,11 @@ The strongest immediate candidate is not all six venues at once. It is one narro
 
 | Stage | n | Notes |
 | --- | --- | --- |
-| Candidate venue families | unknown | The venue set is known, but the concrete resolution-state seam must be chosen first |
-| Historical price + hedge state | unknown | Tradecore supports venue ingestion, but not a unified research table for this seam |
-| Historical resolution-state labels | unknown | Liquidation, transfer, collateral, or event-resolution clocks are not yet materialized as a replay dataset here |
-| Detected delayed-resolution windows | unknown | Cannot be estimated honestly without the earlier stages |
-| Executable windows surviving fees and carry | unknown | Also unknown without matched state history |
+| Candidate venue families | ~3 narrow seam families | prediction resolution timing, perp-spot collateral timing, and transfer / inventory synchronization are the realistic first-pass buckets |
+| Historical price + hedge state | partial only | supported operationally, but not yet a canonical replay table |
+| Historical resolution-state labels | sparse / partial | enough to define the seam concept, not enough to measure it directly |
+| Detected delayed-resolution windows | estimated 3-10/day | conservative subset of broader cross-venue or hedge-adjustment timing states |
+| Executable windows surviving fees and carry | estimated 1-5/day | assumes most detected windows die at hedge, carry, or transfer friction gates |
 
 ### Where the Opportunity Probably Lives
 
@@ -87,15 +87,31 @@ A viable version of this motif would show:
 - net edge that survives fees, slippage, financing, and carry
 - a resolution-state variable that adds signal beyond plain spread, basis, or volatility
 
-### Why The Unknowns Stay Unknown
+### Estimated Economics
+
+These are spherical-cow estimates, not measured production outputs.
+
+- Estimated annual revenue capacity: roughly `$0.0005M-$0.0015M/year`
+- Estimated center-case capacity used here: `$0.001M/year`
+- Estimated tradeable timing windows: `1-5/day`
+- Estimated center-case APR used here: `8%`
+
+Reasoning:
+
+- Tradecore already supports the relevant venue families and has partial expiry and settlement metadata, so the seam is operationally plausible.
+- But this motif is narrower than same-event fragmentation or generic lead-lag because it requires a specific resolution-state explanation, not just a price mismatch.
+- It also has more ways to die after detection: hedge friction, transfer latency, collateral timing, carry, and venue-specific resolution rules.
+- The estimate is therefore deliberately smaller than the market-design delayed-parity memo: lower frequency, lower capacity, and a more muted APR until a replay surface proves otherwise.
+
+### Why These Are Estimates
 
 Tradecore has the venue support, but not yet the historical research substrate for this motif:
 
 - no persisted, unified resolution-state history across the candidate venue families
 - no canonical replay surface for collateral, liquidation, transfer, or event-resolution clocks
-- no honest funnel yet for how often delayed-resolution windows survive into executable trades
+- no honest replay yet for how often delayed-resolution windows survive into executable trades
 
-So the correct spherical-cow posture is: **supported venues, credible seam, un-sized opportunity**.
+So the correct spherical-cow posture is: **supported venues, credible seam, roughly sized opportunity with low confidence until replay data exists**.
 
 ### Smallest Honest First Pass
 
@@ -110,6 +126,6 @@ So the correct spherical-cow posture is: **supported venues, credible seam, un-s
 1. This motif belongs in Tradecore because the supported venues span prediction, perps, and spot.
 2. It should not be treated as a generic spread or basis strategy.
 3. The main blocker is not theory; it is the lack of persisted resolution-state history.
-4. APR, capacity, and opportunity count remain honestly unknown until that history exists.
+4. APR, capacity, and opportunity count are now explicit estimates, but they should still be treated as planning priors until replay data exists.
 
 ---

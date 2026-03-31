@@ -1664,16 +1664,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s37-estimated-spherical-cow-1-market-design-delayed-parity-repair`
-- Why this commit exists: revise the first spherical-cow memo from unknown sizing to explicit estimates using Tradecore's lead-lag and cross-venue fragmentation priors with a conservative haircut for the stricter delayed-repair trigger
+- Commit scope: `s37-estimated-spherical-cow-2-settlement-lag-resolution-friction-timing`
+- Why this commit exists: revise the settlement / resolution-friction spherical-cow memo from unknown sizing to explicit estimates using Tradecore venue support and settlement-metadata priors with a conservative haircut for the narrower, higher-friction timing seam
 - Stages touched: `S37`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-market-design-delayed-parity-repair.md`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`
 - Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `reports/spherical-cow-market-design-delayed-parity-repair.md`
-- Acceptance result: `reports/spherical-cow-market-design-delayed-parity-repair.md` now carries explicit estimates derived from Tradecore priors: `APR 15%`, `Capacity $0.003M/year`, and `10-30 tradeable repair windows/day`; the memo states clearly that these are planning estimates based on lead-lag and cross-venue fragmentation ranges rather than measured replay output
+- Artifacts produced: `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`
+- Acceptance result: `reports/spherical-cow-settlement-lag-resolution-friction-timing.md` now carries explicit estimates derived from Tradecore priors: `APR 8%`, `Capacity $0.001M/year`, and `1-5 tradeable timing windows/day`; the memo states clearly that these are planning estimates based on supported-venue scope and narrower resolution-state timing priors rather than measured replay output
 - Open risks after commit: the sizing must stay estimate-labeled and derived from existing Tradecore priors rather than being presented as measured production output
-- Next intended commit: `S37 estimated spherical-cow 2 — settlement-lag / resolution-friction timing`
+- Next intended commit: `S37 estimated spherical-cow 3 — rule-sensitive toxic-flow filters`
 - Signoff status: `committed`
 - Last updated: `2026-03-31`
 
