@@ -6,13 +6,13 @@ Strategy Theme: Cross-Venue Relative Value
 Venues: Kalshi, Polymarket, Limitless
 Edge Description: Structural price repair delay between matched event markets listed on different venues with different rule surfaces, tick sizes, protection logic, and liquidity regimes. The edge is not generic cross-venue arb; it is the short window where one venue begins repairing toward fair value and the lagging venue remains stale because its local design rules slow convergence.
 Null Hypothesis: Cross-venue delayed parity repair in matched prediction markets is too short-lived, too sparse, or too contaminated by market-matching errors to generate returns materially above fees and slippage after accounting for venue-specific execution friction.
-🐮 APR: unknown
-🐮 Capacity ($M/Year): unknown
-🐮 Oppty: unknown
+🐮 APR: 15%
+🐮 Capacity ($M/Year): $0.003
+🐮 Oppty: 10-30 tradeable repair windows/day
 Experiments: unknown
 Last edited time: March 31, 2026 11:59 PM
 👼: ✅
-AI Thesis Eval (0-5): 4 - The thesis is specific and Tradecore-compatible because it uses venues the system already supports and focuses on a concrete repair-timing mechanism rather than generic fragmentation. It is still un-sized because Tradecore does not yet persist the matched, historical cross-venue state needed for an honest spherical-cow estimate.
+AI Thesis Eval (0-5): 4 - The thesis is specific and Tradecore-compatible because it uses venues the system already supports and focuses on a concrete repair-timing mechanism rather than generic fragmentation. The sizing is still estimated rather than measured, but it is now anchored to Tradecore's existing lead-lag and cross-venue fragmentation priors instead of left blank.
 
 ## Summary
 
@@ -50,19 +50,19 @@ Query 7: Time-series funnel
 
 ### Recommendation
 
-**Do not size this yet. First build a state-aware replay dataset for matched Kalshi / Polymarket / Limitless events.**
+**Treat this as a small but plausible extension of Tradecore's cross-venue prediction-market stack, not as a standalone flagship strategy.**
 
-The current evidence is good enough to justify research, but not good enough to claim APR, capacity, or opportunity count. Tradecore's own lead-lag research notes that cross-venue mappings are not persisted and historical orderbook snapshots are missing or incomplete. Without that foundation, any spherical-cow estimate would be fabricated.
+Estimated sizing is possible now because Tradecore already has priors for same-event fragmentation and lead-lag behavior. The estimate here is intentionally conservative: it starts from Tradecore's lead-lag range of 10-30 tradeable events/day and annual revenue of roughly $0.7K-$3.3K, then discounts it because this motif is a stricter subset that only fires when a repair window appears to be widened by venue state.
 
 ### Detection Funnel
 
 | Stage | n | Notes |
 | --- | --- | --- |
-| Matched event pairs across venues | unknown | Cross-venue mapping exists at runtime, not as a stable historical research table |
-| Historical synchronized books | unknown | Tradecore venue support exists, but historical matched snapshots are not yet available in a research-ready form |
-| Detected state breaks | unknown | Requires a repair-state definition, not just raw spread comparisons |
-| State breaks with venue asymmetry labels | unknown | Tick-size / protection / rule-state annotations not yet materialized into a replayable dataset |
-| Executable delayed-repair windows | unknown | Cannot be estimated honestly without the earlier stages |
+| Matched event pairs across venues | ~100 | borrowed from Tradecore's same-market fragmentation universe |
+| Historical synchronized books | not yet persisted | still the main evidence gap |
+| Detected state breaks | estimated 20-60/day | rough subset of the broader cross-venue stale-quote / lead-lag universe |
+| State breaks with venue asymmetry labels | estimated 10-30/day | conservative haircut for events where venue-state asymmetry is plausibly doing the work |
+| Executable delayed-repair windows | estimated 10-30/day | same practical range as Tradecore's tradeable lead-lag windows, but treated as the upper bound rather than the median |
 
 ### Where the Opportunity Probably Lives
 
@@ -79,7 +79,23 @@ A viable version of this motif would show all of the following:
 - Enough resting or taking liquidity on the lagging venue to enter before repair closes.
 - Net edge that survives venue fees, slippage, and stale-quote false positives.
 
-### Why The Unknowns Stay Unknown
+### Estimated Economics
+
+These are spherical-cow estimates, not measured production outputs.
+
+- Estimated annual revenue capacity: roughly `$0.001M-$0.003M/year`
+- Estimated center-case capacity used here: `$0.003M/year`
+- Estimated tradeable repair windows: `10-30/day`
+- Estimated center-case APR used here: `15%`
+
+Reasoning:
+
+- Tradecore's lead-lag motif already estimates `10-30` tradeable events/day and roughly `$730-$3,285/year`.
+- This motif is a stricter subset of that universe, because it requires a plausible venue-state reason for the lag, not just any lag.
+- Tradecore's lead-lag work also says the standalone edge is borderline and often subsumed by the existing cross-venue fragmentation executor, so the APR should be haircut below the raw headline ROI implied by tiny capital bases.
+- A `15%` APR assumption is therefore a conservative strategic estimate rather than a literal backtest output.
+
+### Why These Are Estimates
 
 Tradecore already has the right venue set, but the necessary research substrate is still missing:
 
@@ -87,7 +103,7 @@ Tradecore already has the right venue set, but the necessary research substrate 
 - Historical orderbook snapshots for matched venue pairs are not available in a stable research surface.
 - Venue-state annotations needed for this motif, such as repair-state boundary or rule-state tags, do not yet exist in a replayable dataset.
 
-So the correct spherical-cow posture is: **promising thesis, un-sized opportunity**.
+So the correct spherical-cow posture is: **promising thesis, roughly sized opportunity with low confidence until replay data exists**.
 
 ### Smallest Honest First Pass
 
@@ -101,7 +117,7 @@ So the correct spherical-cow posture is: **promising thesis, un-sized opportunit
 
 1. This motif is Tradecore-compatible because all proposed venues are already supported.
 2. It is not the same as plain identical-market arb; the core thesis is *repair timing conditioned on venue state*.
-3. The current unknowns are structural, not cosmetic. APR, capacity, and opportunity count are not honest yet.
-4. The first pass should be a data and replay study, not an execution launch.
+3. The current sizing is estimate-based and should be treated as a planning prior, not as measured truth.
+4. The first pass should still be a data and replay study before any execution launch.
 
 ---
