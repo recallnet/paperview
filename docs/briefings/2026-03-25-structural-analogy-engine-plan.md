@@ -316,7 +316,8 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S34` | empirical test memos v2 | `done` | queue x refill, auction handoff, maker-retreat memos now published in the v2 hypothesis/data/baseline/metric/fail-fast format |
 | `S35` | lane memo suite | `done` | four focused lane memos: market-design delayed parity repair, settlement-lag timing, toxic-flow filters, state-graph repair timing |
 | `S36` | spherical-cow memo suite | `done` | tradecore-targeted spherical-cow writeups for each lane memo, committed one at a time |
-| `S37` | estimated spherical-cow sizing pass | `in_progress` | revise spherical-cow memos from `unknown` to explicit estimates using Tradecore research priors, one memo at a time |
+| `S37` | estimated spherical-cow sizing pass | `done` | revised all four spherical-cow memos from `unknown` to explicit estimates using Tradecore research priors |
+| `S38` | spherical-cow memo metadata cleanup | `done` | remove copied example-template metadata from the spherical-cow memos so they only contain justified strategy fields |
 
 ## Completed Stages
 
@@ -1664,16 +1665,16 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s37-estimated-spherical-cow-4-state-graph-repair-timing-monitor`
-- Why this commit exists: revise the state-graph repair spherical-cow memo from unknown sizing to explicit estimates using Tradecore's cross-venue fragmentation, parity, and lead-lag priors with a conservative haircut for the harder graph-aware trigger
-- Stages touched: `S37`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-state-graph-repair-timing-monitor.md`
+- Commit scope: `s38-spherical-cow-memo-metadata-cleanup`
+- Why this commit exists: remove copied example-template metadata from the spherical-cow memos so they read like native paperview documents instead of carrying synthetic fields from the user's sample format
+- Stages touched: `S37`, `S38`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-market-design-delayed-parity-repair.md`, `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`, `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`, `reports/spherical-cow-state-graph-repair-timing-monitor.md`
 - Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
 - Tests run: `npm run docs:lint`
-- Artifacts produced: `reports/spherical-cow-state-graph-repair-timing-monitor.md`
-- Acceptance result: `reports/spherical-cow-state-graph-repair-timing-monitor.md` now carries explicit estimates derived from Tradecore priors: `APR 10%`, `Capacity $0.002M/year`, and `5-15 tradeable graph-repair windows/day`; the memo states clearly that these are planning estimates based on cross-venue fragmentation, parity, and lead-lag priors rather than measured replay output
-- Open risks after commit: the sizing must stay estimate-labeled and derived from existing Tradecore priors rather than being presented as measured production output
-- Next intended commit: `none — S37 estimated sizing pass complete`
+- Artifacts produced: `reports/spherical-cow-market-design-delayed-parity-repair.md`, `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`, `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`, `reports/spherical-cow-state-graph-repair-timing-monitor.md`
+- Acceptance result: all four spherical-cow memos now keep only justified strategy fields; copied sample-only metadata such as `Lead(s): Kristal Soman`, `Experiments: unknown`, `Last edited time`, `👼`, and `AI Thesis Eval` has been removed; `S37` is also marked fully complete in the stage table
+- Open risks after commit: none on the memo template leak; future memo rewrites should avoid inheriting example-only metadata fields that are not grounded in repo truth
+- Next intended commit: `none`
 - Signoff status: `committed`
 - Last updated: `2026-03-31`
 

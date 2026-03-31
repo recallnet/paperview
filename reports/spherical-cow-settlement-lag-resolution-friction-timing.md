@@ -1,6 +1,5 @@
 # Settlement-Lag / Resolution-Friction Timing
 
-Lead(s): Kristal Soman
 Categories: Prediction Markets, Perpetuals, Spot Crypto
 Strategy Theme: Resolution-State Relative Value
 Venues: Kalshi, Polymarket, Limitless, Hyperliquid, Coinbase, Binance
@@ -9,10 +8,6 @@ Null Hypothesis: Apparent settlement or resolution timing dislocations across su
 🐮 APR: 8%
 🐮 Capacity ($M/Year): $0.001
 🐮 Oppty: 1-5 tradeable timing windows/day
-Experiments: unknown
-Last edited time: March 31, 2026 11:59 PM
-👼: ✅
-AI Thesis Eval (0-5): 3 - The thesis is coherent and maps to Tradecore-supported venues. The sizing is still an estimate rather than a replay result, but it is now anchored to Tradecore's visible venue support, partial settlement metadata, and the much smaller execution universe implied by resolution-state timing triggers.
 
 ## Summary
 

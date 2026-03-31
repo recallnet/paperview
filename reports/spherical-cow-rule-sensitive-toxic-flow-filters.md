@@ -1,6 +1,5 @@
 # Rule-Sensitive Toxic-Flow Filters
 
-Lead(s): Kristal Soman
 Categories: Prediction Markets, Perpetuals, Spot Crypto
 Strategy Theme: Venue-State Flow Filtering
 Venues: Kalshi, Polymarket, Limitless, Hyperliquid, Coinbase, Binance
@@ -9,10 +8,6 @@ Null Hypothesis: Venue-conditioned toxic-flow signatures across supported venues
 🐮 APR: 5%
 🐮 Capacity ($M/Year): $0.002
 🐮 Oppty: 3-12 tradeable filtered windows/day
-Experiments: unknown
-Last edited time: March 31, 2026 11:59 PM
-👼: ✅
-AI Thesis Eval (0-5): 4 - The thesis maps well to Tradecore because the platform already supports orderbook-driven venues where cancellation bursts, sweeps, and imbalance states are observable. The estimate is intentionally harsh because Tradecore's own research says the prediction-market version is effectively dead and only a crypto-first implementation is plausibly worth testing.
 
 ## Summary
 

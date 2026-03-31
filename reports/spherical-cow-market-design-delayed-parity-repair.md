@@ -1,6 +1,5 @@
 # Venue-Shaped Delayed Parity Repair
 
-Lead(s): Kristal Soman
 Categories: Prediction Markets
 Strategy Theme: Cross-Venue Relative Value
 Venues: Kalshi, Polymarket, Limitless
@@ -9,10 +8,6 @@ Null Hypothesis: Cross-venue delayed parity repair in matched prediction markets
 🐮 APR: 15%
 🐮 Capacity ($M/Year): $0.003
 🐮 Oppty: 10-30 tradeable repair windows/day
-Experiments: unknown
-Last edited time: March 31, 2026 11:59 PM
-👼: ✅
-AI Thesis Eval (0-5): 4 - The thesis is specific and Tradecore-compatible because it uses venues the system already supports and focuses on a concrete repair-timing mechanism rather than generic fragmentation. The sizing is still estimated rather than measured, but it is now anchored to Tradecore's existing lead-lag and cross-venue fragmentation priors instead of left blank.
 
 ## Summary
 

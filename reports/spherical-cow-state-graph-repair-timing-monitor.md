@@ -1,6 +1,5 @@
 # State-Graph Repair Timing Monitor
 
-Lead(s): Kristal Soman
 Categories: Prediction Markets, Perpetuals, Spot Crypto
 Strategy Theme: Graph-Aware Relative Value
 Venues: Kalshi, Polymarket, Limitless, Hyperliquid, Coinbase, Binance
@@ -9,10 +8,6 @@ Null Hypothesis: Graph-aware repair timing across supported venues does not add 
 🐮 APR: 10%
 🐮 Capacity ($M/Year): $0.002
 🐮 Oppty: 5-15 tradeable graph-repair windows/day
-Experiments: unknown
-Last edited time: March 31, 2026 11:59 PM
-👼: ✅
-AI Thesis Eval (0-5): 4 - The thesis maps cleanly to Tradecore-supported markets because the venue set spans prediction, perps, and spot pairs where linked-state relationships exist. The estimate is still a planning prior rather than a replay result, but it is now anchored to Tradecore's cross-venue fragmentation, parity, and lead-lag priors with a conservative haircut for the harder graph-state trigger.
 
 ## Summary
 
