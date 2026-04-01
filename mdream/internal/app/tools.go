@@ -16,6 +16,7 @@ func newToolsCommand() *cobra.Command {
 				{"tool": "note add|list", "purpose": "store observations linked to sessions, papers, or prior results"},
 				{"tool": "hypothesis add|list", "purpose": "store candidate hypotheses for a session"},
 				{"tool": "search papers|sections", "purpose": "lexically search papers and extracted sections"},
+				{"tool": "discover round", "purpose": "run one prompt-driven discovery pass and store ranked cross-lane leads for follow-up"},
 				{"tool": "paper get|sections|neighbors", "purpose": "drill into one paper and its local retrieval neighborhood"},
 				{"tool": "surface list|get", "purpose": "inspect canonical publication and review surfaces"},
 				{"tool": "score paper", "purpose": "inspect stored diamond scores, echoes, and operator evidence for a paper"},

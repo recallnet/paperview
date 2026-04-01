@@ -319,6 +319,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S37` | estimated spherical-cow sizing pass | `done` | revised all four spherical-cow memos from `unknown` to explicit estimates using Tradecore research priors |
 | `S38` | spherical-cow memo metadata cleanup | `done` | remove copied example-template metadata from the spherical-cow memos so they only contain justified strategy fields |
 | `S39` | mdream research-agent CLI foundation | `done` | local Go CLI with JSON-first sessionized search, retrieval, score drilldown, session memory, and stored result paging over the canonical SQLite corpus |
+| `S40` | mdream discovery-loop DX hardening | `done` | dogfooded the CLI end to end, fixed brittle token/placeholder search bugs, added prompt-driven `discover round` with session continuation, improved section drilldown payloads, and tuned ranking toward lane-diverse leads instead of generic matches |
 
 ## Completed Stages
 
@@ -1666,15 +1667,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s39-mdream-cli-foundation`
-- Why this commit exists: add a local Go CLI that gives an LLM research agent a stable interface for corpus search, paper and section drilldown, score inspection, surface retrieval, session memory, and stored result paging without duplicating the full paper store
-- Stages touched: `S39`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `.gitignore`, `mdream/`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `gofmt -w mdream/cmd/mdream/main.go mdream/internal/core/*.go mdream/internal/app/*.go`, `cd mdream && go mod tidy`, `cd mdream && go test ./...`, `cd mdream && go run ./cmd/mdream --help`, `cd mdream && go run ./cmd/mdream init --json`, `cd mdream && go run ./cmd/mdream tools --json`, `cd mdream && go run ./cmd/mdream session create --label 'dream test' --prompt 'find surprising strategies' --json`, `cd mdream && go run ./cmd/mdream search papers --query 'prediction market' --json`, `cd mdream && go run ./cmd/mdream paper get --paper-id 2106.00581 --json`, `cd mdream && go run ./cmd/mdream paper sections --paper-id 2106.00581 --json`, `cd mdream && go run ./cmd/mdream paper neighbors --paper-id 2106.00581 --json`, `cd mdream && go run ./cmd/mdream surface list --surface diamond-board --json`, `cd mdream && go run ./cmd/mdream score paper --paper-id 2106.00581 --json`, `cd mdream && go run ./cmd/mdream result get --result-id res_414b6731 --page 2 --json`, `cd mdream && go run ./cmd/mdream search papers --query 'low volume prediction market'`, `npm run docs:lint`
-- Tests run: `cd mdream && go test ./...`, `npm run docs:lint`
-- Artifacts produced: `mdream` Go module, `mdream` session/result store schema, JSON-first CLI commands, stored result paging, session/note/hypothesis persistence, paper/section/neighbor drilldown, surface retrieval, score drilldown
-- Acceptance result: `mdream` now provides a working local CLI with `--json` support on every command, short outputs by default, stored `result_id` drilldown, local session memory, and read-only access to the canonical paperview SQLite corpus without duplicating paper rows; the local `mdream.sqlite3` store is ignored from git
-- Open risks after commit: raw prompt-to-vector search is not yet a first-class CLI command and currently relies on lexical search plus existing retrieval surfaces; section labels in the source corpus remain partial and noisy
+- Commit scope: `s40-mdream-discovery-loop-hardening`
+- Why this commit exists: dogfood the CLI as an actual research agent, remove the brittle exact-phrase search behavior, and add a prompt-driven discovery-round command so an LLM can iterate on a research session without manually stitching together low-level commands
+- Stages touched: `S40`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `mdream/README.md`, `mdream/internal/app/discover.go`, `mdream/internal/app/discover_test.go`, `mdream/internal/app/paper.go`, `mdream/internal/app/root.go`, `mdream/internal/app/search.go`, `mdream/internal/app/tools.go`, `mdream/internal/core/query.go`, `mdream/internal/core/query_test.go`
+- Commands run: `npm run codecontext:scope -- mdream/internal/app/search.go`, `npm run codecontext:scope -- mdream/internal/core/query.go`, `npm run codecontext:scope -- mdream/internal/app/root.go`, `cd mdream && go run ./cmd/mdream tools --json`, `cd mdream && go run ./cmd/mdream discover round --prompt 'find me a surprising trade strategy that could work on unprofessionalized low volume prediction markets but had not realized it in the paper' --json`, `cd mdream && go run ./cmd/mdream --session ses_8c2c4f44 discover round --prompt 'focus on settlement lag and rule-sensitive toxic flow in event markets' --json`, `cd mdream && go run ./cmd/mdream paper sections --paper-id 1210.4900 --full --json`, `gofmt -w mdream/internal/core/query.go mdream/internal/core/query_test.go mdream/internal/app/root.go mdream/internal/app/paper.go mdream/internal/app/discover.go mdream/internal/app/discover_test.go mdream/internal/app/search.go mdream/internal/app/tools.go`, `npm run codecontext:diff -- mdream/internal/app/discover.go`, `npm run codecontext:diff -- mdream/internal/app/search.go`, `npm run codecontext:diff -- mdream/internal/core/query.go`, `npm run docs:lint`
+- Tests run: `cd mdream && go test ./...`, live mdream CLI smoke runs for session creation, first-round discovery, continued discovery, tools listing, and full section drilldown, `npm run docs:lint`
+- Artifacts produced: improved `mdream` discovery UX, prompt-driven `discover round`, session-continuation discovery results, less brittle lexical matching, and full section-text drilldown from stored CLI results
+- Acceptance result: `done — mdream can now run a discovery prompt end to end, continue a second round inside the same session, and drill directly into full section text without requiring disk or SQLite knowledge`
+- Open risks after commit: prompt-driven discovery still uses deterministic retrieval/ranking rather than explicit surprise-state tracking; section labels in the source corpus are noisy, so some section matches remain semantically weak even after filtering
 - Next intended commit: `none`
 - Signoff status: `committed`
 - Last updated: `2026-04-01`
@@ -1694,3 +1695,4 @@ Current status:
   - a completed `S36` spherical-cow stage with four Tradecore-targeted rewrites of those lane memos, each keeping unsupported sizing explicitly unknown
   - a completed `S37` estimated-sizing pass replacing those unknowns with explicit Tradecore-based priors across all four spherical-cow memos
   - a completed `S39` mdream CLI foundation giving a research agent local session memory, result paging, paper and section drilldown, surface retrieval, and score inspection over the canonical SQLite corpus
+  - a completed `S40` mdream hardening pass that adds prompt-driven multi-round discovery, better lexical retrieval, and full section drilldown without exposing the underlying SQLite layout

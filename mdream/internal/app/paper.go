@@ -45,7 +45,7 @@ func newPaperCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			query := `SELECT section_id, paper_id, section_label, section_order, substr(replace(replace(content_text, char(10), ' '), char(13), ' '), 1, 400) AS snippet FROM paper_sections WHERE paper_id = ?`
+			query := `SELECT section_id, paper_id, section_label, section_order, content_text, substr(replace(replace(content_text, char(10), ' '), char(13), ' '), 1, 400) AS snippet FROM paper_sections WHERE paper_id = ?`
 			args := []any{sectionsPaperID}
 			if sectionLabel != "" {
 				query += ` AND section_label = ?`
@@ -58,7 +58,7 @@ func newPaperCommand() *cobra.Command {
 				return err
 			}
 			if len(items) == 0 {
-				items, err = core.QueryRows(runtime.SourceDB, `SELECT view_id AS section_id, paper_id, view_type AS section_label, 0 AS section_order, substr(replace(replace(text, char(10), ' '), char(13), ' '), 1, 400) AS snippet FROM text_views WHERE paper_id = ? AND view_type = 'section_or_abs'`, sectionsPaperID)
+				items, err = core.QueryRows(runtime.SourceDB, `SELECT view_id AS section_id, paper_id, view_type AS section_label, 0 AS section_order, text AS content_text, substr(replace(replace(text, char(10), ' '), char(13), ' '), 1, 400) AS snippet FROM text_views WHERE paper_id = ? AND view_type = 'section_or_abs'`, sectionsPaperID)
 				if err != nil {
 					return err
 				}

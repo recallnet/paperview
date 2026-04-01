@@ -56,6 +56,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	root.AddCommand(newNoteCommand())
 	root.AddCommand(newHypothesisCommand())
 	root.AddCommand(newSearchCommand())
+	root.AddCommand(newDiscoverCommand())
 	root.AddCommand(newPaperCommand())
 	root.AddCommand(newSurfaceCommand())
 	root.AddCommand(newScoreCommand())
@@ -75,6 +76,24 @@ func emitAndStore(cmd *cobra.Command, kind string, summary string, payload map[s
 		return err
 	}
 	stored := core.BuildStoredResult(resultID, commandPath(cmd), runtime.Output.Session, summary, kind, payload, totalItems, runtime.Output)
+	text, err := core.RenderStoredResult(stored, runtime.Output)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(cmd.OutOrStdout(), text)
+	return nil
+}
+
+func emitAndStoreWithSession(cmd *cobra.Command, sessionID string, kind string, summary string, payload map[string]any, totalItems int, args map[string]any) error {
+	runtime, err := core.RuntimeFromContext(cmd.Context())
+	if err != nil {
+		return err
+	}
+	resultID, err := core.SaveQueryResult(runtime.StoreDB, sessionID, commandPath(cmd), args, kind, summary, payload, totalItems)
+	if err != nil {
+		return err
+	}
+	stored := core.BuildStoredResult(resultID, commandPath(cmd), sessionID, summary, kind, payload, totalItems, runtime.Output)
 	text, err := core.RenderStoredResult(stored, runtime.Output)
 	if err != nil {
 		return err

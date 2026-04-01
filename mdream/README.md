@@ -16,6 +16,7 @@ Current command groups:
 - `session create|get|list`
 - `note add|list`
 - `hypothesis add|list`
+- `discover round`
 - `search papers|sections`
 - `paper get|sections|neighbors`
 - `surface list|get`
@@ -27,9 +28,16 @@ Typical flow:
 
 ```bash
 go run ./cmd/mdream init --json
-go run ./cmd/mdream session create --label "prediction market seams" --prompt "find surprising strategies" --json
-go run ./cmd/mdream search papers --query "prediction market delayed repair" --json
-go run ./cmd/mdream paper get --paper-id 2106.00581 --json
-go run ./cmd/mdream paper sections --paper-id 2106.00581 --json
-go run ./cmd/mdream score paper --paper-id 2106.00581 --json
+go run ./cmd/mdream discover round --prompt "find a surprising strategy for unprofessionalized low-volume prediction markets" --json
+go run ./cmd/mdream result get --result-id <discover_result_id> --full --json
+go run ./cmd/mdream --session <session_id> discover round --prompt "focus on settlement lag and toxic flow" --json
+go run ./cmd/mdream paper sections --paper-id 1210.4900 --full --json
+go run ./cmd/mdream surface get --surface diamond-board --item-id early_market_failure_modes_ledger:market_design:composition:market_design_seams__parity_propagation --full --json
 ```
+
+Notes:
+
+- every command supports `--json`
+- short output is capped and returns a `result_id` for paging or `--full` reloads
+- `discover round` creates a session automatically unless `--session` is provided
+- `paper sections --full` returns stored section text, not only snippets
