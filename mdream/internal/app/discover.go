@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/recallnet/paperview/mdream/internal/core"
@@ -19,7 +20,9 @@ type discoverLead struct {
 	Source            string
 	PaperID           string
 	PublicationItemID string
-	Score             float64
+	MatchScore        float64
+	AgentPriority     float64
+	ScoreBreakdown    map[string]float64
 	Reason            string
 	NextStep          string
 }
@@ -35,6 +38,7 @@ func newDiscoverCommand() *cobra.Command {
 	var paperLimit int
 	var sectionLimit int
 	var newSession bool
+	var allowRepeats bool
 	var label string
 	var maxDate string
 	roundCmd := &cobra.Command{
@@ -75,20 +79,22 @@ func newDiscoverCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			leads := mergeDiscoverLeads(surfaceHits, paperHits, sectionHits, focusTokens, seenLeadIDs, limit)
+			leads := mergeDiscoverLeads(surfaceHits, paperHits, sectionHits, focusTokens, seenLeadIDs, limit, allowRepeats)
 			payloadItems := make([]map[string]any, 0, len(leads))
 			for _, lead := range leads {
 				payloadItems = append(payloadItems, map[string]any{
-					"lead_id":             lead.ID,
-					"lead_type":           lead.LeadType,
-					"title":               lead.Title,
-					"lane_family":         lead.LaneFamily,
-					"source":              lead.Source,
-					"paper_id":            lead.PaperID,
-					"publication_item_id": lead.PublicationItemID,
-					"match_score":         lead.Score,
-					"reason":              lead.Reason,
-					"next_step":           lead.NextStep,
+					"lead_id":              lead.ID,
+					"lead_type":            lead.LeadType,
+					"title":                lead.Title,
+					"lane_family":          lead.LaneFamily,
+					"source":               lead.Source,
+					"paper_id":             lead.PaperID,
+					"publication_item_id":  lead.PublicationItemID,
+					"match_score":          lead.MatchScore,
+					"agent_priority_score": lead.AgentPriority,
+					"score_breakdown":      lead.ScoreBreakdown,
+					"reason":               lead.Reason,
+					"next_step":            lead.NextStep,
 				})
 			}
 			nextCommands := buildNextCommands(sessionID, leads)
@@ -116,6 +122,7 @@ func newDiscoverCommand() *cobra.Command {
 				"limit":         limit,
 				"paper_limit":   paperLimit,
 				"section_limit": sectionLimit,
+				"allow_repeats": allowRepeats,
 				"max_date":      maxDate,
 				"round_index":   roundIndex,
 			})
@@ -126,6 +133,7 @@ func newDiscoverCommand() *cobra.Command {
 	roundCmd.Flags().IntVar(&paperLimit, "paper-limit", 12, "Maximum paper matches to consider")
 	roundCmd.Flags().IntVar(&sectionLimit, "section-limit", 12, "Maximum section matches to consider")
 	roundCmd.Flags().BoolVar(&newSession, "new-session", false, "Force creation of a new session instead of continuing the current one")
+	roundCmd.Flags().BoolVar(&allowRepeats, "allow-repeats", false, "Allow previously surfaced leads to compete normally instead of backfilling only when new leads run out")
 	roundCmd.Flags().StringVar(&label, "label", "", "Optional label when auto-creating a session")
 	roundCmd.Flags().StringVar(&maxDate, "max-date", "2023-12-31", "Only consider papers published on or before this date")
 	_ = roundCmd.MarkFlagRequired("prompt")
@@ -185,6 +193,20 @@ SELECT
   primary_category,
   published_at,
   (%s) AS lexical_score,
+  (
+    SELECT ds.diamond_score
+    FROM diamond_scores ds
+    WHERE ds.paper_id = papers.paper_id
+    ORDER BY ds.created_at DESC, ds.run_id DESC
+    LIMIT 1
+  ) AS diamond_score,
+  (
+    SELECT ds.top_lane
+    FROM diamond_scores ds
+    WHERE ds.paper_id = papers.paper_id
+    ORDER BY ds.created_at DESC, ds.run_id DESC
+    LIMIT 1
+  ) AS top_lane,
   substr(replace(replace(COALESCE(abstract, ''), char(10), ' '), char(13), ' '), 1, 280) AS abstract_snippet
 FROM papers
 WHERE (%s)
@@ -228,6 +250,8 @@ func discoverSurfaceHits(db *sql.DB, tokens []string, limit int) ([]map[string]a
 SELECT
   publication_item_id,
   lane_family,
+  source_surface,
+  confidence,
   title,
   result_summary,
   modern_equivalent,
@@ -263,45 +287,64 @@ func tokenizedDiscoverSurfaceSearch(tokens []string) (string, string, []any, []a
 	return strings.Join(scoreParts, " + "), strings.Join(whereParts, " OR "), scoreArgs, whereArgs
 }
 
-func mergeDiscoverLeads(surfaceHits []map[string]any, paperHits []map[string]any, sectionHits []map[string]any, focusTokens []string, seenLeadIDs map[string]struct{}, limit int) []discoverLead {
+func mergeDiscoverLeads(surfaceHits []map[string]any, paperHits []map[string]any, sectionHits []map[string]any, focusTokens []string, seenLeadIDs map[string]struct{}, limit int, allowRepeats bool) []discoverLead {
 	leadMap := map[string]discoverLead{}
 	for _, row := range surfaceHits {
 		id := normalizeSurfaceLeadID(fmt.Sprint(row["lane_family"]), fmt.Sprint(row["title"]), fmt.Sprint(row["modern_equivalent"]))
+		breakdown := map[string]float64{
+			"surface_bonus":      40,
+			"match":              toFloat(row["match_score"]),
+			"rank_bonus":         rankBonus(toFloat(row["board_rank"])),
+			"confidence_bonus":   confidenceBonus(fmt.Sprint(row["confidence"])),
+			"executability":      executabilityBonus(fmt.Sprint(row["modern_equivalent"]), fmt.Sprint(row["first_test"]), fmt.Sprint(row["gap_to_close"])),
+			"focus_bonus":        laneFocusBonus(fmt.Sprint(row["lane_family"]), focusTokens),
+			"section_support":    0,
+			"repeat_penalty":     0,
+			"prompt_fit_penalty": 0,
+		}
 		lead := discoverLead{
 			ID:                id,
 			LeadType:          "surface",
 			Title:             fmt.Sprint(row["title"]),
 			LaneFamily:        fmt.Sprint(row["lane_family"]),
-			Source:            "diamond-board",
+			Source:            fmt.Sprint(row["source_surface"]),
 			PublicationItemID: fmt.Sprint(row["publication_item_id"]),
-			// @context decision Discovery rounds should bias toward canonical
-			// surfaced leads before generic lexical papers. The board entries are
-			// already interpretation-backed candidates, so they get a fixed bonus
-			// to keep broad old microstructure papers from drowning lane-specific
-			// market-design or settlement seams.
-			Score:    toFloat(row["match_score"]) + rankBonus(toFloat(row["board_rank"])) + 40,
-			Reason:   fmt.Sprintf("%s Modern equivalent: %s", strings.TrimSpace(fmt.Sprint(row["result_summary"])), strings.TrimSpace(fmt.Sprint(row["modern_equivalent"]))),
-			NextStep: fmt.Sprintf("mdream surface get --surface diamond-board --item-id %s --full", fmt.Sprint(row["publication_item_id"])),
+			MatchScore:        toFloat(row["match_score"]),
+			AgentPriority:     sumBreakdown(breakdown),
+			ScoreBreakdown:    breakdown,
+			Reason:            fmt.Sprintf("%s Modern equivalent: %s", strings.TrimSpace(fmt.Sprint(row["result_summary"])), strings.TrimSpace(fmt.Sprint(row["modern_equivalent"]))),
+			NextStep:          fmt.Sprintf("mdream surface get --surface diamond-board --item-id %s --full", fmt.Sprint(row["publication_item_id"])),
 		}
-		if existing, exists := leadMap[id]; !exists || lead.Score > existing.Score {
+		if existing, exists := leadMap[id]; !exists || lead.AgentPriority > existing.AgentPriority {
 			leadMap[id] = lead
 		}
 	}
 	for _, row := range paperHits {
 		id := fmt.Sprintf("paper:%v", row["paper_id"])
-		score := toFloat(row["lexical_score"])
+		breakdown := map[string]float64{
+			"lexical":            toFloat(row["lexical_score"]),
+			"diamond_score":      toFloat(row["diamond_score"]) * 25,
+			"top_lane_bonus":     laneFocusBonus(fmt.Sprint(row["top_lane"]), focusTokens),
+			"focus_bonus":        focusTextBonus(fmt.Sprint(row["title"])+" "+fmt.Sprint(row["abstract_snippet"]), focusTokens),
+			"section_support":    0,
+			"repeat_penalty":     0,
+			"prompt_fit_penalty": 0,
+		}
 		existing, exists := leadMap[id]
 		lead := discoverLead{
-			ID:       id,
-			LeadType: "paper",
-			Title:    fmt.Sprint(row["title"]),
-			Source:   "paper_search",
-			PaperID:  fmt.Sprint(row["paper_id"]),
-			Score:    score,
-			Reason:   strings.TrimSpace(fmt.Sprint(row["abstract_snippet"])),
-			NextStep: fmt.Sprintf("mdream paper get --paper-id %s --full", fmt.Sprint(row["paper_id"])),
+			ID:             id,
+			LeadType:       "paper",
+			Title:          fmt.Sprint(row["title"]),
+			LaneFamily:     fmt.Sprint(row["top_lane"]),
+			Source:         "paper_search",
+			PaperID:        fmt.Sprint(row["paper_id"]),
+			MatchScore:     toFloat(row["lexical_score"]),
+			AgentPriority:  sumBreakdown(breakdown),
+			ScoreBreakdown: breakdown,
+			Reason:         strings.TrimSpace(fmt.Sprint(row["abstract_snippet"])),
+			NextStep:       fmt.Sprintf("mdream paper get --paper-id %s --full", fmt.Sprint(row["paper_id"])),
 		}
-		if !exists || lead.Score > existing.Score {
+		if !exists || lead.AgentPriority > existing.AgentPriority {
 			leadMap[id] = lead
 		}
 	}
@@ -310,7 +353,9 @@ func mergeDiscoverLeads(surfaceHits []map[string]any, paperHits []map[string]any
 		sectionReason := fmt.Sprintf("Section %v: %s", row["section_label"], strings.TrimSpace(fmt.Sprint(row["snippet"])))
 		existing, exists := leadMap[id]
 		if exists {
-			existing.Score += toFloat(row["lexical_score"]) * 0.35
+			sectionSupport := toFloat(row["lexical_score"]) * 0.35
+			existing.AgentPriority += sectionSupport
+			existing.ScoreBreakdown["section_support"] += sectionSupport
 			if !strings.Contains(existing.Reason, sectionReason) {
 				existing.Reason = core.TruncateString(existing.Reason+" "+sectionReason, 420)
 			}
@@ -319,39 +364,95 @@ func mergeDiscoverLeads(surfaceHits []map[string]any, paperHits []map[string]any
 			continue
 		}
 		leadMap[id] = discoverLead{
-			ID:       id,
-			LeadType: "paper",
-			Title:    fmt.Sprint(row["title"]),
-			Source:   "section_search",
-			PaperID:  fmt.Sprint(row["paper_id"]),
-			Score:    toFloat(row["lexical_score"]) * 0.75,
+			ID:            id,
+			LeadType:      "paper",
+			Title:         fmt.Sprint(row["title"]),
+			Source:        "section_search",
+			PaperID:       fmt.Sprint(row["paper_id"]),
+			MatchScore:    toFloat(row["lexical_score"]),
+			AgentPriority: toFloat(row["lexical_score"]) * 0.75,
+			ScoreBreakdown: map[string]float64{
+				"lexical":            toFloat(row["lexical_score"]) * 0.75,
+				"diamond_score":      0,
+				"top_lane_bonus":     0,
+				"focus_bonus":        0,
+				"section_support":    0,
+				"repeat_penalty":     0,
+				"prompt_fit_penalty": 0,
+			},
 			Reason:   sectionReason,
 			NextStep: fmt.Sprintf("mdream paper sections --paper-id %s --full", fmt.Sprint(row["paper_id"])),
 		}
 	}
 
-	leads := make([]discoverLead, 0, len(leadMap))
+	primaryLeads := make([]discoverLead, 0, len(leadMap))
+	seenLeads := make([]discoverLead, 0, len(leadMap))
 	for _, lead := range leadMap {
 		if lead.LeadType == "paper" && len(focusTokens) > 0 && !matchesAnyToken(lead.Title+" "+lead.Reason, focusTokens) {
-			lead.Score *= 0.55
+			penalty := lead.AgentPriority * 0.45
+			lead.AgentPriority -= penalty
+			lead.ScoreBreakdown["prompt_fit_penalty"] -= penalty
 			lead.Reason = "Weak prompt-specific match. " + lead.Reason
 		}
 		if _, seen := seenLeadIDs[lead.ID]; seen {
-			lead.Score *= 0.55
+			penalty := lead.AgentPriority * 0.45
+			lead.AgentPriority -= penalty
+			lead.ScoreBreakdown["repeat_penalty"] -= penalty
 			lead.Reason = "Repeated from an earlier discovery round. " + lead.Reason
+			if shouldCarryForwardSeenLead(lead) {
+				primaryLeads = append(primaryLeads, lead)
+				continue
+			}
+			seenLeads = append(seenLeads, lead)
+			continue
 		}
-		leads = append(leads, lead)
+		primaryLeads = append(primaryLeads, lead)
 	}
-	sort.SliceStable(leads, func(i, j int) bool {
-		if leads[i].Score == leads[j].Score {
-			return leads[i].Title < leads[j].Title
+
+	sortDiscoverLeads(primaryLeads)
+	sortDiscoverLeads(seenLeads)
+
+	if allowRepeats {
+		leads := append(primaryLeads, seenLeads...)
+		sortDiscoverLeads(leads)
+		if len(leads) > limit {
+			leads = leads[:limit]
 		}
-		return leads[i].Score > leads[j].Score
-	})
+		return leads
+	}
+
+	// @context decision Continuing a session should surface new candidate families
+	// before repeating already-seen leads. Without this novelty-first backfill
+	// policy, follow-up rounds collapse into the same top packets and the agent
+	// stops making exploratory progress even when fresh, lower-score leads exist.
+	leads := append([]discoverLead{}, primaryLeads...)
+	if len(leads) < limit {
+		remaining := limit - len(leads)
+		leads = append(leads, seenLeads[:minInt(remaining, len(seenLeads))]...)
+	}
 	if len(leads) > limit {
 		leads = leads[:limit]
 	}
 	return leads
+}
+
+func sortDiscoverLeads(leads []discoverLead) {
+	sort.SliceStable(leads, func(i, j int) bool {
+		if leads[i].AgentPriority == leads[j].AgentPriority {
+			return leads[i].Title < leads[j].Title
+		}
+		return leads[i].AgentPriority > leads[j].AgentPriority
+	})
+}
+
+func shouldCarryForwardSeenLead(lead discoverLead) bool {
+	if lead.LeadType != "surface" {
+		return false
+	}
+	if lead.MatchScore < 40 {
+		return false
+	}
+	return lead.ScoreBreakdown["executability"] >= 12
 }
 
 func buildDiscoverSummary(sessionID string, prompt string, leads []discoverLead, roundIndex int) string {
@@ -388,6 +489,62 @@ func candidateDiversity(items []map[string]any) map[string]int {
 	return diversity
 }
 
+func sumBreakdown(parts map[string]float64) float64 {
+	total := 0.0
+	for _, value := range parts {
+		total += value
+	}
+	return total
+}
+
+func confidenceBonus(value string) float64 {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "high":
+		return 10
+	case "medium":
+		return 6
+	case "low":
+		return 2
+	default:
+		return 0
+	}
+}
+
+func executabilityBonus(modernEquivalent string, firstTest string, gapToClose string) float64 {
+	bonus := 0.0
+	if strings.TrimSpace(modernEquivalent) != "" {
+		bonus += 4
+	}
+	if strings.TrimSpace(firstTest) != "" {
+		bonus += 8
+	}
+	if strings.TrimSpace(gapToClose) != "" {
+		bonus += 4
+	}
+	return bonus
+}
+
+func laneFocusBonus(lane string, focusTokens []string) float64 {
+	if lane == "" || len(focusTokens) == 0 {
+		return 0
+	}
+	return focusTextBonus(lane, focusTokens)
+}
+
+func focusTextBonus(text string, focusTokens []string) float64 {
+	if len(focusTokens) == 0 {
+		return 0
+	}
+	lowered := strings.ToLower(text)
+	bonus := 0.0
+	for _, token := range focusTokens {
+		if strings.Contains(lowered, token) {
+			bonus += 4
+		}
+	}
+	return bonus
+}
+
 func rankBonus(rank float64) float64 {
 	if rank <= 0 {
 		return 0
@@ -404,9 +561,13 @@ func toFloat(value any) float64 {
 	case int:
 		return float64(typed)
 	case string:
-		var parsed float64
-		fmt.Sscanf(typed, "%f", &parsed)
-		return parsed
+		parsed, err := strconv.ParseFloat(typed, 64)
+		if err == nil {
+			return parsed
+		}
+		var scanned float64
+		fmt.Sscanf(typed, "%f", &scanned)
+		return scanned
 	default:
 		return 0
 	}

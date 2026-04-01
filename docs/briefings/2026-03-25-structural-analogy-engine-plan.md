@@ -321,6 +321,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S39` | mdream research-agent CLI foundation | `done` | local Go CLI with JSON-first sessionized search, retrieval, score drilldown, session memory, and stored result paging over the canonical SQLite corpus |
 | `S40` | mdream discovery-loop DX hardening | `done` | dogfooded the CLI end to end, fixed brittle token/placeholder search bugs, added prompt-driven `discover round` with session continuation, improved section drilldown payloads, and tuned ranking toward lane-diverse leads instead of generic matches |
 | `S41` | mdream global runtime defaults | `done` | installed `mdream` now resolves a machine-global store path, honors `MDREAM_STORE_DB` and `MDREAM_SOURCE_DB`, persists the canonical source-db path, and works from outside the repo with no cwd assumptions |
+| `S42` | mdream agent-priority scoring | `done` | added first-class `agent_priority_score` and score breakdowns to discovery leads, plus novelty-first continuation with explicit repeat controls so prompt-driven exploration converges toward narrower findings instead of reshuffling the same packets |
 
 ## Completed Stages
 
@@ -1668,15 +1669,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s41-mdream-global-runtime-defaults`
-- Why this commit exists: make installed `mdream` usable from any directory on the machine while still tapping the same session store and source corpus, without forcing the caller to know repo-relative SQLite paths
-- Stages touched: `S41`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `mdream/README.md`, `mdream/internal/core/runtime.go`, `mdream/internal/core/store.go`, `mdream/internal/core/store_test.go`
-- Commands run: `npm run codecontext:scope -- mdream/internal/core/runtime.go`, `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `gofmt -w mdream/internal/core/runtime.go mdream/internal/core/store.go mdream/internal/core/store_test.go`, `cd mdream && go test ./...`, `cd mdream && go run ./cmd/mdream init --json`, `cd mdream && go build -o /tmp/mdream ./cmd/mdream`, `cd /tmp && /tmp/mdream tools --json`, `cd /tmp && /tmp/mdream search papers --query 'prediction market delayed repair' --json`, `npm run docs:lint`
-- Tests run: `cd mdream && go test ./...`, live `mdream init` with the new machine-global default store, live `/tmp/mdream tools --json` and `/tmp/mdream search papers --query 'prediction market delayed repair' --json` from a non-repo cwd, `npm run docs:lint`
-- Artifacts produced: machine-global mdream defaults, env-based path overrides, persisted source-db reuse, automatic migration from the legacy repo-local store, and updated usage docs
-- Acceptance result: `done — mdream can now be built once, run from outside the repo with no path flags, and still hit the same session store plus canonical source corpus`
-- Open risks after commit: if the canonical source DB moves, the persisted path or env override must be refreshed; this change improves path resolution but does not yet add a formal installer or shell integration
+- Commit scope: `s42-mdream-agent-priority-scoring`
+- Why this commit exists: give an mdream-driven agent an explicit tool-native objective function by adding `agent_priority_score` plus a readable score breakdown to every discovery lead, then verify that the score guides multi-round exploration toward narrower and stronger findings
+- Stages touched: `S42`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `mdream/README.md`, `mdream/internal/app/discover.go`, `mdream/internal/app/discover_test.go`
+- Commands run: `npm run codecontext:scope -- mdream/internal/app/discover.go`, `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `gofmt -w mdream/internal/app/discover.go mdream/internal/app/discover_test.go`, `cd mdream && go test ./...`, `cd mdream && go run ./cmd/mdream discover round --prompt 'find a surprising strategy for unprofessionalized low-volume prediction markets' --json`, `cd mdream && go run ./cmd/mdream --session ses_f7f1513e discover round --prompt 'focus on settlement lag and rule-sensitive toxic flow in event markets' --json`, `cd mdream && go run ./cmd/mdream --session ses_f7f1513e discover round --prompt 'narrow to market-design delayed parity repair in thin prediction venues with explicit first tests' --json`, `npm run docs:lint`
+- Tests run: `cd mdream && go test ./...`, three live discovery rounds demonstrating score-guided narrowing from broad lane discovery to settlement / participant leads and then back to the targeted market-design seam, `npm run docs:lint`
+- Artifacts produced: explicit `agent_priority_score`, readable score breakdowns in discovery payloads, novelty-first session continuation, `--allow-repeats` for manual override, and updated mdream usage docs
+- Acceptance result: `done — mdream now exposes a tool-native target for the agent, broad round-1 discovery surfaces four non-transition lanes immediately, round 2 pivots toward settlement and toxic-flow leads, and round 3 keeps the exact delayed-parity seam visible while still offering fresh drilldowns beneath it`
+- Open risks after commit: the priority score is still heuristic until explicit surprise-state tracking exists; repeated rounds can still drift into transition-state-heavy lexical papers when the prompt is broad and the corpus lacks stronger matching surfaced leads
 - Next intended commit: `none`
 - Signoff status: `committed`
 - Last updated: `2026-04-01`

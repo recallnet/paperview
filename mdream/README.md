@@ -40,6 +40,8 @@ Notes:
 - every command supports `--json`
 - short output is capped and returns a `result_id` for paging or `--full` reloads
 - `discover round` creates a session automatically unless `--session` is provided
+- `discover round` now emits `agent_priority_score` plus `score_breakdown` so agents can optimize a tool-native ranking target instead of only raw lexical match
+- follow-up `discover round` calls are novelty-first by default: previously seen leads only backfill when fresh leads run out; use `--allow-repeats` to let old leads compete normally
 - `paper sections --full` returns stored section text, not only snippets
 - installed `mdream` now defaults to a machine-global store at `~/Library/Application Support/mdream/mdream.sqlite3` on this Mac, so it can be called from any working directory
 - `MDREAM_STORE_DB` and `MDREAM_SOURCE_DB` override the default store and source corpus paths when needed
