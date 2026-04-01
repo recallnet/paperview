@@ -159,12 +159,12 @@ This is a first-class score family derived from the current run's strongest evid
 
 The canonical text-view set should converge toward:
 
-- problem view
-- mechanism view
-- regime / constraint view
-- stranding view
+- surprise / implication sections
+- mechanism sections
+- regime / constraint sections
+- full section context
 
-The current store also has the lower-level operational views used to build toward that:
+The store still retains compatibility views for metadata and downstream display/debug flows:
 
 - `title_abs`
 - `abs_only`
@@ -172,6 +172,10 @@ The current store also has the lower-level operational views used to build towar
 - `title_only`
 - `category_string`
 - `section_or_abs`
+- `surprise_sections`
+- `mechanism_sections`
+- `regime_sections`
+- `all_sections`
 
 ## Sparse Stranding Overlay
 
@@ -323,6 +327,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S41` | mdream global runtime defaults | `done` | installed `mdream` now resolves a machine-global store path, honors `MDREAM_STORE_DB` and `MDREAM_SOURCE_DB`, persists the canonical source-db path, and works from outside the repo with no cwd assumptions |
 | `S42` | mdream agent-priority scoring | `done` | added first-class `agent_priority_score` and score breakdowns to discovery leads, plus novelty-first continuation with explicit repeat controls so prompt-driven exploration converges toward narrower findings instead of reshuffling the same packets |
 | `S43` | mdream corpus-first discovery default | `done` | removed the default surfaced-first handicap by making runtime paper retrieval the primary discovery path and leaving canonical surfaces behind an explicit `--prefer-surfaces` mode |
+| `S44` | section-first discovery representations | `done` | replace title/abstract-dominant canonical embedding spaces with section-derived surprise, mechanism, regime, and full-section views so open-ended discovery ranks reflective paper sections instead of headline framing |
 
 ## Completed Stages
 
@@ -1670,15 +1675,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s43-mdream-corpus-first-default`
-- Why this commit exists: stop `mdream` from anchoring discovery on previously surfaced ideas by default and make live corpus retrieval the main ranking path, with surfaced priors available only through an explicit opt-in flag
-- Stages touched: `S43`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `mdream/README.md`, `mdream/internal/app/discover.go`, `mdream/internal/app/discover_test.go`
-- Commands run: `npm run codecontext:scope -- mdream/internal/app/discover.go`, `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `gofmt -w mdream/internal/app/discover.go mdream/internal/app/discover_test.go`, `cd mdream && go test ./...`, `cd mdream && go run ./cmd/mdream discover round --prompt 'find a surprising strategy for unprofessionalized low-volume prediction markets' --json`, `cd mdream && go run ./cmd/mdream discover round --prompt 'find a surprising strategy for unprofessionalized low-volume prediction markets' --prefer-surfaces --json`, `npm run docs:lint`
-- Tests run: `cd mdream && go test ./...`, live default discovery proving runtime papers outrank surfaced priors by default, live `--prefer-surfaces` control run proving the surfaced-first ranking remains available when explicitly requested, `npm run docs:lint`
-- Artifacts produced: corpus-first discovery defaults, `--prefer-surfaces` override, updated tests for default and override behavior, and updated mdream usage docs
-- Acceptance result: `done — the same broad prediction-market prompt now defaults to runtime papers and sections (e.g. 0809.0822 and 1609.04640) ahead of canonical surfaces, while `--prefer-surfaces` restores the previous surfaced-first ranking on demand`
-- Open risks after commit: runtime retrieval is still lexical-plus-score based rather than full vector neighborhood expansion, so corpus-first is a real improvement but not yet the final dream-machine search loop
+- Commit scope: `s44-section-first-discovery-views`
+- Why this commit exists: move the canonical discovery representation away from title/abstract/category gravity and toward the section-level text where surprising implications, mechanism details, and regime constraints usually live
+- Stages touched: `S44`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `configs/embedding_spaces.yaml`, `scripts/materialize_text_views.py`, `scripts/materialize_view_embeddings.py`, `scripts/build_representation_discovery_map.py`, `tests/test_materialize_text_views.py`, `tests/test_build_representation_discovery_map.py`
+- Commands run: `npm run codecontext:py -- scripts/materialize_text_views.py`, `npm run codecontext:py -- scripts/build_representation_discovery_map.py`, `npm run codecontext:py -- scripts/materialize_view_embeddings.py`, `python3 -m unittest -v tests.test_materialize_text_views`, `python3 -m unittest -v tests.test_build_representation_discovery_map`, `python3 -m unittest -v tests.test_materialize_text_views tests.test_build_representation_discovery_map`, `npm run codecontext:diff -- scripts/materialize_text_views.py`, `npm run codecontext:diff -- scripts/build_representation_discovery_map.py`, `npm run codecontext:diff -- scripts/materialize_view_embeddings.py`, `npm run docs:lint`
+- Tests run: `python3 -m unittest -v tests.test_materialize_text_views`, `python3 -m unittest -v tests.test_build_representation_discovery_map`, `python3 -m unittest -v tests.test_materialize_text_views tests.test_build_representation_discovery_map`, `npm run docs:lint`
+- Artifacts produced: section-derived canonical view set (`surprise_sections`, `mechanism_sections`, `regime_sections`, `all_sections`), section-first embedding-space defaults, and updated representation-map defaults that share the same view-construction rules
+- Acceptance result: `done — canonical discovery weighting now points only at section-derived views, the shared section-bucketing logic no longer relies on title/abstract fallback for ranking, and the representation tests pass without importing the embedding runtime`
+- Open risks after commit: section-label quality is still noisy in the corpus, so this commit must use position-aware heuristics when labels are malformed and may reduce coverage for papers without usable extracted sections
 - Next intended commit: `none`
 - Signoff status: `committed`
 - Last updated: `2026-04-01`

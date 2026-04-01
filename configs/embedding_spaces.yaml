@@ -1,0 +1,17 @@
+spaces:
+  - name: s1_surprise_sections_main
+    view_type: surprise_sections
+    weight: 0.4
+    prompt_style: surprise_sections
+  - name: s2_mechanism_sections_main
+    view_type: mechanism_sections
+    weight: 0.3
+    prompt_style: mechanism_sections
+  - name: s3_regime_sections_main
+    view_type: regime_sections
+    weight: 0.2
+    prompt_style: regime_sections
+  - name: s4_all_sections_main
+    view_type: all_sections
+    weight: 0.1
+    prompt_style: all_sections
