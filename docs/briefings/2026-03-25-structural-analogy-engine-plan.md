@@ -318,6 +318,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S36` | spherical-cow memo suite | `done` | tradecore-targeted spherical-cow writeups for each lane memo, committed one at a time |
 | `S37` | estimated spherical-cow sizing pass | `done` | revised all four spherical-cow memos from `unknown` to explicit estimates using Tradecore research priors |
 | `S38` | spherical-cow memo metadata cleanup | `done` | remove copied example-template metadata from the spherical-cow memos so they only contain justified strategy fields |
+| `S39` | mdream research-agent CLI foundation | `done` | local Go CLI with JSON-first sessionized search, retrieval, score drilldown, session memory, and stored result paging over the canonical SQLite corpus |
 
 ## Completed Stages
 
@@ -1665,18 +1666,18 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s38-spherical-cow-memo-metadata-cleanup`
-- Why this commit exists: remove copied example-template metadata from the spherical-cow memos so they read like native paperview documents instead of carrying synthetic fields from the user's sample format
-- Stages touched: `S37`, `S38`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `reports/spherical-cow-market-design-delayed-parity-repair.md`, `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`, `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`, `reports/spherical-cow-state-graph-repair-timing-monitor.md`
-- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `npm run docs:lint`
-- Tests run: `npm run docs:lint`
-- Artifacts produced: `reports/spherical-cow-market-design-delayed-parity-repair.md`, `reports/spherical-cow-settlement-lag-resolution-friction-timing.md`, `reports/spherical-cow-rule-sensitive-toxic-flow-filters.md`, `reports/spherical-cow-state-graph-repair-timing-monitor.md`
-- Acceptance result: all four spherical-cow memos now keep only justified strategy fields; copied sample-only metadata such as `Lead(s): Kristal Soman`, `Experiments: unknown`, `Last edited time`, `👼`, and `AI Thesis Eval` has been removed; `S37` is also marked fully complete in the stage table
-- Open risks after commit: none on the memo template leak; future memo rewrites should avoid inheriting example-only metadata fields that are not grounded in repo truth
+- Commit scope: `s39-mdream-cli-foundation`
+- Why this commit exists: add a local Go CLI that gives an LLM research agent a stable interface for corpus search, paper and section drilldown, score inspection, surface retrieval, session memory, and stored result paging without duplicating the full paper store
+- Stages touched: `S39`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `.gitignore`, `mdream/`
+- Commands run: `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `gofmt -w mdream/cmd/mdream/main.go mdream/internal/core/*.go mdream/internal/app/*.go`, `cd mdream && go mod tidy`, `cd mdream && go test ./...`, `cd mdream && go run ./cmd/mdream --help`, `cd mdream && go run ./cmd/mdream init --json`, `cd mdream && go run ./cmd/mdream tools --json`, `cd mdream && go run ./cmd/mdream session create --label 'dream test' --prompt 'find surprising strategies' --json`, `cd mdream && go run ./cmd/mdream search papers --query 'prediction market' --json`, `cd mdream && go run ./cmd/mdream paper get --paper-id 2106.00581 --json`, `cd mdream && go run ./cmd/mdream paper sections --paper-id 2106.00581 --json`, `cd mdream && go run ./cmd/mdream paper neighbors --paper-id 2106.00581 --json`, `cd mdream && go run ./cmd/mdream surface list --surface diamond-board --json`, `cd mdream && go run ./cmd/mdream score paper --paper-id 2106.00581 --json`, `cd mdream && go run ./cmd/mdream result get --result-id res_414b6731 --page 2 --json`, `cd mdream && go run ./cmd/mdream search papers --query 'low volume prediction market'`, `npm run docs:lint`
+- Tests run: `cd mdream && go test ./...`, `npm run docs:lint`
+- Artifacts produced: `mdream` Go module, `mdream` session/result store schema, JSON-first CLI commands, stored result paging, session/note/hypothesis persistence, paper/section/neighbor drilldown, surface retrieval, score drilldown
+- Acceptance result: `mdream` now provides a working local CLI with `--json` support on every command, short outputs by default, stored `result_id` drilldown, local session memory, and read-only access to the canonical paperview SQLite corpus without duplicating paper rows; the local `mdream.sqlite3` store is ignored from git
+- Open risks after commit: raw prompt-to-vector search is not yet a first-class CLI command and currently relies on lexical search plus existing retrieval surfaces; section labels in the source corpus remain partial and noisy
 - Next intended commit: `none`
 - Signoff status: `committed`
-- Last updated: `2026-03-31`
+- Last updated: `2026-04-01`
 
 ## Closeout Status
 
@@ -1692,3 +1693,4 @@ Current status:
   - a completed `S35` lane-memo stage with four focused writeups for the strongest non-generic early-market leads
   - a completed `S36` spherical-cow stage with four Tradecore-targeted rewrites of those lane memos, each keeping unsupported sizing explicitly unknown
   - a completed `S37` estimated-sizing pass replacing those unknowns with explicit Tradecore-based priors across all four spherical-cow memos
+  - a completed `S39` mdream CLI foundation giving a research agent local session memory, result paging, paper and section drilldown, surface retrieval, and score inspection over the canonical SQLite corpus
