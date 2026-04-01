@@ -322,6 +322,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S40` | mdream discovery-loop DX hardening | `done` | dogfooded the CLI end to end, fixed brittle token/placeholder search bugs, added prompt-driven `discover round` with session continuation, improved section drilldown payloads, and tuned ranking toward lane-diverse leads instead of generic matches |
 | `S41` | mdream global runtime defaults | `done` | installed `mdream` now resolves a machine-global store path, honors `MDREAM_STORE_DB` and `MDREAM_SOURCE_DB`, persists the canonical source-db path, and works from outside the repo with no cwd assumptions |
 | `S42` | mdream agent-priority scoring | `done` | added first-class `agent_priority_score` and score breakdowns to discovery leads, plus novelty-first continuation with explicit repeat controls so prompt-driven exploration converges toward narrower findings instead of reshuffling the same packets |
+| `S43` | mdream corpus-first discovery default | `done` | removed the default surfaced-first handicap by making runtime paper retrieval the primary discovery path and leaving canonical surfaces behind an explicit `--prefer-surfaces` mode |
 
 ## Completed Stages
 
@@ -1669,15 +1670,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s42-mdream-agent-priority-scoring`
-- Why this commit exists: give an mdream-driven agent an explicit tool-native objective function by adding `agent_priority_score` plus a readable score breakdown to every discovery lead, then verify that the score guides multi-round exploration toward narrower and stronger findings
-- Stages touched: `S42`
+- Commit scope: `s43-mdream-corpus-first-default`
+- Why this commit exists: stop `mdream` from anchoring discovery on previously surfaced ideas by default and make live corpus retrieval the main ranking path, with surfaced priors available only through an explicit opt-in flag
+- Stages touched: `S43`
 - Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `mdream/README.md`, `mdream/internal/app/discover.go`, `mdream/internal/app/discover_test.go`
-- Commands run: `npm run codecontext:scope -- mdream/internal/app/discover.go`, `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `gofmt -w mdream/internal/app/discover.go mdream/internal/app/discover_test.go`, `cd mdream && go test ./...`, `cd mdream && go run ./cmd/mdream discover round --prompt 'find a surprising strategy for unprofessionalized low-volume prediction markets' --json`, `cd mdream && go run ./cmd/mdream --session ses_f7f1513e discover round --prompt 'focus on settlement lag and rule-sensitive toxic flow in event markets' --json`, `cd mdream && go run ./cmd/mdream --session ses_f7f1513e discover round --prompt 'narrow to market-design delayed parity repair in thin prediction venues with explicit first tests' --json`, `npm run docs:lint`
-- Tests run: `cd mdream && go test ./...`, three live discovery rounds demonstrating score-guided narrowing from broad lane discovery to settlement / participant leads and then back to the targeted market-design seam, `npm run docs:lint`
-- Artifacts produced: explicit `agent_priority_score`, readable score breakdowns in discovery payloads, novelty-first session continuation, `--allow-repeats` for manual override, and updated mdream usage docs
-- Acceptance result: `done — mdream now exposes a tool-native target for the agent, broad round-1 discovery surfaces four non-transition lanes immediately, round 2 pivots toward settlement and toxic-flow leads, and round 3 keeps the exact delayed-parity seam visible while still offering fresh drilldowns beneath it`
-- Open risks after commit: the priority score is still heuristic until explicit surprise-state tracking exists; repeated rounds can still drift into transition-state-heavy lexical papers when the prompt is broad and the corpus lacks stronger matching surfaced leads
+- Commands run: `npm run codecontext:scope -- mdream/internal/app/discover.go`, `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `gofmt -w mdream/internal/app/discover.go mdream/internal/app/discover_test.go`, `cd mdream && go test ./...`, `cd mdream && go run ./cmd/mdream discover round --prompt 'find a surprising strategy for unprofessionalized low-volume prediction markets' --json`, `cd mdream && go run ./cmd/mdream discover round --prompt 'find a surprising strategy for unprofessionalized low-volume prediction markets' --prefer-surfaces --json`, `npm run docs:lint`
+- Tests run: `cd mdream && go test ./...`, live default discovery proving runtime papers outrank surfaced priors by default, live `--prefer-surfaces` control run proving the surfaced-first ranking remains available when explicitly requested, `npm run docs:lint`
+- Artifacts produced: corpus-first discovery defaults, `--prefer-surfaces` override, updated tests for default and override behavior, and updated mdream usage docs
+- Acceptance result: `done — the same broad prediction-market prompt now defaults to runtime papers and sections (e.g. 0809.0822 and 1609.04640) ahead of canonical surfaces, while `--prefer-surfaces` restores the previous surfaced-first ranking on demand`
+- Open risks after commit: runtime retrieval is still lexical-plus-score based rather than full vector neighborhood expansion, so corpus-first is a real improvement but not yet the final dream-machine search loop
 - Next intended commit: `none`
 - Signoff status: `committed`
 - Last updated: `2026-04-01`

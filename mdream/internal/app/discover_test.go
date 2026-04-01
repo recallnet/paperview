@@ -2,7 +2,7 @@ package app
 
 import "testing"
 
-func TestMergeDiscoverLeadsPrefersUnseenCrossSurfaceLead(t *testing.T) {
+func TestMergeDiscoverLeadsDefaultsToCorpusFirst(t *testing.T) {
 	surfaceHits := []map[string]any{
 		{
 			"publication_item_id": "early_market_failure_modes_ledger:market_design:x",
@@ -22,8 +22,8 @@ func TestMergeDiscoverLeadsPrefersUnseenCrossSurfaceLead(t *testing.T) {
 		{
 			"paper_id":         "2205.08913",
 			"title":            "Prediction market convergence",
-			"lexical_score":    float64(9),
-			"diamond_score":    float64(0.4),
+			"lexical_score":    float64(18),
+			"diamond_score":    float64(0.6),
 			"top_lane":         "market_design",
 			"abstract_snippet": "Prediction markets converge under some conditions.",
 		},
@@ -37,27 +37,24 @@ func TestMergeDiscoverLeadsPrefersUnseenCrossSurfaceLead(t *testing.T) {
 			"snippet":       "Thin venues repair more slowly.",
 		},
 	}
-	seen := map[string]struct{}{
-		"paper:2205.08913": {},
-	}
-	leads := mergeDiscoverLeads(surfaceHits, paperHits, sectionHits, []string{"prediction"}, seen, 5, false)
+	leads := mergeDiscoverLeads(surfaceHits, paperHits, sectionHits, []string{"prediction"}, map[string]struct{}{}, 5, false, false)
 	if len(leads) != 2 {
 		t.Fatalf("expected 2 leads, got %d", len(leads))
 	}
-	if leads[0].LeadType != "surface" {
-		t.Fatalf("expected surface lead first, got %+v", leads[0])
+	if leads[0].LeadType != "paper" {
+		t.Fatalf("expected paper lead first in corpus-first mode, got %+v", leads[0])
 	}
-	if leads[1].LeadType != "paper" {
-		t.Fatalf("expected paper lead second, got %+v", leads[1])
+	if leads[1].LeadType != "surface" {
+		t.Fatalf("expected surface lead second, got %+v", leads[1])
 	}
 	if leads[1].AgentPriority >= leads[0].AgentPriority {
 		t.Fatalf("expected repeated paper lead to be penalized, got %+v", leads)
 	}
-	if leads[0].AgentPriority <= leads[0].MatchScore {
-		t.Fatalf("expected surface lead to have an explicit priority boost, got %+v", leads[0])
+	if leads[0].ScoreBreakdown["runtime_bonus"] <= 0 {
+		t.Fatalf("expected runtime discovery bonus in default corpus-first mode, got %+v", leads[0].ScoreBreakdown)
 	}
-	if leads[1].ScoreBreakdown["repeat_penalty"] >= 0 {
-		t.Fatalf("expected repeat penalty to be recorded, got %+v", leads[1].ScoreBreakdown)
+	if leads[0].ScoreBreakdown["repeat_penalty"] != 0 {
+		t.Fatalf("expected no repeat penalty on unseen paper, got %+v", leads[0].ScoreBreakdown)
 	}
 }
 
@@ -91,7 +88,7 @@ func TestMergeDiscoverLeadsBackfillsRepeatsOnlyAfterUnseen(t *testing.T) {
 		"surface:market_design:delayed-parity-repair:venue-shaped-delayed-parity-repair": {},
 	}
 
-	leads := mergeDiscoverLeads(surfaceHits, paperHits, nil, []string{"toxic", "flow"}, seen, 5, false)
+	leads := mergeDiscoverLeads(surfaceHits, paperHits, nil, []string{"toxic", "flow"}, seen, 5, false, false)
 	if len(leads) != 2 {
 		t.Fatalf("expected 2 leads, got %d", len(leads))
 	}
@@ -133,14 +130,53 @@ func TestMergeDiscoverLeadsCarriesForwardStrongRepeatedSurface(t *testing.T) {
 		"surface:market_design:delayed-parity-repair:venue-shaped-delayed-parity-repair": {},
 	}
 
-	leads := mergeDiscoverLeads(surfaceHits, paperHits, nil, []string{"market", "design", "parity"}, seen, 5, false)
+	leads := mergeDiscoverLeads(surfaceHits, paperHits, nil, []string{"market", "design", "parity"}, seen, 5, false, false)
+	if len(leads) != 2 {
+		t.Fatalf("expected 2 leads, got %d", len(leads))
+	}
+	if leads[1].LeadType != "surface" {
+		t.Fatalf("expected strong repeated surface to remain visible, got %+v", leads)
+	}
+	if leads[1].ScoreBreakdown["repeat_penalty"] >= 0 {
+		t.Fatalf("expected repeat penalty on carried-forward surface, got %+v", leads[1].ScoreBreakdown)
+	}
+}
+
+func TestMergeDiscoverLeadsPreferSurfacesFlagRestoresSurfaceBias(t *testing.T) {
+	surfaceHits := []map[string]any{
+		{
+			"publication_item_id": "early_market_failure_modes_ledger:market_design:x",
+			"lane_family":         "market_design",
+			"source_surface":      "early_market_failure_modes_ledger",
+			"confidence":          "medium",
+			"title":               "Delayed parity repair",
+			"result_summary":      "Rule differences delay repair.",
+			"modern_equivalent":   "venue-shaped delayed parity repair",
+			"first_test":          "Compare venue rule differences.",
+			"gap_to_close":        "Need venue metadata.",
+			"board_rank":          int64(1),
+			"match_score":         float64(27),
+		},
+	}
+	paperHits := []map[string]any{
+		{
+			"paper_id":         "2002.02583",
+			"title":            "Triangular arbitrage correlations",
+			"lexical_score":    float64(36),
+			"diamond_score":    float64(0.62),
+			"top_lane":         "state_graph",
+			"abstract_snippet": "Cross-currency correlations around flash events.",
+		},
+	}
+
+	leads := mergeDiscoverLeads(surfaceHits, paperHits, nil, []string{"prediction", "market"}, map[string]struct{}{}, 5, false, true)
 	if len(leads) != 2 {
 		t.Fatalf("expected 2 leads, got %d", len(leads))
 	}
 	if leads[0].LeadType != "surface" {
-		t.Fatalf("expected strong repeated surface to remain visible first, got %+v", leads[0])
+		t.Fatalf("expected surface lead first when prefer-surfaces is enabled, got %+v", leads[0])
 	}
-	if leads[0].ScoreBreakdown["repeat_penalty"] >= 0 {
-		t.Fatalf("expected repeat penalty on carried-forward surface, got %+v", leads[0].ScoreBreakdown)
+	if leads[0].ScoreBreakdown["surface_bonus"] <= 0 {
+		t.Fatalf("expected explicit surface bonus when prefer-surfaces is enabled, got %+v", leads[0].ScoreBreakdown)
 	}
 }

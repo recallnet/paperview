@@ -39,6 +39,7 @@ func newDiscoverCommand() *cobra.Command {
 	var sectionLimit int
 	var newSession bool
 	var allowRepeats bool
+	var preferSurfaces bool
 	var label string
 	var maxDate string
 	roundCmd := &cobra.Command{
@@ -79,7 +80,7 @@ func newDiscoverCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			leads := mergeDiscoverLeads(surfaceHits, paperHits, sectionHits, focusTokens, seenLeadIDs, limit, allowRepeats)
+			leads := mergeDiscoverLeads(surfaceHits, paperHits, sectionHits, focusTokens, seenLeadIDs, limit, allowRepeats, preferSurfaces)
 			payloadItems := make([]map[string]any, 0, len(leads))
 			for _, lead := range leads {
 				payloadItems = append(payloadItems, map[string]any{
@@ -117,14 +118,15 @@ func newDiscoverCommand() *cobra.Command {
 			// This keeps the CLI session-based instead of forcing the user back to
 			// ad hoc local files or manual SQL when refining a lead.
 			return emitAndStoreWithSession(cmd, sessionID, "discover_round", summary, payload, len(payloadItems), map[string]any{
-				"prompt":        activePrompt,
-				"tokens":        tokens,
-				"limit":         limit,
-				"paper_limit":   paperLimit,
-				"section_limit": sectionLimit,
-				"allow_repeats": allowRepeats,
-				"max_date":      maxDate,
-				"round_index":   roundIndex,
+				"prompt":          activePrompt,
+				"tokens":          tokens,
+				"limit":           limit,
+				"paper_limit":     paperLimit,
+				"section_limit":   sectionLimit,
+				"allow_repeats":   allowRepeats,
+				"prefer_surfaces": preferSurfaces,
+				"max_date":        maxDate,
+				"round_index":     roundIndex,
 			})
 		},
 	}
@@ -134,6 +136,7 @@ func newDiscoverCommand() *cobra.Command {
 	roundCmd.Flags().IntVar(&sectionLimit, "section-limit", 12, "Maximum section matches to consider")
 	roundCmd.Flags().BoolVar(&newSession, "new-session", false, "Force creation of a new session instead of continuing the current one")
 	roundCmd.Flags().BoolVar(&allowRepeats, "allow-repeats", false, "Allow previously surfaced leads to compete normally instead of backfilling only when new leads run out")
+	roundCmd.Flags().BoolVar(&preferSurfaces, "prefer-surfaces", false, "Bias discovery toward canonical surfaced candidates instead of corpus-first runtime retrieval")
 	roundCmd.Flags().StringVar(&label, "label", "", "Optional label when auto-creating a session")
 	roundCmd.Flags().StringVar(&maxDate, "max-date", "2023-12-31", "Only consider papers published on or before this date")
 	_ = roundCmd.MarkFlagRequired("prompt")
@@ -287,12 +290,12 @@ func tokenizedDiscoverSurfaceSearch(tokens []string) (string, string, []any, []a
 	return strings.Join(scoreParts, " + "), strings.Join(whereParts, " OR "), scoreArgs, whereArgs
 }
 
-func mergeDiscoverLeads(surfaceHits []map[string]any, paperHits []map[string]any, sectionHits []map[string]any, focusTokens []string, seenLeadIDs map[string]struct{}, limit int, allowRepeats bool) []discoverLead {
+func mergeDiscoverLeads(surfaceHits []map[string]any, paperHits []map[string]any, sectionHits []map[string]any, focusTokens []string, seenLeadIDs map[string]struct{}, limit int, allowRepeats bool, preferSurfaces bool) []discoverLead {
 	leadMap := map[string]discoverLead{}
 	for _, row := range surfaceHits {
 		id := normalizeSurfaceLeadID(fmt.Sprint(row["lane_family"]), fmt.Sprint(row["title"]), fmt.Sprint(row["modern_equivalent"]))
 		breakdown := map[string]float64{
-			"surface_bonus":      40,
+			"surface_bonus":      surfaceBonus(preferSurfaces),
 			"match":              toFloat(row["match_score"]),
 			"rank_bonus":         rankBonus(toFloat(row["board_rank"])),
 			"confidence_bonus":   confidenceBonus(fmt.Sprint(row["confidence"])),
@@ -322,6 +325,7 @@ func mergeDiscoverLeads(surfaceHits []map[string]any, paperHits []map[string]any
 	for _, row := range paperHits {
 		id := fmt.Sprintf("paper:%v", row["paper_id"])
 		breakdown := map[string]float64{
+			"runtime_bonus":      runtimeDiscoveryBonus(preferSurfaces),
 			"lexical":            toFloat(row["lexical_score"]),
 			"diamond_score":      toFloat(row["diamond_score"]) * 25,
 			"top_lane_bonus":     laneFocusBonus(fmt.Sprint(row["top_lane"]), focusTokens),
@@ -372,6 +376,7 @@ func mergeDiscoverLeads(surfaceHits []map[string]any, paperHits []map[string]any
 			MatchScore:    toFloat(row["lexical_score"]),
 			AgentPriority: toFloat(row["lexical_score"]) * 0.75,
 			ScoreBreakdown: map[string]float64{
+				"runtime_bonus":      runtimeDiscoveryBonus(preferSurfaces),
 				"lexical":            toFloat(row["lexical_score"]) * 0.75,
 				"diamond_score":      0,
 				"top_lane_bonus":     0,
@@ -487,6 +492,25 @@ func candidateDiversity(items []map[string]any) map[string]int {
 		diversity[lane]++
 	}
 	return diversity
+}
+
+func surfaceBonus(preferSurfaces bool) float64 {
+	// @context decision mdream defaults to corpus-first exploration rather than
+	// surfaced-first replay. The canonical publication surfaces are useful priors,
+	// but treating them as the default ranking spine traps discovery inside the
+	// ideas we already wrote down and suppresses fresh retrieval from the 20k+
+	// paper corpus.
+	if preferSurfaces {
+		return 28
+	}
+	return 0
+}
+
+func runtimeDiscoveryBonus(preferSurfaces bool) float64 {
+	if preferSurfaces {
+		return 0
+	}
+	return 12
 }
 
 func sumBreakdown(parts map[string]float64) float64 {
