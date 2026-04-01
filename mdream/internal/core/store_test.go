@@ -18,6 +18,16 @@ func TestStoreLifecycle(t *testing.T) {
 	if err := EnsureStoreSchema(db); err != nil {
 		t.Fatal(err)
 	}
+	if err := UpsertSetting(db, "source_db_path", "/tmp/source.sqlite3"); err != nil {
+		t.Fatal(err)
+	}
+	sourcePath, err := LoadSetting(db, "source_db_path")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sourcePath != "/tmp/source.sqlite3" {
+		t.Fatalf("unexpected source path %q", sourcePath)
+	}
 	sessionID, err := CreateSession(db, "test", "prompt", "/tmp/source.sqlite3")
 	if err != nil {
 		t.Fatal(err)

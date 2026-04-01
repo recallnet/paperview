@@ -41,3 +41,6 @@ Notes:
 - short output is capped and returns a `result_id` for paging or `--full` reloads
 - `discover round` creates a session automatically unless `--session` is provided
 - `paper sections --full` returns stored section text, not only snippets
+- installed `mdream` now defaults to a machine-global store at `~/Library/Application Support/mdream/mdream.sqlite3` on this Mac, so it can be called from any working directory
+- `MDREAM_STORE_DB` and `MDREAM_SOURCE_DB` override the default store and source corpus paths when needed
+- on first run, `mdream` persists the active source DB path in the store and reuses it from any directory after that

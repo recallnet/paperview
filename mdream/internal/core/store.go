@@ -89,6 +89,15 @@ func UpsertSetting(db *sql.DB, key string, value string) error {
 	return err
 }
 
+func LoadSetting(db *sql.DB, key string) (string, error) {
+	row := db.QueryRow(`SELECT value_text FROM settings WHERE key = ?`, key)
+	var value string
+	if err := row.Scan(&value); err != nil {
+		return "", err
+	}
+	return value, nil
+}
+
 func CreateSession(db *sql.DB, label string, prompt string, sourceDBPath string) (string, error) {
 	sessionID := "ses_" + uuid.NewString()[:8]
 	_, err := db.Exec(

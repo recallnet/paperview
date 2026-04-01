@@ -320,6 +320,7 @@ Each row is intended to be completable in one or more commits, but the order is 
 | `S38` | spherical-cow memo metadata cleanup | `done` | remove copied example-template metadata from the spherical-cow memos so they only contain justified strategy fields |
 | `S39` | mdream research-agent CLI foundation | `done` | local Go CLI with JSON-first sessionized search, retrieval, score drilldown, session memory, and stored result paging over the canonical SQLite corpus |
 | `S40` | mdream discovery-loop DX hardening | `done` | dogfooded the CLI end to end, fixed brittle token/placeholder search bugs, added prompt-driven `discover round` with session continuation, improved section drilldown payloads, and tuned ranking toward lane-diverse leads instead of generic matches |
+| `S41` | mdream global runtime defaults | `done` | installed `mdream` now resolves a machine-global store path, honors `MDREAM_STORE_DB` and `MDREAM_SOURCE_DB`, persists the canonical source-db path, and works from outside the repo with no cwd assumptions |
 
 ## Completed Stages
 
@@ -1667,15 +1668,15 @@ Current status:
 
 ## Active Signoff Block
 
-- Commit scope: `s40-mdream-discovery-loop-hardening`
-- Why this commit exists: dogfood the CLI as an actual research agent, remove the brittle exact-phrase search behavior, and add a prompt-driven discovery-round command so an LLM can iterate on a research session without manually stitching together low-level commands
-- Stages touched: `S40`
-- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `mdream/README.md`, `mdream/internal/app/discover.go`, `mdream/internal/app/discover_test.go`, `mdream/internal/app/paper.go`, `mdream/internal/app/root.go`, `mdream/internal/app/search.go`, `mdream/internal/app/tools.go`, `mdream/internal/core/query.go`, `mdream/internal/core/query_test.go`
-- Commands run: `npm run codecontext:scope -- mdream/internal/app/search.go`, `npm run codecontext:scope -- mdream/internal/core/query.go`, `npm run codecontext:scope -- mdream/internal/app/root.go`, `cd mdream && go run ./cmd/mdream tools --json`, `cd mdream && go run ./cmd/mdream discover round --prompt 'find me a surprising trade strategy that could work on unprofessionalized low volume prediction markets but had not realized it in the paper' --json`, `cd mdream && go run ./cmd/mdream --session ses_8c2c4f44 discover round --prompt 'focus on settlement lag and rule-sensitive toxic flow in event markets' --json`, `cd mdream && go run ./cmd/mdream paper sections --paper-id 1210.4900 --full --json`, `gofmt -w mdream/internal/core/query.go mdream/internal/core/query_test.go mdream/internal/app/root.go mdream/internal/app/paper.go mdream/internal/app/discover.go mdream/internal/app/discover_test.go mdream/internal/app/search.go mdream/internal/app/tools.go`, `npm run codecontext:diff -- mdream/internal/app/discover.go`, `npm run codecontext:diff -- mdream/internal/app/search.go`, `npm run codecontext:diff -- mdream/internal/core/query.go`, `npm run docs:lint`
-- Tests run: `cd mdream && go test ./...`, live mdream CLI smoke runs for session creation, first-round discovery, continued discovery, tools listing, and full section drilldown, `npm run docs:lint`
-- Artifacts produced: improved `mdream` discovery UX, prompt-driven `discover round`, session-continuation discovery results, less brittle lexical matching, and full section-text drilldown from stored CLI results
-- Acceptance result: `done — mdream can now run a discovery prompt end to end, continue a second round inside the same session, and drill directly into full section text without requiring disk or SQLite knowledge`
-- Open risks after commit: prompt-driven discovery still uses deterministic retrieval/ranking rather than explicit surprise-state tracking; section labels in the source corpus are noisy, so some section matches remain semantically weak even after filtering
+- Commit scope: `s41-mdream-global-runtime-defaults`
+- Why this commit exists: make installed `mdream` usable from any directory on the machine while still tapping the same session store and source corpus, without forcing the caller to know repo-relative SQLite paths
+- Stages touched: `S41`
+- Code paths touched: `docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `mdream/README.md`, `mdream/internal/core/runtime.go`, `mdream/internal/core/store.go`, `mdream/internal/core/store_test.go`
+- Commands run: `npm run codecontext:scope -- mdream/internal/core/runtime.go`, `npm run codecontext:scope -- docs/briefings/2026-03-25-structural-analogy-engine-plan.md`, `gofmt -w mdream/internal/core/runtime.go mdream/internal/core/store.go mdream/internal/core/store_test.go`, `cd mdream && go test ./...`, `cd mdream && go run ./cmd/mdream init --json`, `cd mdream && go build -o /tmp/mdream ./cmd/mdream`, `cd /tmp && /tmp/mdream tools --json`, `cd /tmp && /tmp/mdream search papers --query 'prediction market delayed repair' --json`, `npm run docs:lint`
+- Tests run: `cd mdream && go test ./...`, live `mdream init` with the new machine-global default store, live `/tmp/mdream tools --json` and `/tmp/mdream search papers --query 'prediction market delayed repair' --json` from a non-repo cwd, `npm run docs:lint`
+- Artifacts produced: machine-global mdream defaults, env-based path overrides, persisted source-db reuse, automatic migration from the legacy repo-local store, and updated usage docs
+- Acceptance result: `done — mdream can now be built once, run from outside the repo with no path flags, and still hit the same session store plus canonical source corpus`
+- Open risks after commit: if the canonical source DB moves, the persisted path or env override must be refreshed; this change improves path resolution but does not yet add a formal installer or shell integration
 - Next intended commit: `none`
 - Signoff status: `committed`
 - Last updated: `2026-04-01`
@@ -1696,3 +1697,4 @@ Current status:
   - a completed `S37` estimated-sizing pass replacing those unknowns with explicit Tradecore-based priors across all four spherical-cow memos
   - a completed `S39` mdream CLI foundation giving a research agent local session memory, result paging, paper and section drilldown, surface retrieval, and score inspection over the canonical SQLite corpus
   - a completed `S40` mdream hardening pass that adds prompt-driven multi-round discovery, better lexical retrieval, and full section drilldown without exposing the underlying SQLite layout
+  - a completed `S41` runtime-defaults pass that makes installed `mdream` usable from any directory via a machine-global store, env overrides, and persisted source-db resolution
