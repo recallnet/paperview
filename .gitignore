@@ -5,6 +5,8 @@ node_modules/
 .babysit-state.json
 mdream/*.sqlite3
 logs/
-.agents/
+.agents/*
+!.agents/skills/
+!.agents/skills/**
 .claude/
 .DS_Store

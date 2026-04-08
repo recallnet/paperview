@@ -1,0 +1,3 @@
+display_name: mq for paperview protected main
+short_description: Land paperview topic-branch work through mq into protected main.
+default_prompt: Use mq to preflight, submit, and wait for paperview work to land through the protected-main workflow. Prefer mq submit and mq wait over direct git merge or push.

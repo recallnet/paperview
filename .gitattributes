@@ -1,0 +1,2 @@
+data/structural-analogy/paperview.sqlite3 filter=lfs diff=lfs merge=lfs -text
+data/structural-analogy/*.sqlite3 filter=lfs diff=lfs merge=lfs -text
