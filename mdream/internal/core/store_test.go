@@ -55,4 +55,36 @@ func TestStoreLifecycle(t *testing.T) {
 	if stored.ResultID != resultID {
 		t.Fatalf("unexpected result id %q", stored.ResultID)
 	}
+
+	hypothesisID, err := SaveHypothesis(db, sessionID, "test hypothesis", "some thesis", "prediction")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hypothesisID == "" {
+		t.Fatal("expected hypothesis id")
+	}
+	scoreID, err := SaveHypothesisScore(db, HypothesisScoreInput{
+		HypothesisID:           hypothesisID,
+		LeadID:                 "paper:1234.5678",
+		PaperID:                "1234.5678",
+		ResultID:               resultID,
+		PriorNovelty:           3,
+		PosteriorNovelty:       8,
+		PriorPlausibility:      4,
+		PosteriorPlausibility:  7,
+		ThinMarketFit:          8,
+		Executability:          6,
+		EvidenceQuality:        7,
+		BasinRepetitionPenalty: 1,
+		GenericDragPenalty:     2,
+		SurpriseScore:          4,
+		ObjectiveScore:         6.2,
+		Notes:                  "strong after reading",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scoreID == "" {
+		t.Fatal("expected score id")
+	}
 }

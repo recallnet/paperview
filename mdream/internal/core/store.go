@@ -62,6 +62,30 @@ CREATE TABLE IF NOT EXISTS hypotheses (
   FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS hypothesis_scores (
+  score_id TEXT PRIMARY KEY,
+  hypothesis_id TEXT NOT NULL,
+  lead_id TEXT,
+  paper_id TEXT,
+  result_id TEXT,
+  prior_novelty REAL NOT NULL,
+  posterior_novelty REAL NOT NULL,
+  prior_plausibility REAL NOT NULL,
+  posterior_plausibility REAL NOT NULL,
+  thin_market_fit REAL NOT NULL,
+  executability REAL NOT NULL,
+  evidence_quality REAL NOT NULL,
+  basin_repetition_penalty REAL NOT NULL DEFAULT 0,
+  generic_drag_penalty REAL NOT NULL DEFAULT 0,
+  surprise_score REAL NOT NULL,
+  objective_score REAL NOT NULL,
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (hypothesis_id) REFERENCES hypotheses(hypothesis_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_hypothesis_scores_hypothesis ON hypothesis_scores(hypothesis_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_hypothesis_scores_objective ON hypothesis_scores(objective_score DESC, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS query_results (
   result_id TEXT PRIMARY KEY,
   session_id TEXT,
@@ -123,6 +147,56 @@ func SaveHypothesis(db *sql.DB, sessionID string, title string, hypothesisText s
 		hypothesisID, sessionID, title, hypothesisText, nullableString(targetMarket),
 	)
 	return hypothesisID, err
+}
+
+type HypothesisScoreInput struct {
+	HypothesisID           string
+	LeadID                 string
+	PaperID                string
+	ResultID               string
+	PriorNovelty           float64
+	PosteriorNovelty       float64
+	PriorPlausibility      float64
+	PosteriorPlausibility  float64
+	ThinMarketFit          float64
+	Executability          float64
+	EvidenceQuality        float64
+	BasinRepetitionPenalty float64
+	GenericDragPenalty     float64
+	SurpriseScore          float64
+	ObjectiveScore         float64
+	Notes                  string
+}
+
+func SaveHypothesisScore(db *sql.DB, input HypothesisScoreInput) (string, error) {
+	scoreID := "hsc_" + uuid.NewString()[:8]
+	_, err := db.Exec(
+		`INSERT INTO hypothesis_scores(
+			score_id, hypothesis_id, lead_id, paper_id, result_id,
+			prior_novelty, posterior_novelty, prior_plausibility, posterior_plausibility,
+			thin_market_fit, executability, evidence_quality,
+			basin_repetition_penalty, generic_drag_penalty,
+			surprise_score, objective_score, notes
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		scoreID,
+		input.HypothesisID,
+		nullableString(input.LeadID),
+		nullableString(input.PaperID),
+		nullableString(input.ResultID),
+		input.PriorNovelty,
+		input.PosteriorNovelty,
+		input.PriorPlausibility,
+		input.PosteriorPlausibility,
+		input.ThinMarketFit,
+		input.Executability,
+		input.EvidenceQuality,
+		input.BasinRepetitionPenalty,
+		input.GenericDragPenalty,
+		input.SurpriseScore,
+		input.ObjectiveScore,
+		nullableString(input.Notes),
+	)
+	return scoreID, err
 }
 
 func SaveQueryResult(db *sql.DB, sessionID string, command string, args map[string]any, kind string, summary string, payload map[string]any, totalItems int) (string, error) {

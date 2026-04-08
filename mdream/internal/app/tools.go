@@ -14,7 +14,7 @@ func newToolsCommand() *cobra.Command {
 				{"tool": "init", "purpose": "initialize or inspect the local mdream store"},
 				{"tool": "session create|get|list", "purpose": "create and inspect research sessions"},
 				{"tool": "note add|list", "purpose": "store observations linked to sessions, papers, or prior results"},
-				{"tool": "hypothesis add|list", "purpose": "store candidate hypotheses for a session"},
+				{"tool": "hypothesis add|list|score|top", "purpose": "store candidate hypotheses, score them after reading, and inspect the current best session objective"},
 				{"tool": "search papers|sections", "purpose": "lexically search papers and extracted sections"},
 				{"tool": "discover round", "purpose": "run one prompt-driven discovery pass and store ranked cross-lane leads for follow-up"},
 				{"tool": "paper get|sections|neighbors", "purpose": "drill into one paper and its local retrieval neighborhood"},

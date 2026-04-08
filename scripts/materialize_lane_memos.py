@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_REPORTS_ROOT = ROOT / "reports"
+PUBLISHED_ROOT = ROOT / "reports" / "published"
 
 
 def parse_args():
@@ -16,9 +17,9 @@ def parse_args():
     parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH))
     parser.add_argument("--run-id", default="lane-memos-20260329")
     parser.add_argument("--reports-root", default=str(DEFAULT_REPORTS_ROOT))
-    parser.add_argument("--diamond-board-path", default=str(ROOT / "diamond_board.md"))
-    parser.add_argument("--findings-path", default=str(ROOT / "findings_and_throwaways.md"))
-    parser.add_argument("--research-output-path", default=str(ROOT / "research_output.md"))
+    parser.add_argument("--diamond-board-path", default=str(PUBLISHED_ROOT / "diamond_board.md"))
+    parser.add_argument("--findings-path", default=str(PUBLISHED_ROOT / "findings_and_throwaways.md"))
+    parser.add_argument("--research-output-path", default=str(PUBLISHED_ROOT / "research_output.md"))
     parser.add_argument(
         "--memo-id",
         choices=[

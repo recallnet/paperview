@@ -1,10 +1,10 @@
 ---
 doc_type: briefing
 owner: devrel
-review_policy: periodic-7
-reviewed: 2026-03-26
-status: active
-summary: Canonical commit-by-commit living plan for the structural analogy engine, updated to be mechanism-first, benchmarked, and strategy-output oriented.
+review_policy: historical
+reviewed: 2026-04-08
+status: historical
+summary: Historical commit-by-commit execution plan for the structural analogy engine before the repo was cleaned around mdream as the primary product surface.
 tags:
   - docs
   - briefing

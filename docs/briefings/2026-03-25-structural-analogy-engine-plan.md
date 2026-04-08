@@ -2,7 +2,7 @@
 doc_type: briefing
 owner: devrel
 review_policy: periodic-7
-reviewed: 2026-03-28
+reviewed: 2026-04-08
 status: active
 summary: Canonical active development plan for building the Unrealized Idea Index with Stranding Overlay and Transition-State Workbench from the current embedding-first arXiv discovery system.
 tags:

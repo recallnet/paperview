@@ -4,3 +4,7 @@ data/
 node_modules/
 .babysit-state.json
 mdream/*.sqlite3
+logs/
+.agents/
+.claude/
+.DS_Store

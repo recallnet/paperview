@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_RUNS_ROOT = ROOT / "data" / "structural-analogy" / "runs"
+PUBLISHED_ROOT = ROOT / "reports" / "published"
 POSITIVE_CLASSIFICATIONS = {
     "TRANSLATION_CANDIDATE",
     "COMPOSITIONAL_CANDIDATE",
@@ -27,8 +28,10 @@ def parse_args():
     parser.add_argument("--stranded-run-id", default="stranded-result-ledger-broadened-20260328")
     parser.add_argument("--transition-run-id", default="transition-state-ledger-broadened-20260328")
     parser.add_argument("--findings-run-id", default="findings-and-throwaways-broadened-20260328")
-    parser.add_argument("--output-json-path", default=str(ROOT / "run_summary.json"))
-    parser.add_argument("--output-md-path", default=str(ROOT / "run_summary.md"))
+    # @context decision -- run summary is still the S28 truth checkpoint, but the checked-in
+    # publication copy now lives under reports/published with the other exported surfaces.
+    parser.add_argument("--output-json-path", default=str(PUBLISHED_ROOT / "run_summary.json"))
+    parser.add_argument("--output-md-path", default=str(PUBLISHED_ROOT / "run_summary.md"))
     return parser.parse_args()
 
 

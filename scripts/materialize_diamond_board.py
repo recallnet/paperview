@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_RUNS_ROOT = ROOT / "data" / "structural-analogy" / "runs"
+PUBLISHED_ROOT = ROOT / "reports" / "published"
 
 
 def parse_args():
@@ -22,7 +23,9 @@ def parse_args():
     parser.add_argument("--transition-run-id", default="transition-state-ledger-diamond-20260329")
     parser.add_argument("--early-market-run-id", default="early-market-failure-modes-20260329")
     parser.add_argument("--output-dir", default=None)
-    parser.add_argument("--root-markdown-path", default=str(ROOT / "diamond_board.md"))
+    # @context decision -- checked-in publication surfaces now live under reports/published
+    # so mdream stays the repo focus and future materialization runs do not repollute the root.
+    parser.add_argument("--root-markdown-path", default=str(PUBLISHED_ROOT / "diamond_board.md"))
     return parser.parse_args()
 
 

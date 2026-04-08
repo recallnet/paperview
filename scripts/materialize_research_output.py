@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_RUNS_ROOT = ROOT / "data" / "structural-analogy" / "runs"
+PUBLISHED_ROOT = ROOT / "reports" / "published"
 
 
 def parse_args():
@@ -22,7 +23,9 @@ def parse_args():
     parser.add_argument("--findings-run-id", default="findings-and-throwaways-enhanced-20260328")
     parser.add_argument("--shortlist-run-id", default="shortlist-materialization-20260328")
     parser.add_argument("--enhanced-interpretation-run-id", default="enhanced-interpretation-ingestion-20260328")
-    parser.add_argument("--output-path", default=str(ROOT / "research_output.md"))
+    # @context decision -- the human-facing narrative report remains canonical, but it is now
+    # published under reports/published so the repo root stays product-first for mdream.
+    parser.add_argument("--output-path", default=str(PUBLISHED_ROOT / "research_output.md"))
     return parser.parse_args()
 
 

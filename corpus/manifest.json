@@ -1,0 +1,24 @@
+{
+  "corpus_version": "2026-03-29-section-first-v1",
+  "source_db_relpath": "data/structural-analogy/paperview.sqlite3",
+  "source_db_size_bytes": 17814237184,
+  "schema_file": "sql/paperview_schema.sql",
+  "embedding_config": "configs/embedding_spaces.yaml",
+  "embedding_spaces": [
+    "s1_surprise_sections_main",
+    "s2_mechanism_sections_main",
+    "s3_regime_sections_main",
+    "s4_all_sections_main"
+  ],
+  "record_counts": {
+    "papers": 24203,
+    "paper_sections": 5851,
+    "text_views": 145218,
+    "diamond_scores": 17323,
+    "knn_edges": 2904360
+  },
+  "compatibility": {
+    "mdream_cli": "section-first discovery, session/objective scoring enabled",
+    "published_surfaces_dir": "reports/published"
+  }
+}

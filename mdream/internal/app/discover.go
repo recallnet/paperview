@@ -99,6 +99,10 @@ func newDiscoverCommand() *cobra.Command {
 				})
 			}
 			nextCommands := buildNextCommands(sessionID, leads)
+			sessionObjective, err := currentSessionObjective(runtime.StoreDB, sessionID)
+			if err != nil {
+				return err
+			}
 			summary := buildDiscoverSummary(sessionID, activePrompt, leads, roundIndex)
 			payload := map[string]any{
 				"items":               payloadItems,
@@ -112,6 +116,7 @@ func newDiscoverCommand() *cobra.Command {
 				"surface_hits":        surfaceHits,
 				"next_commands":       nextCommands,
 				"candidate_diversity": candidateDiversity(payloadItems),
+				"session_objective":   sessionObjective,
 			}
 			// @context decision Persist all raw supporting hit sets under the
 			// discover round so the agent can continue from stored result IDs alone.
@@ -474,12 +479,59 @@ func buildDiscoverSummary(sessionID string, prompt string, leads []discoverLead,
 func buildNextCommands(sessionID string, leads []discoverLead) []string {
 	commands := []string{
 		fmt.Sprintf("mdream note add --session-id %s --kind finding --text '<why this round matters>'", sessionID),
+		fmt.Sprintf("mdream hypothesis top --session-id %s --json", sessionID),
+		"mdream hypothesis score --hypothesis-id <hypothesis_id> --lead-id <lead_id> --result-id <result_id> --prior-novelty <0-10> --posterior-novelty <0-10> --prior-plausibility <0-10> --posterior-plausibility <0-10> --thin-market-fit <0-10> --executability <0-10> --evidence-quality <0-10> --basin-repetition-penalty <0-10> --generic-drag-penalty <0-10> --json",
 		fmt.Sprintf("mdream --session %s discover round --prompt '<refined prompt>'", sessionID),
 	}
 	for _, lead := range leads[:minInt(3, len(leads))] {
 		commands = append(commands, lead.NextStep)
 	}
 	return commands
+}
+
+func currentSessionObjective(db *sql.DB, sessionID string) (map[string]any, error) {
+	items, err := core.QueryRows(db, `
+WITH latest_scores AS (
+  SELECT *
+  FROM (
+    SELECT
+      hs.*,
+      ROW_NUMBER() OVER (PARTITION BY hs.hypothesis_id ORDER BY hs.created_at DESC, hs.score_id DESC) AS rn
+    FROM hypothesis_scores hs
+  )
+  WHERE rn = 1
+)
+SELECT
+  h.hypothesis_id,
+  h.title,
+  ls.objective_score,
+  ls.surprise_score,
+  ls.posterior_novelty,
+  ls.posterior_plausibility,
+  ls.thin_market_fit,
+  ls.executability,
+  ls.evidence_quality,
+  ls.lead_id,
+  ls.paper_id,
+  ls.result_id,
+  ls.created_at AS scored_at
+FROM hypotheses h
+JOIN latest_scores ls ON ls.hypothesis_id = h.hypothesis_id
+WHERE h.session_id = ?
+ORDER BY ls.objective_score DESC, ls.created_at DESC
+LIMIT 1`, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return map[string]any{
+			"status":  "unscored",
+			"message": "No scored hypotheses yet. Add a hypothesis, score it after reading, and use that objective to steer the next round.",
+		}, nil
+	}
+	best := items[0]
+	best["status"] = "scored"
+	return best, nil
 }
 
 func candidateDiversity(items []map[string]any) map[string]int {

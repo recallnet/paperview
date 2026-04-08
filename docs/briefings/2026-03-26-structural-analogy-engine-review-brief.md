@@ -1,10 +1,10 @@
 ---
 doc_type: briefing
 owner: devrel
-review_policy: periodic-7
-reviewed: 2026-03-26
-status: active
-summary: Review brief describing the exact research plan, technical stack, execution phases, and expected end-state outputs for the structural analogy engine.
+review_policy: historical
+reviewed: 2026-04-08
+status: historical
+summary: Historical review brief for the structural analogy engine before the repo was reorganized around mdream and the shared corpus workflow.
 tags:
   - docs
   - briefing

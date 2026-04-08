@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_OUTPUT_ROOT = ROOT / "data" / "structural-analogy" / "runs"
+PUBLISHED_ROOT = ROOT / "reports" / "published"
 POSITIVE_CLASSIFICATIONS = {
     "TRANSLATION_CANDIDATE",
     "COMPOSITIONAL_CANDIDATE",
@@ -40,7 +41,9 @@ def parse_args():
     parser.add_argument("--resurfacing-run-id", default="stranded-resurfacing-materialization-20260328")
     parser.add_argument("--stranded-ledger-run-id", default="stranded-result-ledger-20260328")
     parser.add_argument("--output-dir", default=None)
-    parser.add_argument("--root-markdown-path", default=str(ROOT / "findings_and_throwaways.md"))
+    # @context decision -- the mandatory human-facing findings surface is still required every run,
+    # but the checked-in canonical location is reports/published rather than the repo root.
+    parser.add_argument("--root-markdown-path", default=str(PUBLISHED_ROOT / "findings_and_throwaways.md"))
     parser.add_argument("--top-k", type=int, default=3)
     return parser.parse_args()
 

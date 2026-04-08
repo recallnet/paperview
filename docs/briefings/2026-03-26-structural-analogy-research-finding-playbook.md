@@ -2,7 +2,7 @@
 doc_type: briefing
 owner: devrel
 review_policy: periodic-7
-reviewed: 2026-03-26
+reviewed: 2026-04-08
 status: active
 summary: Canonical playbook for turning future structural-analogy findings into purified motifs, evidence packs, and measurement specs.
 tags:

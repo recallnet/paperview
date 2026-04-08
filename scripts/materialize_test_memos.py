@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = ROOT / "data" / "structural-analogy" / "paperview.sqlite3"
 DEFAULT_RUNS_ROOT = ROOT / "data" / "structural-analogy" / "runs"
 DEFAULT_REPORTS_ROOT = ROOT / "reports"
+PUBLISHED_ROOT = ROOT / "reports" / "published"
 
 
 def parse_args():
@@ -18,7 +19,7 @@ def parse_args():
     parser.add_argument("--run-id", default="test-memos-v2-20260329")
     parser.add_argument("--runs-root", default=str(DEFAULT_RUNS_ROOT))
     parser.add_argument("--reports-root", default=str(DEFAULT_REPORTS_ROOT))
-    parser.add_argument("--research-output-path", default=str(ROOT / "research_output.md"))
+    parser.add_argument("--research-output-path", default=str(PUBLISHED_ROOT / "research_output.md"))
     parser.add_argument("--unrealized-run-id", default="unrealized-ideas-index-diamond-20260329")
     parser.add_argument("--stranded-run-id", default="stranded-result-ledger-diamond-20260329")
     parser.add_argument("--transition-run-id", default="transition-state-ledger-diamond-20260329")
