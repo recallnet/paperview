@@ -1,0 +1,3 @@
+display_name: mdream Hypothesis Deepening
+short_description: Run multi-round mdream discovery until a surprising, testable strategy survives.
+default_prompt: Deepen this mdream hypothesis end to end. Open a session, iterate through multiple mdream rounds, escape repeated basins, inspect paper and section evidence, and stop only when the best surviving idea is genuinely surprising and has a first test plus gap to close.
