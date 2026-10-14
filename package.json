@@ -59,6 +59,12 @@
   },
   "devDependencies": {
     "@recallnet/codecontext-cli": "^0.3.0",
-    "@recallnet/docs-governance-preset": "^0.2.2"
+    "@recallnet/docs-governance-preset": "^0.3.4"
+  },
+  "overrides": {
+    "@apidevtools/json-schema-ref-parser": "^11.9.3",
+    "ajv": "^8.20.0",
+    "minimatch": "^9.0.9",
+    "yaml": "^2.9.1"
   }
 }

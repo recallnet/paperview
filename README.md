@@ -39,16 +39,16 @@ See the [CLI reference](mdream/README.md), [operator guide](docs/operator-guide.
 ## Validation
 
 ```sh
-PYTHONPATH=scripts uv run --python 3.13 --with pyyaml --with numpy --with sqlite-vec python -m unittest discover -s tests -p 'test_*.py' -v
+PYTHONPATH=scripts uv run --python 3.13 --with pyyaml --with numpy --with sqlite-vec --with scikit-learn python -m unittest discover -s tests -p 'test_*.py' -v
 (cd mdream && go test ./... && go vet ./... && go build ./cmd/mdream)
 bash -n scripts/bootstrap_mdream.sh
 npm run docs:lint
 ```
 
-The docs lint command requires the internal Recall documentation tooling declared in `package.json`; availability outside the original environment is not guaranteed. The Python suite currently fails because tracked tests refer to absent `scripts/init_local_store.py` and `scripts/sqlite_vec_adapter.py`. These files are not present in repository history. Tests use fixtures and do not establish that the missing historical corpus can be reproduced.
+The docs lint command requires the internal Recall documentation tooling declared in `package.json`; availability outside the original environment is not guaranteed. Tests use fixtures and do not establish that the missing historical corpus can be reproduced.
 
 ## Data, reports, and licensing
 
 The MIT license applies to Recall-authored source code and documentation. It does not grant rights to papers, quoted text, metadata supplied by others, model artifacts, or external datasets. Preserve each source’s license and attribution, and verify rights before redistributing a database or derived report. Public availability of a paper does not imply permission to redistribute it.
 
-[`reports/`](reports/) contains historical internal research artifacts and candidate classifications. They are unvalidated hypotheses, including negative results, rather than investment advice or proven strategies. Their paper-derived content has no complete per-source redistribution ledger in this repository. Review the original sources and rights before sharing these artifacts or their history.
+[`reports/`](reports/) contains historical internal research artifacts and candidate classifications. They are unvalidated hypotheses, including negative results, rather than investment advice or proven strategies. The tracked reports contain paper identifiers and titles, derived scores, and research commentary; the underlying full-text database is not included. No rights to redistribute a paper or the historical corpus are implied.
