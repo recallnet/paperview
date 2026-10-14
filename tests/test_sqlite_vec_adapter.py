@@ -1,4 +1,5 @@
 import sys
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,16 @@ from sqlite_vec_adapter import (
 
 
 class SQLiteVecAdapterTests(unittest.TestCase):
+    def test_metadata_failure_rolls_back_vectors(self):
+        connection = connect(':memory:')
+        ensure_schema(connection)
+        ensure_vec_table(connection, 'vec_test_2', 2)
+        with self.assertRaises(sqlite3.IntegrityError):
+            write_embeddings(connection, table_name='vec_test_2', space_id=999,
+                view_ids=[1], vectors=[[1, 0]], batch_id='invalid-space')
+        self.assertEqual(connection.execute('SELECT COUNT(*) FROM vec_test_2').fetchone()[0], 0)
+        connection.close()
+
     def test_embeddings_survive_reopen_and_update_nearest_neighbor(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'vectors.sqlite3'

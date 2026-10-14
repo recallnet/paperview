@@ -52,15 +52,19 @@ def ensure_vec_table(connection, table_name, dims):
     connection.commit()
 
 
-def write_vectors(connection, table_name, view_ids, vectors):
+def _write_vectors(connection, table_name, view_ids, vectors):
     table = _table_name(table_name)
     if len(view_ids) != len(vectors):
         raise ValueError('view IDs and vectors must have equal lengths')
+    for view_id, vector in zip(view_ids, vectors):
+        connection.execute(f'DELETE FROM {table} WHERE rowid = ?', (int(view_id),))
+        connection.execute(f'INSERT INTO {table}(rowid, embedding) VALUES (?, ?)',
+                           (int(view_id), np.asarray(vector, dtype=np.float32).tobytes()))
+
+
+def write_vectors(connection, table_name, view_ids, vectors):
     with connection:
-        for view_id, vector in zip(view_ids, vectors):
-            connection.execute(f'DELETE FROM {table} WHERE rowid = ?', (int(view_id),))
-            connection.execute(f'INSERT INTO {table}(rowid, embedding) VALUES (?, ?)',
-                               (int(view_id), np.asarray(vector, dtype=np.float32).tobytes()))
+        _write_vectors(connection, table_name, view_ids, vectors)
 
 
 def query_knn(connection, table_name, vector, k):
@@ -101,6 +105,8 @@ def upsert_view_embedding_meta(connection, *, space_id, view_ids, batch_id, embe
 
 
 def write_embeddings(connection, *, table_name, space_id, view_ids, vectors, batch_id):
-    write_vectors(connection, table_name, view_ids, vectors)
+    # @context invariant: vectors and their provenance must commit together.
+    # Calling write_vectors here would commit before a metadata error can roll back.
     with connection:
+        _write_vectors(connection, table_name, view_ids, vectors)
         upsert_view_embedding_meta(connection, space_id=space_id, view_ids=view_ids, batch_id=batch_id)
