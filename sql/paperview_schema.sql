@@ -586,6 +586,7 @@ CREATE TABLE IF NOT EXISTS stranding_scores (
   stranding_score REAL NOT NULL,
   instrument_gap_score REAL NOT NULL,
   access_barrier_score REAL NOT NULL,
+  implementation_barrier_score REAL NOT NULL DEFAULT 0,
   result_specificity_score REAL NOT NULL,
   resolution_mechanics_score REAL NOT NULL,
   survey_penalty_score REAL NOT NULL,

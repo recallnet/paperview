@@ -1,0 +1,5 @@
+The root MIT license covers Recall-authored code and documentation only.
+Third-party papers, excerpts, metadata, datasets, model artifacts, and derived
+content retain their original rights; no redistribution license for those
+materials is granted by this repository. The historical corpus is not included.
+Go dependencies retain their respective licenses as identified by their modules.
